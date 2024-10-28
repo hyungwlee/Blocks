@@ -11,7 +11,8 @@ import SwiftUI
 struct BlocksApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // Provide actual dependencies and game mode
+            ContentView(dependencies: Dependencies(), gameMode: .single) // Use the desired game mode
         }
     }
 }
