@@ -32,6 +32,9 @@ class BGamePlayingState: GKState {
 
     override func didEnter(from previousState: GKState?) {
         print("Game started")
-        // Add code to start the game logic, initialize variables, etc.
+          // Example of creating and adding a node with the parent check
+        let block = SKShapeNode(rectOf: CGSize(width: 50, height: 50))
+        block.fillColor = .green
+        scene?.addBlockNode(block, to: scene!) 
     }
 }

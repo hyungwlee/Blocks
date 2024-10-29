@@ -62,9 +62,3 @@ class BDoubleBlock: BBoxNode {
     }
 }
 
-
-
-
-
-
-

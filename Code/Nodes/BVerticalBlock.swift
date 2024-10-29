@@ -42,8 +42,7 @@ class BVerticalBlock: BBoxNode {
         box.fillColor = fillColor // Use the provided color
         box.lineWidth = 2.0       // Adjust line width if desired
 
-        // Add the configured box to the node
-        addChild(box)
+        // No need to addChild(box) since it's already done in BBoxNode
     }
 }
 

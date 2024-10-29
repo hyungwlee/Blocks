@@ -9,7 +9,7 @@ import Combine
 import GameplayKit
 
 class BGameContext: GameContext {
-    var nextState: GameState? // Reference to the game state
+    var nextState: GameState?
     var gameScene: BGameScene? {
         scene as? BGameScene
     }
@@ -28,7 +28,7 @@ class BGameContext: GameContext {
         self.gameInfo = BGameInfo()
         self.gameMode = gameMode
         super.init(dependencies: dependencies)
-        configureStates()  // Call configureStates on init for easier setup
+        configureStates()
     }
 
     // MARK: - Configure State Machine
@@ -39,7 +39,8 @@ class BGameContext: GameContext {
         // Define the states available in this game context
         let states: [GKState] = [
             BGameIdleState(scene: gameScene, context: self),
-            BGamePlayingState(scene: gameScene, context: self)
+            BGamePlayingState(scene: gameScene, context: self),
+            BGamePlacingState(scene: gameScene, context: self) // Ensure placing state is included
         ]
         
         // Initialize the state machine with the array of states
@@ -57,6 +58,13 @@ class BGameContext: GameContext {
             return
         }
         stateMachine?.enter(stateClass)
+        // Update placing state based on the state
+        placingState = (stateClass == BGamePlacingState.self)
+    }
+
+    // Example method to transition to the placing state
+    func startPlacing() {
+        enterState(BGamePlacingState.self)
     }
 
     // Example method to transition to the playing state
@@ -64,4 +72,5 @@ class BGameContext: GameContext {
         enterState(BGamePlayingState.self)
     }
 }
+
 

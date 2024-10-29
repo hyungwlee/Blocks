@@ -7,6 +7,7 @@
 import SpriteKit
 
 
+
 class BGameScene: SKScene {
     let gridSize = 10
     let tileSize: CGFloat = 40
@@ -20,7 +21,6 @@ class BGameScene: SKScene {
     var dependencies: Dependencies // Replace with actual type
     var gameMode: GameModeType // Using the enum defined above
 
-    // Initialize the grid to be a 10x10 array
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
         self.gameContext = context // Initialize your context here
         self.dependencies = dependencies // Initialize dependencies
@@ -29,20 +29,38 @@ class BGameScene: SKScene {
         super.init(size: size)
     }
 
-   required init?(coder aDecoder: NSCoder) {
-    // Initialize dependencies and game mode with default values or handle as necessary
-    let defaultDependencies = Dependencies() // Ensure you have a way to create a default instance
-    self.dependencies = defaultDependencies // Set a default dependencies
-    self.gameMode = .single // Default game mode; change if needed
+    required init?(coder aDecoder: NSCoder) {
+        // Initialize dependencies and game mode with default values or handle as necessary
+        let defaultDependencies = Dependencies() // Ensure you have a way to create a default instance
+        self.dependencies = defaultDependencies // Set a default dependencies
+        self.gameMode = .single // Default game mode; change if needed
 
-    // Create a BGameContext using the dependencies and game mode
-    self.gameContext = BGameContext(dependencies: dependencies, gameMode: gameMode)
-    
-    // Initialize the grid
-    self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize) // Initialize with nil
-    super.init(coder: aDecoder)
-}
+        // Create a BGameContext using the dependencies and game mode
+        self.gameContext = BGameContext(dependencies: dependencies, gameMode: gameMode)
 
+        // Initialize the grid
+        self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize) // Initialize with nil
+        super.init(coder: aDecoder)
+    }
+
+    // MARK: - Node Management
+
+    func addBlockNode(_ blockNode: SKShapeNode, to parentNode: SKNode) {
+        // Check if blockNode already has a parent before adding
+        if blockNode.parent == nil {
+            parentNode.addChild(blockNode)
+        } else {
+            print("Block node already has a parent and will not be added again.")
+        }
+    }
+
+    func safeAddBlock(_ block: BBoxNode) {
+        // Remove the block from its parent if it already has one
+        if block.parent != nil {
+            block.removeFromParent()
+        }
+        addChild(block) // Now safely add it to the scene
+    }
 
     // MARK: - Grid Management
 
@@ -77,8 +95,14 @@ class BGameScene: SKScene {
         addScoreLabel()
         spawnNewBlocks()
     }
+    
+    // Function handling block positioning - now uses addBlockNode for safety
+    func positionBlock(_ block: SKShapeNode, at position: CGPoint) {
+        block.position = position
+        addBlockNode(block, to: self) // Updated to call addBlockNode with parent check
+    }
 
-    func generateRandomShapes(count: Int) -> [BBoxNode] {
+       func generateRandomShapes(count: Int) -> [BBoxNode] {
         var shapes: [BBoxNode] = []
         for _ in 0..<count {
             let blockType = availableBlockTypes.randomElement()!
@@ -145,13 +169,7 @@ class BGameScene: SKScene {
         }
     }
 
-    func safeAddBlock(_ block: BBoxNode) {
-        // Remove the block from its parent if it already has one
-        if block.parent != nil {
-            block.removeFromParent()
-        }
-        addChild(block) // Now safely add it to the scene
-    }
+    // Touch handling methods
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
@@ -165,7 +183,7 @@ class BGameScene: SKScene {
         currentlyDraggedNode?.touchesMoved(touches, with: event)
     }
 
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
 
         if let block = currentlyDraggedNode {
@@ -188,6 +206,8 @@ class BGameScene: SKScene {
         currentlyDraggedNode?.touchesEnded(touches, with: event)
         currentlyDraggedNode = nil
     }
+    
+    // Placement logic
 
     func isPlacementValid(for node: BBoxNode, at row: Int, col: Int) -> Bool {
         for r in 0..<node.gridHeight {
@@ -203,46 +223,33 @@ class BGameScene: SKScene {
         return true
     }
 
-    func getOccupiedCells(for block: BBoxNode, at position: (row: Int, col: Int)) -> [GridCoordinate] {
-        var occupiedCells: [GridCoordinate] = []
-        for r in 0..<block.gridHeight {
-            for c in 0..<block.gridWidth {
-                occupiedCells.append(GridCoordinate(row: position.row + r, col: position.col + c))
+    func getOccupiedCells(for node: BBoxNode, at position: (row: Int, col: Int)) -> [(row: Int, col: Int)] {
+        var occupiedCells: [(Int, Int)] = []
+
+        for r in 0..<node.gridHeight {
+            for c in 0..<node.gridWidth {
+                occupiedCells.append((position.row + r, position.col + c))
             }
         }
         return occupiedCells
     }
 
-    func placeBlock(_ block: BBoxNode, occupiedCells: [GridCoordinate]) {
-        // Check if the block already has a parent and remove it
-        if let existingParent = block.parent {
-            print("Removing block from existing parent: \(existingParent)")
-            block.removeFromParent()
+    func placeBlock(_ block: BBoxNode, occupiedCells: [(row: Int, col: Int)]) {
+        // Update the grid with the block's occupied cells
+        for (row, col) in occupiedCells {
+            setCellOccupied(row: row, col: col, with: block)
         }
-        
-        // Set the block in the grid
-        for cell in occupiedCells {
-            setCellOccupied(row: cell.row, col: cell.col, with: block)
-        }
-        
-        // Update the position of the block to match the grid
-        let blockPosition = CGPoint(x: CGFloat(occupiedCells[0].col) * tileSize,
-                                     y: CGFloat(occupiedCells[0].row) * tileSize)
-        block.position = blockPosition
-        
-        // Add the block to the scene
-        addChild(block)
+        block.removeFromParent() // Remove block from the parent node before adding it to the grid
+        addChild(block) // Add to the grid node
+        spawnNewBlocks() // Trigger spawning of new blocks
     }
 
     func canSpawnBlocks() -> Bool {
-        for col in 0..<gridSize {
-            if grid[0][col] == nil { // Check if the top row has any empty cells
-                return true
-            }
-        }
-        return false // If the top row is full, can't spawn new blocks
+        // Implement your logic to determine if new blocks can be spawned
+        return true // Placeholder
     }
 }
+
 
 
 

@@ -28,8 +28,8 @@ class BSquareBlock: BBoxNode {
     // Helper function to configure the square block
     private func configureSquareBlock(fillColor: UIColor) {
         // Define the size for a 2x2 square block
-        let squareWidth = layoutInfo.boxSize.width * 2
-        let squareHeight = layoutInfo.boxSize.height * 2
+        let squareWidth = tileSize * 2
+        let squareHeight = tileSize * 2
         
         // Create a centered square path
         let squarePath = UIBezierPath(rect: CGRect(
@@ -41,11 +41,9 @@ class BSquareBlock: BBoxNode {
         box.path = squarePath.cgPath
         box.fillColor = fillColor   // Use the provided color
         box.lineWidth = 2.0         // Adjust line width if needed
-
-        // Add the configured box to the node
-        addChild(box)
     }
 }
+
 
 
 

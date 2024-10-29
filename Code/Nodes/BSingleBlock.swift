@@ -10,18 +10,15 @@ import SpriteKit
 
 
 class BSingleBlock: BBoxNode {
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize)
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .blue) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
 
-        // Set the main block's path to a horizontal rectangle
-        box.path = UIBezierPath(rect: .init(origin: .zero, size: CGSize(width: tileSize * 3, height: tileSize))).cgPath
-
-        // Create a smaller box to represent the 'T' shape
-        let smallBox = SKShapeNode(rect: .init(origin: CGPoint(x: tileSize, y: 0), size: CGSize(width: tileSize, height: tileSize)), cornerRadius: 8.0)
-        smallBox.fillColor = .cyan
-        addChild(smallBox)
+        // Create a square block using the layoutInfo for size
+        box = SKShapeNode(rect: .init(origin: .zero, size: layoutInfo.boxSize), cornerRadius: 8.0)
+        box.fillColor = color // Use the provided color
+        addChild(box) // Add the box as a child to this node
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
