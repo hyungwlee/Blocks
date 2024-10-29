@@ -9,8 +9,7 @@ import Combine
 import GameplayKit
 
 class BGameContext: GameContext {
-    
-    // MARK: - Properties
+    var nextState: GameState? // Reference to the game state
     var gameScene: BGameScene? {
         scene as? BGameScene
     }
@@ -18,7 +17,7 @@ class BGameContext: GameContext {
     let gameInfo: BGameInfo
     var layoutInfo: BLayoutInfo = .init(screenSize: .zero)
     var placingState: Bool = false 
-    
+
     private(set) var stateMachine: GKStateMachine?
     var currentState: GKState? {
         stateMachine?.currentState
@@ -36,17 +35,16 @@ class BGameContext: GameContext {
     private func configureStates() {
         guard let gameScene else { return }
         print("Configuring states for game context")
-        
+
         // Define the states available in this game context
         let states: [GKState] = [
             BGameIdleState(scene: gameScene, context: self),
-            TTGamePlayingState(scene: gameScene, context: self),
-            TTGamePausedState(scene: gameScene, context: self)
+            BGamePlayingState(scene: gameScene, context: self)
         ]
         
         // Initialize the state machine with the array of states
         stateMachine = GKStateMachine(states: states)
-        
+
         // Enter the initial state
         stateMachine?.enter(BGameIdleState.self)
     }
@@ -63,53 +61,7 @@ class BGameContext: GameContext {
 
     // Example method to transition to the playing state
     func startGame() {
-        enterState(TTGamePlayingState.self)
-    }
-
-    // Example method to transition to the paused state
-    func pauseGame() {
-        enterState(TTGamePausedState.self)
+        enterState(BGamePlayingState.self)
     }
 }
 
-// MARK: - Additional States
-
-class TTGamePlayingState: GKState {
-    weak var scene: BGameScene?
-    weak var context: BGameContext?
-
-    init(scene: BGameScene, context: BGameContext) {
-        self.scene = scene
-        self.context = context
-        super.init()
-    }
-
-    override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return stateClass is TTGamePausedState.Type || stateClass is BGameIdleState.Type
-    }
-
-    override func didEnter(from previousState: GKState?) {
-        print("Game started")
-        // Add code to start the game logic, initialize variables, etc.
-    }
-}
-
-class TTGamePausedState: GKState {
-    weak var scene: BGameScene?
-    weak var context: BGameContext?
-
-    init(scene: BGameScene, context: BGameContext) {
-        self.scene = scene
-        self.context = context
-        super.init()
-    }
-
-    override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return stateClass is TTGamePlayingState.Type || stateClass is BGameIdleState.Type
-    }
-
-    override func didEnter(from previousState: GKState?) {
-        print("Game paused")
-        // Add code to handle the paused state, stop timers, etc.
-    }
-}

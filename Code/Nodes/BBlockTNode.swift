@@ -8,22 +8,24 @@
 import Foundation
 import SpriteKit
 
+
 class BBlockTNode: BBoxNode {
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .cyan)
+        // Call the superclass initializer with layoutInfo and tileSize only
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize)
 
+        // Set the main block's path to a horizontal rectangle
         box.path = UIBezierPath(rect: .init(origin: .zero, size: CGSize(width: tileSize * 3, height: tileSize))).cgPath
 
+        // Create a smaller box to represent the 'T' shape
         let smallBox = SKShapeNode(rect: .init(origin: CGPoint(x: tileSize, y: 0), size: CGSize(width: tileSize, height: tileSize)), cornerRadius: 8.0)
-        smallBox.fillColor = .cyan
+        smallBox.fillColor = .cyan // UIColor should be imported in your file
         addChild(smallBox)
-    }
-
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
     }
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
 }
+
+

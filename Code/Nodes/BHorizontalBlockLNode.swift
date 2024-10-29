@@ -8,36 +8,45 @@
 import Foundation
 import SpriteKit
 
-class BHorizontalBlockLNode: BBoxNode {
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .purple) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
 
+class BHorizontalBlockLNode: BBoxNode {
+    // Required initializer with layoutInfo, tileSize, and default color
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize) // Call the superclass initializer
+        createLShapeNode(fillColor: .purple) // Use default color
+    }
+
+    // Initializer that allows a custom color
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize) // Call the superclass initializer
+        createLShapeNode(fillColor: color) // Use provided color
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder) // Ensure 'override' is used here
+    }
+
+    // Helper function to create the L shape node
+    private func createLShapeNode(fillColor: UIColor) {
         // Create a path for the L shape
         let path = UIBezierPath()
-
-        // Draw the L shape facing the other way
         path.move(to: CGPoint(x: 0, y: 0)) // Start at the bottom left corner
-        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width * 2, y: 0)) // Move to the bottom left corner
-        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width * 2, y: layoutInfo.boxSize.height)) // Move up to the middle left
-        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width, y: layoutInfo.boxSize.height)) // Move right to the middle
-        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width, y: layoutInfo.boxSize.height * 2)) // Move up to the top middle
-        path.addLine(to: CGPoint(x: 0, y: layoutInfo.boxSize.height * 2)) // Move right to the top right corner
+        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width * 2, y: 0)) // Use layoutInfo directly
+        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width * 2, y: layoutInfo.boxSize.height)) // Use layoutInfo directly
+        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width, y: layoutInfo.boxSize.height)) // Use layoutInfo directly
+        path.addLine(to: CGPoint(x: -layoutInfo.boxSize.width, y: layoutInfo.boxSize.height * 2)) // Use layoutInfo directly
+        path.addLine(to: CGPoint(x: 0, y: layoutInfo.boxSize.height * 2)) // Use layoutInfo directly
         path.close() // Close the path to form the L shape
 
         // Create the shape node with the path
         let lShapeNode = SKShapeNode(path: path.cgPath)
-        lShapeNode.fillColor = color // Use the provided color
+        lShapeNode.fillColor = fillColor // Set the color
 
         // Remove any additional nodes or shapes that may have been added previously
         self.removeAllChildren() // Ensure no unwanted children are present
-        addChild(lShapeNode) // Add only the L shape node
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+        addChild(lShapeNode) // Add the L shape node
     }
 }
-
 
 
 

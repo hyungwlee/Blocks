@@ -8,34 +8,49 @@
 import Foundation
 import SpriteKit
 
+
 class BVerticalLBlock: BBoxNode {
+
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .purple) // Pass default color
-        
-        // Create a path for the vertical L shape
-        let path = UIBezierPath()
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize)
+        configureLShapeBlock(fillColor: UIColor.purple)
+    }
 
-        // Draw the vertical L shape
-        path.move(to: CGPoint(x: 0, y: layoutInfo.boxSize.height * 2)) // Start at the top left
-        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width * 2, y: layoutInfo.boxSize.height * 2)) // Move to the top right
-        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width * 2, y: layoutInfo.boxSize.height)) // Move down to the right middle
-        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width, y: layoutInfo.boxSize.height)) // Move left to the middle
-        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width, y: 0)) // Move down to the bottom middle
-        path.addLine(to: CGPoint(x: 0, y: 0)) // Move left to the bottom left
-        path.close() // Close the path to form the vertical L shape
-
-        // Set the path for the box shape node
-        box.path = path.cgPath // Set the path for the box
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize)
+        configureLShapeBlock(fillColor: color)
     }
 
     required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder) // Ensure 'override' is used here
+        super.init(coder: aDecoder)
     }
-    
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color) // Call the superclass initializer
+
+    private func configureLShapeBlock(fillColor: UIColor) {
+        let path = UIBezierPath()
+        // Define the path for the vertical L shape
+        path.move(to: CGPoint(x: 0, y: layoutInfo.boxSize.height * 2))
+        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width * 2, y: layoutInfo.boxSize.height * 2))
+        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width * 2, y: layoutInfo.boxSize.height))
+        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width, y: layoutInfo.boxSize.height))
+        path.addLine(to: CGPoint(x: layoutInfo.boxSize.width, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: 0))
+        path.close()
+
+        // Set the path and color for the box
+        box.path = path.cgPath
+        box.fillColor = fillColor
+        box.lineWidth = 2.0
+
+        // Ensure the box has no parent before adding
+        if box.parent != nil {
+            box.removeFromParent()
+        }
+        
+        addChild(box) // Add the box to the node
     }
 }
+
+
 
 
 

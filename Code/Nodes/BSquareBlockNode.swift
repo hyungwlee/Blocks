@@ -9,55 +9,48 @@ import Foundation
 import SpriteKit
 
 class BSquareBlock: BBoxNode {
-    
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
-        // Call the superclass initializer with a default color (e.g., pink)
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .systemPink)
-        
-        // Create the square shape node with size twice the box size
-        let squareWidth = layoutInfo.boxSize.width * 2
-        let squareHeight = layoutInfo.boxSize.height * 2 // 2x2 block
 
-        let squarePath = UIBezierPath(rect: CGRect(origin: CGPoint(x: -squareWidth / 2, y: -squareHeight / 2), size: CGSize(width: squareWidth, height: squareHeight)))
-        let squareShapeNode = SKShapeNode(path: squarePath.cgPath)
-        
-        // Set the fill color for the square block (already set in the superclass)
-        squareShapeNode.fillColor = .systemPink // Change color as needed
-        squareShapeNode.lineWidth = 2.0 // Change line width if necessary
-        
-        // Center it in the block
-        squareShapeNode.position = CGPoint.zero 
-        
-        // Add the square shape to the node
-        addChild(squareShapeNode)
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize) // No `color` argument in `super.init`
+        configureSquareBlock(fillColor: UIColor.systemPink) // Set default color
+    }
+    
+    // Additional initializer to allow a custom color
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize) // No `color` argument in `super.init`
+        configureSquareBlock(fillColor: color) // Use the provided color
     }
     
     required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder) // Ensure 'override' is used here
+        super.init(coder: aDecoder)
     }
-    
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
-        // Call the superclass initializer with the provided parameters
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
-        
-        // Create the square shape node with size twice the box size
-        let squareWidth = layoutInfo.boxSize.width * 2
-        let squareHeight = layoutInfo.boxSize.height * 2 // 2x2 block
 
-        let squarePath = UIBezierPath(rect: CGRect(origin: CGPoint(x: -squareWidth / 2, y: -squareHeight / 2), size: CGSize(width: squareWidth, height: squareHeight)))
-        let squareShapeNode = SKShapeNode(path: squarePath.cgPath)
+    // Helper function to configure the square block
+    private func configureSquareBlock(fillColor: UIColor) {
+        // Define the size for a 2x2 square block
+        let squareWidth = layoutInfo.boxSize.width * 2
+        let squareHeight = layoutInfo.boxSize.height * 2
         
-        // Set the fill color for the square block
-        squareShapeNode.fillColor = color // Use the provided color
-        squareShapeNode.lineWidth = 2.0 // Change line width if necessary
+        // Create a centered square path
+        let squarePath = UIBezierPath(rect: CGRect(
+            origin: CGPoint(x: -squareWidth / 2, y: -squareHeight / 2),
+            size: CGSize(width: squareWidth, height: squareHeight))
+        )
         
-        // Center it in the block
-        squareShapeNode.position = CGPoint.zero 
-        
-        // Add the square shape to the node
-        addChild(squareShapeNode)
+        // Set the box path and color
+        box.path = squarePath.cgPath
+        box.fillColor = fillColor   // Use the provided color
+        box.lineWidth = 2.0         // Adjust line width if needed
+
+        // Add the configured box to the node
+        addChild(box)
     }
 }
+
+
+
+
+
 
 
 

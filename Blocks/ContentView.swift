@@ -8,20 +8,23 @@
 import SwiftUI
 import SpriteKit
 
+import SwiftUI
+import SpriteKit
+
 struct ContentView: View {
     let screenSize: CGSize = UIScreen.main.bounds.size
     var layoutInfo: BLayoutInfo {
         BLayoutInfo(screenSize: screenSize)
     }
     
-    let gameContext: GameContext
-    
+    let gameContext: BGameContext
+
     init(dependencies: Dependencies, gameMode: GameModeType) {
         self.gameContext = BGameContext(dependencies: dependencies, gameMode: gameMode)
     }
 
     var body: some View {
-        SpriteView(scene: BGameScene(context: gameContext as! BGameContext, size: screenSize))
+        SpriteView(scene: BGameScene(context: gameContext, dependencies: gameContext.dependencies, gameMode: gameContext.gameMode, size: screenSize)) // Pass dependencies and gameMode
             .ignoresSafeArea()
     }
 }
@@ -30,3 +33,4 @@ struct ContentView: View {
     ContentView(dependencies: Dependencies(), gameMode: .single)
         .ignoresSafeArea()
 }
+

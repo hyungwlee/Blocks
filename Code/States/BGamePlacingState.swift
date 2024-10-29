@@ -10,20 +10,24 @@ import SpriteKit
 import GameplayKit
 
 
+import SpriteKit
+import GameplayKit
+
 class BGamePlacingState: GKState {
     weak var scene: BGameScene?
     weak var context: BGameContext?
-    
+    var currentBlock: BBoxNode.Type? // Reference to the type of block being placed
+
     init(scene: BGameScene, context: BGameContext) {
         self.scene = scene
         self.context = context
         super.init()
     }
-    
+
     override func didEnter(from previousState: GKState?) {
         print("Entered Placing State")
     }
-    
+
     private func getGridPosition(for touchLocation: CGPoint) -> (row: Int, col: Int) {
         let tileSize = scene?.tileSize ?? 40
         let row = Int(touchLocation.y / tileSize)
@@ -35,7 +39,7 @@ class BGamePlacingState: GKState {
         guard let scene = scene else { return }
         let touchLocation = touch.location(in: scene)
         let gridPosition = getGridPosition(for: touchLocation)
-        
+
         // Randomly select a block type
         let blockTypes: [BBoxNode.Type] = [
             BSingleBlock.self,
@@ -47,86 +51,110 @@ class BGamePlacingState: GKState {
             BDoubleBlock.self,
             BVerticalLBlock.self
         ]
-        
+
         let randomBlockType = blockTypes.randomElement() ?? BSingleBlock.self
-        
-        // Create an instance of the random block type
+
+        // Create an instance of the random block type for occupied cells
         let blockInstance = randomBlockType.init(
-            layoutInfo: BLayoutInfo(screenSize: scene.size, boxSize: CGSize(width: scene.tileSize, height: scene.tileSize)), 
+            layoutInfo: BLayoutInfo(screenSize: scene.size, boxSize: CGSize(width: scene.tileSize, height: scene.tileSize)),
             tileSize: scene.tileSize
         )
 
-        // Generate a random shape for the created block instance
-        let generatedShapes = context?.gameScene?.generateRandomShapes(for: blockInstance) ?? []
-        let shape: [(Int, Int)] = generatedShapes.isEmpty ? [(0, 0)] : [generatedShapes.first!]
-        
+        // Get the occupied cells for the block being placed
+        let shape = blockInstance.occupiedCellsForPlacement(row: gridPosition.row, col: gridPosition.col)
+
         // Snap the block to the closest valid grid position
         let snappedGridPosition = snapToGridPosition(for: gridPosition, with: shape)
-        
+
         // Place the block if the snapped position is valid
-        placeBlock(shape: shape, at: snappedGridPosition)
+        placeBlock(shape: shape, at: snappedGridPosition, blockType: randomBlockType)
     }
-    
-    private func snapToGridPosition(for gridPosition: (row: Int, col: Int), with shape: [(Int, Int)]) -> (row: Int, col: Int) {
+
+    private func snapToGridPosition(for gridPosition: (row: Int, col: Int), with shape: [GridCoordinate]) -> (row: Int, col: Int) {
         // Check if the current grid position is valid first
         if isValidPlacement(for: shape, at: gridPosition) {
             return gridPosition
         }
-        
+
         // Try moving in all directions to find a valid position
         for deltaRow in -1...1 {
             for deltaCol in -1...1 {
                 let newRow = gridPosition.row + deltaRow
                 let newCol = gridPosition.col + deltaCol
-                
-                let newGridPosition = (newRow, newCol)
-                if isValidPlacement(for: shape, at: newGridPosition) {
-                    print("Snapped grid position: \(newGridPosition)") // Debugging log
-                    return newGridPosition
+
+                if isValidPlacement(for: shape, at: (newRow, newCol)) {
+                    return (newRow, newCol)
                 }
             }
         }
-        
-        // If no valid position was found, return the original position
-        print("No valid position found, returning original grid position: \(gridPosition)") // Debugging log
-        return gridPosition
+
+        return gridPosition // Return the original if no new valid positions found
     }
 
-    private func placeBlock(shape: [(Int, Int)], at gridPosition: (row: Int, col: Int)) {
-        let (row, col) = gridPosition
-        if isValidPlacement(for: shape, at: gridPosition) {
-            // Mark cells as occupied
-            for (dx, dy) in shape {
-                let newRow = row + dy
-                let newCol = col + dx
-                scene?.grid[newRow][newCol]?.color = .darkGray // Mark the cell as occupied
-                print("Marked cell at (\(newRow), \(newCol)) as occupied") // Debugging log
-            }
-            print("Placed block at (\(row), \(col))")
-            stateMachine?.enter(BGameClearingState.self)
-        } else {
-            print("Invalid placement for shape at (\(row), \(col))")
-        }
+    func isCellOccupied(row: Int, col: Int) -> Bool {
+        guard let scene = scene else { return true }
+        return scene.isCellOccupied(row: row, col: col)
     }
 
-    private func isValidPlacement(for shape: [(Int, Int)], at gridPosition: (row: Int, col: Int)) -> Bool {
-        for (dx, dy) in shape {
-            let newRow = gridPosition.row + dy
-            let newCol = gridPosition.col + dx
+   // Set a specific cell in the grid as occupied by the currently dragged node
+func setCellOccupied(row: Int, col: Int, with block: BBoxNode) {
+    guard let scene = scene else { return }
+    scene.setCellOccupied(row: row, col: col, with: block)
+}
+
+
+    private func isValidPlacement(for shape: [GridCoordinate], at position: (row: Int, col: Int)) -> Bool {
+        for coordinate in shape {
+            let occupiedRow = position.row + coordinate.row
+            let occupiedCol = position.col + coordinate.col
             
-            // Check if the position is out of bounds
-            if newRow < 0 || newRow >= scene?.grid.count ?? 0 || newCol < 0 || newCol >= scene?.grid[newRow].count ?? 0 {
-                print("Placement out of bounds at (\(newRow), \(newCol))")
+            // Check bounds
+            if occupiedRow < 0 || occupiedRow >= (scene?.gridSize ?? 10) || occupiedCol < 0 || occupiedCol >= (scene?.gridSize ?? 10) {
                 return false // Out of bounds
             }
 
-            // Check if the grid cell is occupied
-            if scene?.grid[newRow][newCol]?.color != .lightGray {
-                print("Cell at (\(newRow), \(newCol)) is occupied (color: \(String(describing: scene?.grid[newRow][newCol]?.color)))")
-                return false // Cell is already occupied
+            // Check if occupied
+            if isCellOccupied(row: occupiedRow, col: occupiedCol) {
+                return false // Cell already occupied
             }
         }
-        print("Placement valid for shape at (\(gridPosition.row), \(gridPosition.col))")
         return true // Valid placement
     }
+
+   private func placeBlock(shape: [GridCoordinate], at position: (row: Int, col: Int), blockType: BBoxNode.Type) {
+    guard let scene = scene else { return }
+
+    for coordinate in shape {
+        let occupiedRow = position.row + coordinate.row
+        let occupiedCol = position.col + coordinate.col
+        
+        // Create a new instance of the block for marking as occupied
+        let blockInstance = blockType.init(
+            layoutInfo: BLayoutInfo(screenSize: scene.size, boxSize: CGSize(width: scene.tileSize, height: scene.tileSize)), 
+            tileSize: scene.tileSize
+        )
+        
+        setCellOccupied(row: occupiedRow, col: occupiedCol, with: blockInstance) // Mark as occupied
+
+        // Set the position of the block
+        blockInstance.position = CGPoint(x: CGFloat(occupiedCol) * scene.tileSize, y: CGFloat(occupiedRow) * scene.tileSize)
+
+        // Check if the block already has a parent
+        if blockInstance.parent != nil {
+            blockInstance.removeFromParent() // Remove it from its parent if it exists
+        }
+
+        // Add the block to the scene
+        scene.addChild(blockInstance)
+    }
+    
+    // Clean up and prepare for the next state
+    context?.nextState = .none
 }
+
+}
+
+
+
+
+

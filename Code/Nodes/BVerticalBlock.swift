@@ -8,26 +8,45 @@
 import Foundation
 import SpriteKit
 
+
 class BVerticalBlock: BBoxNode {
+
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat) {
-        // Call the superclass initializer with a default color
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .orange) // Set the default color for the block
-        
-        // Create the SKShapeNode for the vertical block
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize) // No `color` argument in `super.init`
+        configureVerticalBlock(fillColor: UIColor.orange) // Set default color
+    }
+
+    // Initializer that allows a custom color
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize) // No `color` argument in `super.init`
+        configureVerticalBlock(fillColor: color) // Use the provided color
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+
+    // Helper function to configure the vertical block
+    private func configureVerticalBlock(fillColor: UIColor) {
+        // Define the size for the vertical block (3x height)
         let verticalSize = CGSize(width: layoutInfo.boxSize.width, height: layoutInfo.boxSize.height * 3)
 
-        // Update the box path to create a vertical block
-        box.path = UIBezierPath(rect: CGRect(origin: .zero, size: verticalSize)).cgPath // Set the path for the box
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder) // Ensure 'override' is used here
-    }
-    
-    // Provide the required initializer from the superclass
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor) {
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color) // Call the superclass initializer
+        // Create and set the path for the box representing the vertical block
+        let verticalPath = UIBezierPath(rect: CGRect(
+            origin: CGPoint(x: -layoutInfo.boxSize.width / 2, y: -layoutInfo.boxSize.height * 1.5),
+            size: verticalSize)
+        )
+        
+        // Set the box path and color
+        box.path = verticalPath.cgPath
+        box.fillColor = fillColor // Use the provided color
+        box.lineWidth = 2.0       // Adjust line width if desired
+
+        // Add the configured box to the node
+        addChild(box)
     }
 }
+
+
 
 
