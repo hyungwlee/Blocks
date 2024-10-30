@@ -80,13 +80,17 @@ class BGameScene: SKScene {
 
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
-        //BHorizontalBlock.self,
+        BHorizontalBlock1x4Node.self,
         BVerticalBlock.self,
         BSquareBlock.self,
-        //BBlockTNode.self,
-        BHorizontalBlockLNode.self,
-        //BDoubleBlock.self,
-        BVerticalLBlock.self,
+        BBlockTNode.self,
+        BHorizontalBlock1x3Node.self,
+       BVDoubleBlock.self,
+       BVerticalLBlock.self,
+        BHDoubleBlock.self,
+       BVerticalBlock1x4Node.self,
+        BSquareBlockNode3x3.self,
+        BRightFacingLBlockNode.self,
     ]
 
     override func didMove(to view: SKView) {

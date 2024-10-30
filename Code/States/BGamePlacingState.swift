@@ -38,13 +38,16 @@ func handleTouchEnded(_ touch: UITouch) {
     // Randomly select a block type
     let blockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
-        BHorizontalBlock.self,
         BVerticalBlock.self,
         BSquareBlock.self,
-        BHorizontalBlockLNode.self,
+        BHorizontalBlock1x3Node.self,
         BBlockTNode.self,
-        BDoubleBlock.self,
-        BVerticalLBlock.self
+        BHDoubleBlock.self,
+        BVerticalLBlock.self,
+        BHorizontalBlock1x4Node.self,
+        BVerticalBlock1x4Node.self,
+        BSquareBlockNode3x3.self,
+        BRightFacingLBlockNode.self,
     ]
 
     let randomBlockType = blockTypes.randomElement() ?? BSingleBlock.self
