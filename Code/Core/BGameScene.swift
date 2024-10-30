@@ -80,12 +80,12 @@ class BGameScene: SKScene {
 
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
-        BHorizontalBlock.self,
+        //BHorizontalBlock.self,
         BVerticalBlock.self,
         BSquareBlock.self,
-        BBlockTNode.self,
+        //BBlockTNode.self,
         BHorizontalBlockLNode.self,
-        BDoubleBlock.self,
+        //BDoubleBlock.self,
         BVerticalLBlock.self,
     ]
 
