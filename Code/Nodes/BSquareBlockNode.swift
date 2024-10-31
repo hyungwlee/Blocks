@@ -33,30 +33,19 @@ class BSquareBlock: BBoxNode {
 
     // Helper function to create the square block using individual blocks
     private func createSquareBlock(fillColor: UIColor) {
-        // Clear any existing blocks
-        for row in blocks {
-            for block in row {
-                block.removeFromParent()
-            }
-        }
-        blocks.removeAll()
-
-        // Create a 2x2 square block using individual blocks
         for row in 0..<2 {
-            var blockRow: [BSingleBlockT] = []
             for column in 0..<2 {
                 let block = BSingleBlockT(layoutInfo: layoutInfo, tileSize: tileSize, color: fillColor)
                 block.position = CGPoint(
-                    x: CGFloat(column) * tileSize - tileSize / 2,  // Adjust for centering on the x-axis
-                    y: CGFloat(row) * tileSize - tileSize / 2       // Adjust for centering on the y-axis
+                    x: CGFloat(column) * tileSize,
+                    y: CGFloat(row) * tileSize
                 )
-                block.isUserInteractionEnabled = false // Prevent interaction with individual blocks
-                blockRow.append(block)
-                addChild(block) // Add each block to the parent node
+                block.isUserInteractionEnabled = false
+                addChild(block)
             }
-            blocks.append(blockRow) // Add the row of blocks to the main array
         }
     }
+
 
     // Override grid dimensions for the 2x2 square block
     override var gridHeight: Int { 2 } // Two cells tall

@@ -20,6 +20,8 @@ class BBoxNode: SKNode {
     var gridHeight: Int { 1 } // Default value, can be overridden
     var gridWidth: Int { 1 } // Default value, can be overridden
     var layoutInfo: BLayoutInfo
+    weak var gameScene: BGameScene?
+    var initialPosition: CGPoint = .zero
 
        required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .red) {
         self.layoutInfo = layoutInfo // Initialize layoutInfo before super.init
@@ -28,6 +30,7 @@ class BBoxNode: SKNode {
         box = SKShapeNode(rect: .init(origin: .zero, size: layoutInfo.boxSize), cornerRadius: 8.0)
         box.fillColor = color
         super.init()
+        box.position = CGPoint(x: 0, y: 0) // Set position to (0, 0)
         addChild(box)
         isUserInteractionEnabled = true
     }
@@ -62,16 +65,17 @@ class BBoxNode: SKNode {
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isBeingDragged = false
-      print("Dragging ended")
+        print("Dragging ended")
 
-    // Check the occupied cells after dragging
-    let occupied = occupiedCells()
-    for coordinate in occupied {
-        print("Occupied cell at Row: \(coordinate.row), Col: \(coordinate.col)")
+        guard let touch = touches.first else { return }
+
+        // Calculate grid position
+        let gridPos = gridPosition()
+
+        // Ask the game scene to place the block
+        gameScene?.placeBlock(self, at: gridPos)
     }
-        
-        // Handle placement logic (e.g., validate and update game state)
-    }
+
 
     func updatePosition(to position: CGPoint) {
         self.position = CGPoint(x: position.x - box.frame.width / 2, y: position.y - box.frame.height / 2)
@@ -92,6 +96,17 @@ class BBoxNode: SKNode {
         }
         return occupied
     }
+    func gridPosition() -> (row: Int, col: Int) {
+        guard let gameScene = gameScene else { return (0, 0) }
+        let tileSize = gameScene.tileSize
+        let gridOrigin = CGPoint(x: (gameScene.size.width - CGFloat(gameScene.gridSize) * tileSize) / 2,
+                                 y: (gameScene.size.height - CGFloat(gameScene.gridSize) * tileSize) / 2)
+        let adjustedPosition = CGPoint(x: self.position.x - gridOrigin.x, y: self.position.y - gridOrigin.y)
+        let col = Int((adjustedPosition.x + tileSize / 2) / tileSize)
+        let row = Int((adjustedPosition.y + tileSize / 2) / tileSize)
+        return (row, col)
+    }
+
 
     // Generate a random color
     private func randomColor() -> UIColor {

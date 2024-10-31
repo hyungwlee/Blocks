@@ -11,57 +11,40 @@ import UIKit
 
 
 class BVDoubleBlock: BBoxNode {
-
-    // Required initializer with layoutInfo, tileSize, and default color
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .green) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize)
         box.removeFromParent() // Remove any existing background shape (box)
-        setupBlock(fillColor: color)
+        configureDoubleBlock(fillColor: color)
     }
 
     required init?(coder aDecoder: NSCoder) {
-        let layoutInfo = BLayoutInfo(screenSize: CGSize(width: 640, height: 480))
-        let tileSize: CGFloat = 40.0
-        let color: UIColor = .green
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize)
-        box.removeFromParent() // Remove any existing background shape (box)
-        setupBlock(fillColor: color)
-    }
-
-    private func setupBlock(fillColor: UIColor) {
-        configureDoubleBlock(fillColor: fillColor)
+        super.init(coder: aDecoder)
+        box.removeFromParent()
     }
 
     private func configureDoubleBlock(fillColor: UIColor) {
-        // Ensure the layout box size is valid
         guard layoutInfo.boxSize != .zero else {
             print("Error: Layout box size is zero. Ensure layoutInfo is set up correctly.")
             return
         }
 
-        // Create the first block (bottom)
-        let bottomBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: layoutInfo.boxSize.height, color: fillColor)
-        bottomBlock.position = CGPoint(x: 0, y: -layoutInfo.boxSize.height / 2) // Position it down
+        // Bottom block at (0, 0)
+        let bottomBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: tileSize, color: fillColor)
+        bottomBlock.position = CGPoint(x: 0, y: 0)
         addChild(bottomBlock)
 
-        // Create the second block (top)
-        let topBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: layoutInfo.boxSize.height, color: fillColor)
-        topBlock.position = CGPoint(x: 0, y: layoutInfo.boxSize.height / 2) // Position it up
+        // Top block at (0, tileSize)
+        let topBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: tileSize, color: fillColor)
+        topBlock.position = CGPoint(x: 0, y: tileSize)
         addChild(topBlock)
 
-        // Ensure all parts are treated as a single unit
+        // Disable interaction with individual blocks
         for block in [bottomBlock, topBlock] {
-            block.isUserInteractionEnabled = false // Prevent user interaction with individual blocks
+            block.isUserInteractionEnabled = false
         }
     }
 
-    // Override grid dimensions for the double block
-    override var gridHeight: Int { 2 } // Two cells tall
-    override var gridWidth: Int { 1 }  // One cell wide
+    // Correct grid dimensions
+    override var gridHeight: Int { 2 }
+    override var gridWidth: Int { 1 }
 }
-
-
-
-
-
-

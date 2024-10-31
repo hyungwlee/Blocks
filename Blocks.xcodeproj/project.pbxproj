@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8013DF0F2CD2BACA00029895 /* BHorizontalBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF0E2CD2BACA00029895 /* BHorizontalBlock.swift */; };
+		8013DF112CD2BAD800029895 /* BHorizontalBlockLNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF102CD2BAD800029895 /* BHorizontalBlockLNode.swift */; };
+		8013DF132CD2BB8900029895 /* BHorizontalBlock1x4Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF122CD2BB8900029895 /* BHorizontalBlock1x4Node.swift */; };
+		8013DF152CD2BB9B00029895 /* BHDoubleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF142CD2BB9B00029895 /* BHDoubleBlock.swift */; };
+		8013DF172CD2BBB300029895 /* BRightLBlock2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF162CD2BBB300029895 /* BRightLBlock2x2.swift */; };
+		8013DF192CD2BBBC00029895 /* BSingleNodeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF182CD2BBBC00029895 /* BSingleNodeTest.swift */; };
+		8013DF1B2CD2BBC700029895 /* BSquareNode3x3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF1A2CD2BBC700029895 /* BSquareNode3x3.swift */; };
+		8013DF1D2CD2BBCF00029895 /* BTripleHorizontalBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF1C2CD2BBCF00029895 /* BTripleHorizontalBlock.swift */; };
+		8013DF1F2CD2BBD600029895 /* BVerticalBlock1x4Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF1E2CD2BBD600029895 /* BVerticalBlock1x4Node.swift */; };
+		8013DF212CD2BBE300029895 /* BVerticalDoubleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8013DF202CD2BBE300029895 /* BVerticalDoubleBlock.swift */; };
 		8043C70C2CC3721A00AE8B4D /* BlocksApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8043C70B2CC3721A00AE8B4D /* BlocksApp.swift */; };
 		8043C70E2CC3721A00AE8B4D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8043C70D2CC3721A00AE8B4D /* ContentView.swift */; };
 		8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C70F2CC3721B00AE8B4D /* Assets.xcassets */; };
@@ -18,12 +28,9 @@
 		9E3580792CD1A407007ABB7D /* BSquareBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806A2CD1A407007ABB7D /* BSquareBlockNode.swift */; };
 		9E35807A2CD1A407007ABB7D /* BGameClearingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806E2CD1A407007ABB7D /* BGameClearingState.swift */; };
 		9E35807B2CD1A407007ABB7D /* BVerticalLBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806C2CD1A407007ABB7D /* BVerticalLBlock.swift */; };
-		9E35807C2CD1A407007ABB7D /* BDoubleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580662CD1A407007ABB7D /* BDoubleBlock.swift */; };
 		9E35807D2CD1A407007ABB7D /* BBoxNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580652CD1A407007ABB7D /* BBoxNode.swift */; };
 		9E35807E2CD1A407007ABB7D /* BSingleBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580692CD1A407007ABB7D /* BSingleBlock.swift */; };
 		9E35807F2CD1A407007ABB7D /* BGamePlacingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580702CD1A407007ABB7D /* BGamePlacingState.swift */; };
-		9E3580802CD1A407007ABB7D /* BHorizontalBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580672CD1A407007ABB7D /* BHorizontalBlock.swift */; };
-		9E3580812CD1A407007ABB7D /* BHorizontalBlockLNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580682CD1A407007ABB7D /* BHorizontalBlockLNode.swift */; };
 		9E3580822CD1A407007ABB7D /* BGameInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580612CD1A407007ABB7D /* BGameInfo.swift */; };
 		9E3580832CD1A407007ABB7D /* BGamePlayingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580712CD1A407007ABB7D /* BGamePlayingState.swift */; };
 		9E3580842CD1A407007ABB7D /* BBlockTNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580642CD1A407007ABB7D /* BBlockTNode.swift */; };
@@ -36,6 +43,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8013DF0E2CD2BACA00029895 /* BHorizontalBlock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = BHorizontalBlock.swift; path = "../../../../Downloads/Blocks-main/Code/Nodes/BHorizontalBlock.swift"; sourceTree = "<group>"; };
+		8013DF102CD2BAD800029895 /* BHorizontalBlockLNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = BHorizontalBlockLNode.swift; path = "../../../../Downloads/Blocks-main/Code/Nodes/BHorizontalBlockLNode.swift"; sourceTree = "<group>"; };
+		8013DF122CD2BB8900029895 /* BHorizontalBlock1x4Node.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BHorizontalBlock1x4Node.swift; sourceTree = "<group>"; };
+		8013DF142CD2BB9B00029895 /* BHDoubleBlock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BHDoubleBlock.swift; sourceTree = "<group>"; };
+		8013DF162CD2BBB300029895 /* BRightLBlock2x2.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BRightLBlock2x2.swift; sourceTree = "<group>"; };
+		8013DF182CD2BBBC00029895 /* BSingleNodeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BSingleNodeTest.swift; sourceTree = "<group>"; };
+		8013DF1A2CD2BBC700029895 /* BSquareNode3x3.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BSquareNode3x3.swift; sourceTree = "<group>"; };
+		8013DF1C2CD2BBCF00029895 /* BTripleHorizontalBlock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BTripleHorizontalBlock.swift; sourceTree = "<group>"; };
+		8013DF1E2CD2BBD600029895 /* BVerticalBlock1x4Node.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BVerticalBlock1x4Node.swift; sourceTree = "<group>"; };
+		8013DF202CD2BBE300029895 /* BVerticalDoubleBlock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BVerticalDoubleBlock.swift; sourceTree = "<group>"; };
 		8043C7082CC3721A00AE8B4D /* Blocks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blocks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8043C70B2CC3721A00AE8B4D /* BlocksApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlocksApp.swift; sourceTree = "<group>"; };
 		8043C70D2CC3721A00AE8B4D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -47,9 +64,6 @@
 		9E3580622CD1A407007ABB7D /* BLayoutInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLayoutInfo.swift; sourceTree = "<group>"; };
 		9E3580642CD1A407007ABB7D /* BBlockTNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BBlockTNode.swift; sourceTree = "<group>"; };
 		9E3580652CD1A407007ABB7D /* BBoxNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BBoxNode.swift; sourceTree = "<group>"; };
-		9E3580662CD1A407007ABB7D /* BDoubleBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BDoubleBlock.swift; sourceTree = "<group>"; };
-		9E3580672CD1A407007ABB7D /* BHorizontalBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BHorizontalBlock.swift; sourceTree = "<group>"; };
-		9E3580682CD1A407007ABB7D /* BHorizontalBlockLNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BHorizontalBlockLNode.swift; sourceTree = "<group>"; };
 		9E3580692CD1A407007ABB7D /* BSingleBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BSingleBlock.swift; sourceTree = "<group>"; };
 		9E35806A2CD1A407007ABB7D /* BSquareBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BSquareBlockNode.swift; sourceTree = "<group>"; };
 		9E35806B2CD1A407007ABB7D /* BVerticalBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BVerticalBlock.swift; sourceTree = "<group>"; };
@@ -134,11 +148,18 @@
 		9E35806D2CD1A407007ABB7D /* Nodes */ = {
 			isa = PBXGroup;
 			children = (
+				8013DF202CD2BBE300029895 /* BVerticalDoubleBlock.swift */,
+				8013DF1E2CD2BBD600029895 /* BVerticalBlock1x4Node.swift */,
+				8013DF1C2CD2BBCF00029895 /* BTripleHorizontalBlock.swift */,
+				8013DF1A2CD2BBC700029895 /* BSquareNode3x3.swift */,
+				8013DF182CD2BBBC00029895 /* BSingleNodeTest.swift */,
+				8013DF162CD2BBB300029895 /* BRightLBlock2x2.swift */,
+				8013DF142CD2BB9B00029895 /* BHDoubleBlock.swift */,
+				8013DF122CD2BB8900029895 /* BHorizontalBlock1x4Node.swift */,
+				8013DF102CD2BAD800029895 /* BHorizontalBlockLNode.swift */,
+				8013DF0E2CD2BACA00029895 /* BHorizontalBlock.swift */,
 				9E3580642CD1A407007ABB7D /* BBlockTNode.swift */,
 				9E3580652CD1A407007ABB7D /* BBoxNode.swift */,
-				9E3580662CD1A407007ABB7D /* BDoubleBlock.swift */,
-				9E3580672CD1A407007ABB7D /* BHorizontalBlock.swift */,
-				9E3580682CD1A407007ABB7D /* BHorizontalBlockLNode.swift */,
 				9E3580692CD1A407007ABB7D /* BSingleBlock.swift */,
 				9E35806A2CD1A407007ABB7D /* BSquareBlockNode.swift */,
 				9E35806B2CD1A407007ABB7D /* BVerticalBlock.swift */,
@@ -267,30 +288,37 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8013DF1F2CD2BBD600029895 /* BVerticalBlock1x4Node.swift in Sources */,
 				9E3580752CD1A407007ABB7D /* BLayoutInfo.swift in Sources */,
+				8013DF212CD2BBE300029895 /* BVerticalDoubleBlock.swift in Sources */,
 				9E3580762CD1A407007ABB7D /* BGameIdleState.swift in Sources */,
 				9E3580772CD1A407007ABB7D /* BGameScene.swift in Sources */,
 				9E3580782CD1A407007ABB7D /* BGameContext.swift in Sources */,
+				8013DF192CD2BBBC00029895 /* BSingleNodeTest.swift in Sources */,
 				9E3580792CD1A407007ABB7D /* BSquareBlockNode.swift in Sources */,
+				8013DF1B2CD2BBC700029895 /* BSquareNode3x3.swift in Sources */,
 				9E35807A2CD1A407007ABB7D /* BGameClearingState.swift in Sources */,
 				9E35807B2CD1A407007ABB7D /* BVerticalLBlock.swift in Sources */,
-				9E35807C2CD1A407007ABB7D /* BDoubleBlock.swift in Sources */,
+				8013DF132CD2BB8900029895 /* BHorizontalBlock1x4Node.swift in Sources */,
 				9E35807D2CD1A407007ABB7D /* BBoxNode.swift in Sources */,
 				9E35807E2CD1A407007ABB7D /* BSingleBlock.swift in Sources */,
 				9E35807F2CD1A407007ABB7D /* BGamePlacingState.swift in Sources */,
-				9E3580802CD1A407007ABB7D /* BHorizontalBlock.swift in Sources */,
-				9E3580812CD1A407007ABB7D /* BHorizontalBlockLNode.swift in Sources */,
 				9E3580822CD1A407007ABB7D /* BGameInfo.swift in Sources */,
 				9E3580832CD1A407007ABB7D /* BGamePlayingState.swift in Sources */,
+				8013DF172CD2BBB300029895 /* BRightLBlock2x2.swift in Sources */,
 				9E3580842CD1A407007ABB7D /* BBlockTNode.swift in Sources */,
 				9E3580852CD1A407007ABB7D /* GameState.swift in Sources */,
 				9E3580862CD1A407007ABB7D /* BVerticalBlock.swift in Sources */,
 				9E35808C2CD1A459007ABB7D /* GameType.swift in Sources */,
 				9E35808D2CD1A459007ABB7D /* GameModeType.swift in Sources */,
 				9E35808E2CD1A459007ABB7D /* Dependencies.swift in Sources */,
+				8013DF152CD2BB9B00029895 /* BHDoubleBlock.swift in Sources */,
 				9E35808F2CD1A459007ABB7D /* GameContext.swift in Sources */,
+				8013DF0F2CD2BACA00029895 /* BHorizontalBlock.swift in Sources */,
 				8043C70E2CC3721A00AE8B4D /* ContentView.swift in Sources */,
 				8043C70C2CC3721A00AE8B4D /* BlocksApp.swift in Sources */,
+				8013DF1D2CD2BBCF00029895 /* BTripleHorizontalBlock.swift in Sources */,
+				8013DF112CD2BAD800029895 /* BHorizontalBlockLNode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -424,7 +452,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = AXV2JL5X7V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -432,6 +460,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -453,7 +482,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = AXV2JL5X7V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -461,6 +490,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

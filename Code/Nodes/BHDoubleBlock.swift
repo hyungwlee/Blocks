@@ -8,9 +8,7 @@
 import SpriteKit
 import UIKit
 
-
 class BHDoubleBlock: BBoxNode {
-
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .green) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize)
         box.removeFromParent() // Remove any existing background shape (box)
@@ -29,17 +27,13 @@ class BHDoubleBlock: BBoxNode {
             return
         }
 
-        // Define the size for a 2x1 horizontal block
-        let blockWidth = layoutInfo.boxSize.width
-        let blockHeight = layoutInfo.boxSize.height
+        // Create the left block at position (0, 0)
+        let leftBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: tileSize, color: fillColor)
+        leftBlock.position = CGPoint(x: 0, y: 0)
 
-        // Create the left block
-        let leftBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: blockWidth, color: fillColor)
-        leftBlock.position = CGPoint(x: -blockWidth / 2, y: 0) // Left of center
-
-        // Create the right block
-        let rightBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: blockWidth, color: fillColor)
-        rightBlock.position = CGPoint(x: blockWidth / 2, y: 0) // Right of center
+        // Create the right block at position (tileSize, 0)
+        let rightBlock = BSingleBlockT(layoutInfo: layoutInfo, tileSize: tileSize, color: fillColor)
+        rightBlock.position = CGPoint(x: tileSize, y: 0)
 
         // Add the blocks to the parent node
         addChild(leftBlock)
@@ -53,8 +47,5 @@ class BHDoubleBlock: BBoxNode {
 
     // Override grid dimensions for this block type
     override var gridHeight: Int { 1 } // One cell tall
-    override var gridWidth: Int { 2 }  // Two cells wide
+    override var gridWidth: Int { 2 } // Two cells wide
 }
-
-
-

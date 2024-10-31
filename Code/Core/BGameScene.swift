@@ -149,83 +149,159 @@ class BGameScene: SKScene {
     }
 
     func spawnNewBlocks() {
-        guard canSpawnBlocks() else {
-            print("Game Over!")
-            return
-        }
+            guard canSpawnBlocks() else {
+                print("Game Over!")
+                return
+            }
 
-        let blockYPosition = (CGFloat(gridSize) * tileSize) / 2 - tileSize - 10
-        let spacing: CGFloat = 10
-        let totalWidth = (tileSize * 3) + (spacing * 2)
-        let startXPosition = (size.width - totalWidth) / 2
+            // Remove old blocks from the scene
+            boxNodes.forEach { $0.removeFromParent() }
+            boxNodes.removeAll()
 
-        // Remove old blocks from the scene
-        boxNodes.forEach { $0.removeFromParent() }
-        boxNodes.removeAll()
+            let spacing: CGFloat = 10
+            let newBlocks = generateRandomShapes(count: 3)
 
-        let newBlocks = generateRandomShapes(count: 3)
+            // Calculate total width of blocks including spacing
+            var totalBlocksWidth: CGFloat = 0
+            for block in newBlocks {
+                let blockWidth = CGFloat(block.gridWidth) * tileSize
+                totalBlocksWidth += blockWidth
+            }
+            let totalSpacing = spacing * CGFloat(newBlocks.count - 1)
+            let totalWidth = totalBlocksWidth + totalSpacing
 
-        for (i, newBlock) in newBlocks.enumerated() {
-            newBlock.position = CGPoint(x: startXPosition + (CGFloat(i) * (tileSize + spacing)), y: blockYPosition)
-            safeAddBlock(newBlock) // Use the safe method to add the new block
-            boxNodes.append(newBlock)
-            print("Added new block at position: \(newBlock.position)")
-        }
-    }
+            // Calculate starting X position to center blocks
+            let startXPosition = (size.width - totalWidth) / 2.0
+            let blockYPosition = size.height * 0.1 // Adjusted to move blocks higher and ensure proper placement
 
-    // Touch handling methods
+            var currentXPosition = startXPosition
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        currentlyDraggedNode = self.nodes(at: touch.location(in: self)).first { $0 is BBoxNode } as? BBoxNode
-        
-        // Ensure we start touch handling for the currently dragged node
-        currentlyDraggedNode?.touchesBegan(touches, with: event)
-    }
+            for newBlock in newBlocks {
+                let blockWidth = CGFloat(newBlock.gridWidth) * tileSize
 
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        currentlyDraggedNode?.touchesMoved(touches, with: event)
-    }
+                newBlock.position = CGPoint(x: currentXPosition, y: blockYPosition)
+                newBlock.initialPosition = newBlock.position
+                newBlock.gameScene = self  // Set the reference to the game scene
+                safeAddBlock(newBlock)
+                boxNodes.append(newBlock)
+                print("Added new block at position: \(newBlock.position)")
 
-     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-
-        if let block = currentlyDraggedNode {
-            let location = touch.location(in: self)
-            // Calculate the cell position to check where the block is being placed
-            let row = Int((location.y - ((size.height - CGFloat(gridSize) * tileSize) / 2)) / tileSize)
-            let col = Int((location.x - ((size.width - CGFloat(gridSize) * tileSize) / 2)) / tileSize)
-
-            // Check if the placement is valid
-            if isPlacementValid(for: block, at: row, col: col) {
-                // Get the occupied cells for placement
-                let occupiedCells = getOccupiedCells(for: block, at: (row, col))
-                placeBlock(block, occupiedCells: occupiedCells)
-            } else {
-                print("Invalid placement for block.")
-                // Optionally, handle invalid placement (e.g., return the block to its starting position)
+                currentXPosition += blockWidth + spacing
             }
         }
 
-        currentlyDraggedNode?.touchesEnded(touches, with: event)
-        currentlyDraggedNode = nil
-    }
-    
-    // Placement logic
 
-    func isPlacementValid(for node: BBoxNode, at row: Int, col: Int) -> Bool {
-        for r in 0..<node.gridHeight {
-            for c in 0..<node.gridWidth {
+    func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
+        for r in 0..<block.gridHeight {
+            for c in 0..<block.gridWidth {
                 let gridRow = row + r
                 let gridCol = col + c
 
-                if gridRow < 0 || gridRow >= gridSize || gridCol < 0 || gridCol >= gridSize || grid[gridRow][gridCol] != nil {
+                // Check bounds
+                if gridRow < 0 || gridRow >= gridSize || gridCol < 0 || gridCol >= gridSize {
+                    return false
+                }
+
+                // Check if the cell is occupied
+                if grid[gridRow][gridCol] != nil {
                     return false
                 }
             }
         }
         return true
     }
+
+
+
+    func checkForCompletedLines() {
+        // Implement logic to check and clear completed rows or columns
+    }
+
+
+    func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+        let row = gridPosition.row
+        let col = gridPosition.col
+
+        // Check if the placement is valid
+        if isPlacementValid(for: block, at: row, col: col) {
+            // Snap the block to the grid
+            let tileSize = self.tileSize
+            let gridOrigin = CGPoint(
+                x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                y: (size.height - CGFloat(gridSize) * tileSize) / 2
+            )
+            let snappedPosition = CGPoint(
+                x: gridOrigin.x + CGFloat(col) * tileSize,
+                y: gridOrigin.y + CGFloat(row) * tileSize
+            )
+            block.position = snappedPosition
+
+            // Update the grid
+            for r in 0..<block.gridHeight {
+                for c in 0..<block.gridWidth {
+                    let gridRow = row + r
+                    let gridCol = col + c
+                    setCellOccupied(row: gridRow, col: gridCol, with: block)
+                }
+            }
+
+            // Increase score based on the number of cells occupied by the block
+            let occupiedCells = block.gridHeight * block.gridWidth
+            score += occupiedCells
+            updateScoreLabel()
+
+            // Remove the block from draggable blocks
+            if let index = boxNodes.firstIndex(of: block) {
+                boxNodes.remove(at: index)
+            }
+
+            // Prevent the block from being moved again
+            block.isUserInteractionEnabled = false
+
+            // Optionally, check for completed lines and update the score
+            checkForCompletedLines()
+
+            // Spawn new blocks if necessary
+            if boxNodes.isEmpty {
+                spawnNewBlocks()
+            }
+        } else {
+            // If invalid placement, move the block back to its initial position
+            block.position = block.initialPosition
+        }
+    }
+
+    func updateScoreLabel() {
+        if let scoreLabel = childNode(withName: "scoreLabel") as? SKLabelNode {
+            scoreLabel.text = "Score: \(score)"
+        }
+    }
+
+
+
+    // Touch handling methods
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        currentlyDraggedNode = self.nodes(at: location).first(where: { node in
+            guard let boxNode = node as? BBoxNode else { return false }
+            return boxNodes.contains(boxNode)
+        }) as? BBoxNode
+
+        currentlyDraggedNode?.touchesBegan(touches, with: event)
+    }
+
+
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        currentlyDraggedNode?.touchesEnded(touches, with: event)
+        currentlyDraggedNode = nil
+    }
+
+    
+    // Placement logic
+
 
     func getOccupiedCells(for node: BBoxNode, at position: (row: Int, col: Int)) -> [(row: Int, col: Int)] {
         var occupiedCells: [(Int, Int)] = []
