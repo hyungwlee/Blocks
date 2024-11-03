@@ -8,9 +8,6 @@
 import SwiftUI
 import SpriteKit
 
-import SwiftUI
-import SpriteKit
-
 struct ContentView: View {
     let screenSize: CGSize = UIScreen.main.bounds.size
     var layoutInfo: BLayoutInfo {

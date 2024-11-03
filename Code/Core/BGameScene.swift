@@ -1,18 +1,16 @@
 //
-//  TTGameScene.swift
+//  BGameScene.swift
 //  Blocks
 //
 //  Created by Jevon Williams on 10/24/24.
 //
 import SpriteKit
 
-
-
 class BGameScene: SKScene {
     let gridSize = 10
     let tileSize: CGFloat = 40
     var score = 0
-    var grid: [[BBoxNode?]] = []
+    var grid: [[SKShapeNode?]] = [] // Changed from [[BBoxNode?]] to [[SKShapeNode?]]
     var boxNodes: [BBoxNode] = []
     var currentlyDraggedNode: BBoxNode?
     var gameContext: BGameContext
@@ -32,7 +30,7 @@ class BGameScene: SKScene {
     required init?(coder aDecoder: NSCoder) {
         // Initialize dependencies and game mode with default values or handle as necessary
         let defaultDependencies = Dependencies() // Ensure you have a way to create a default instance
-        self.dependencies = defaultDependencies // Set a default dependencies
+        self.dependencies = defaultDependencies // Set default dependencies
         self.gameMode = .single // Default game mode; change if needed
 
         // Create a BGameContext using the dependencies and game mode
@@ -71,11 +69,11 @@ class BGameScene: SKScene {
         return grid[row][col] != nil // Check if the grid cell is occupied
     }
 
-    func setCellOccupied(row: Int, col: Int, with block: BBoxNode) {
+    func setCellOccupied(row: Int, col: Int, with cellNode: SKShapeNode) {
         guard row >= 0, row < gridSize, col >= 0, col < gridSize else {
             return // Ignore out of bounds
         }
-        grid[row][col] = block // Mark the cell as occupied with an instance of a block
+        grid[row][col] = cellNode // Mark the cell as occupied with the cell node
     }
 
     private var availableBlockTypes: [BBoxNode.Type] = [
@@ -88,25 +86,6 @@ class BGameScene: SKScene {
         createGrid()
         addScoreLabel()
         spawnNewBlocks()
-    }
-    
-    // Function handling block positioning - now uses addBlockNode for safety
-    func positionBlock(_ block: SKShapeNode, at position: CGPoint) {
-        block.position = position
-        addBlockNode(block, to: self) // Updated to call addBlockNode with parent check
-    }
-
-       func generateRandomShapes(count: Int) -> [BBoxNode] {
-        var shapes: [BBoxNode] = []
-        for _ in 0..<count {
-            let blockType = availableBlockTypes.randomElement()!
-            let newBlock = blockType.init(
-                layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
-                tileSize: tileSize
-            )
-            shapes.append(newBlock)
-        }
-        return shapes
     }
 
     func createGrid() {
@@ -139,47 +118,59 @@ class BGameScene: SKScene {
     }
 
     func spawnNewBlocks() {
-            guard canSpawnBlocks() else {
-                print("Game Over!")
-                return
-            }
-
-            // Remove old blocks from the scene
-            boxNodes.forEach { $0.removeFromParent() }
-            boxNodes.removeAll()
-
-            let spacing: CGFloat = 10
-            let newBlocks = generateRandomShapes(count: 3)
-
-            // Calculate total width of blocks including spacing
-            var totalBlocksWidth: CGFloat = 0
-            for block in newBlocks {
-                let blockWidth = CGFloat(block.gridWidth) * tileSize
-                totalBlocksWidth += blockWidth
-            }
-            let totalSpacing = spacing * CGFloat(newBlocks.count - 1)
-            let totalWidth = totalBlocksWidth + totalSpacing
-
-            // Calculate starting X position to center blocks
-            let startXPosition = (size.width - totalWidth) / 2.0
-            let blockYPosition = size.height * 0.1 // Adjusted to move blocks higher and ensure proper placement
-
-            var currentXPosition = startXPosition
-
-            for newBlock in newBlocks {
-                let blockWidth = CGFloat(newBlock.gridWidth) * tileSize
-
-                newBlock.position = CGPoint(x: currentXPosition, y: blockYPosition)
-                newBlock.initialPosition = newBlock.position
-                newBlock.gameScene = self  // Set the reference to the game scene
-                safeAddBlock(newBlock)
-                boxNodes.append(newBlock)
-                print("Added new block at position: \(newBlock.position)")
-
-                currentXPosition += blockWidth + spacing
-            }
+        guard canSpawnBlocks() else {
+            print("Game Over!")
+            return
         }
 
+        // Remove old blocks from the scene
+        boxNodes.forEach { $0.removeFromParent() }
+        boxNodes.removeAll()
+
+        let spacing: CGFloat = 10
+        let newBlocks = generateRandomShapes(count: 3)
+
+        // Calculate total width of blocks including spacing
+        var totalBlocksWidth: CGFloat = 0
+        for block in newBlocks {
+            let blockWidth = CGFloat(block.gridWidth) * tileSize
+            totalBlocksWidth += blockWidth
+        }
+        let totalSpacing = spacing * CGFloat(newBlocks.count - 1)
+        let totalWidth = totalBlocksWidth + totalSpacing
+
+        // Calculate starting X position to center blocks
+        let startXPosition = (size.width - totalWidth) / 2.0
+        let blockYPosition = size.height * 0.1 // Adjusted to move blocks higher and ensure proper placement
+
+        var currentXPosition = startXPosition
+
+        for newBlock in newBlocks {
+            let blockWidth = CGFloat(newBlock.gridWidth) * tileSize
+
+            newBlock.position = CGPoint(x: currentXPosition, y: blockYPosition)
+            newBlock.initialPosition = newBlock.position
+            newBlock.gameScene = self  // Set the reference to the game scene
+            safeAddBlock(newBlock)
+            boxNodes.append(newBlock)
+            print("Added new block at position: \(newBlock.position)")
+
+            currentXPosition += blockWidth + spacing
+        }
+    }
+
+    func generateRandomShapes(count: Int) -> [BBoxNode] {
+        var shapes: [BBoxNode] = []
+        for _ in 0..<count {
+            let blockType = availableBlockTypes.randomElement()!
+            let newBlock = blockType.init(
+                layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
+                tileSize: tileSize
+            )
+            shapes.append(newBlock)
+        }
+        return shapes
+    }
 
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
         for r in 0..<block.gridHeight {
@@ -201,119 +192,40 @@ class BGameScene: SKScene {
         return true
     }
 
-
-
-   func checkForCompletedLines() {
-    // Check for completed rows
-    for row in 0..<gridSize {
-        if grid[row].allSatisfy({ $0 != nil }) { // If all cells in the row are occupied
-            clearRow(row)
-        }
-    }
-
-    // Check for completed columns
-    for col in 0..<gridSize {
-        var isCompleted = true
-        for row in 0..<gridSize {
-            if grid[row][col] == nil {
-                isCompleted = false
-                break
-            }
-        }
-        if isCompleted {
-            clearColumn(col)
-        }
-    }
-}
-
-
-   func clearRow(_ row: Int) {
-    // Increment the score based on the number of blocks cleared
-    let clearedCells = grid[row].compactMap { $0 }
-    score += clearedCells.count // Update score for cleared blocks
-    updateScoreLabel()
-
-    // Remove blocks from the scene and grid
-    for block in clearedCells {
-        block.removeFromParent() // Remove block from the scene
-    }
-
-    // Shift down the rows above the cleared row
-    for r in (0..<row).reversed() {
-        grid[r + 1] = grid[r]
-        for block in grid[r] {
-            if let block = block {
-                block.position.y += tileSize // Move the blocks down
-            }
-        }
-    }
-
-    // Clear the top row
-    grid[0] = Array(repeating: nil, count: gridSize)
-}
-
-
-func clearColumn(_ col: Int) {
-    // Increment the score based on the number of blocks cleared
-    let clearedCells = (0..<gridSize).compactMap { grid[$0][col] }
-    score += clearedCells.count // Update score for cleared blocks
-    updateScoreLabel()
-
-    // Remove blocks from the scene and clear references in the grid
-    for row in 0..<gridSize {
-        if let block = grid[row][col] {
-            block.removeFromParent() // Remove block from the scene
-            grid[row][col] = nil // Clear the cell
-        }
-    }
-
-    // Shift left the columns to the right of the cleared column
-    for r in 0..<gridSize {
-        for c in col + 1..<gridSize {
-            grid[r][c - 1] = grid[r][c] // Move blocks left
-            // Update position if block exists
-            if let block = grid[r][c - 1] {
-                block.position.x -= tileSize // Update position
-            }
-            // Clear the original position
-            grid[r][c] = nil
-        }
-    }
-    
-    // Clear the last column
-    for r in 0..<gridSize {
-        grid[r][gridSize - 1] = nil
-    }
-}
-
-
-
-
-
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         let row = gridPosition.row
         let col = gridPosition.col
 
         // Check if the placement is valid
         if isPlacementValid(for: block, at: row, col: col) {
-            // Snap the block to the grid
-            let tileSize = self.tileSize
-            let gridOrigin = CGPoint(
-                x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                y: (size.height - CGFloat(gridSize) * tileSize) / 2
-            )
-            let snappedPosition = CGPoint(
-                x: gridOrigin.x + CGFloat(col) * tileSize,
-                y: gridOrigin.y + CGFloat(row) * tileSize
-            )
-            block.position = snappedPosition
-
-            // Update the grid
+            // For each cell in the block, create a cell node and add it to the grid
             for r in 0..<block.gridHeight {
                 for c in 0..<block.gridWidth {
                     let gridRow = row + r
                     let gridCol = col + c
-                    setCellOccupied(row: gridRow, col: gridCol, with: block)
+
+                    // Create a cell node
+                    let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+                    cellNode.fillColor = block.color // Use the block's color
+                    cellNode.strokeColor = .darkGray
+                    cellNode.lineWidth = 2.0
+
+                    // Position the cell node at the correct grid cell
+                    let gridOrigin = CGPoint(
+                        x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                        y: (size.height - CGFloat(gridSize) * tileSize) / 2
+                    )
+                    let cellPosition = CGPoint(
+                        x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                        y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+                    )
+                    cellNode.position = cellPosition
+
+                    // Add the cell node to the scene
+                    addChild(cellNode)
+
+                    // Update the grid
+                    setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
                 }
             }
 
@@ -327,8 +239,8 @@ func clearColumn(_ col: Int) {
                 boxNodes.remove(at: index)
             }
 
-            // Prevent the block from being moved again
-            block.isUserInteractionEnabled = false
+            // Remove the block node from the scene
+            block.removeFromParent()
 
             // Optionally, check for completed lines and update the score
             checkForCompletedLines()
@@ -343,13 +255,58 @@ func clearColumn(_ col: Int) {
         }
     }
 
+    func checkForCompletedLines() {
+        // Check for completed rows
+        for row in 0..<gridSize {
+            if grid[row].allSatisfy({ $0 != nil }) { // If all cells in the row are occupied
+                clearRow(row)
+            }
+        }
+
+        // Check for completed columns
+        for col in 0..<gridSize {
+            var isCompleted = true
+            for row in 0..<gridSize {
+                if grid[row][col] == nil {
+                    isCompleted = false
+                    break
+                }
+            }
+            if isCompleted {
+                clearColumn(col)
+            }
+        }
+    }
+
+    func clearRow(_ row: Int) {
+        // Remove blocks from the scene and clear references in the grid
+        for col in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                cellNode.removeFromParent() // Remove cell node from the scene
+                grid[row][col] = nil // Clear the cell
+                score += 1 // Update score per cell cleared
+            }
+        }
+        updateScoreLabel()
+    }
+
+    func clearColumn(_ col: Int) {
+        // Remove blocks from the scene and clear references in the grid
+        for row in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                cellNode.removeFromParent() // Remove cell node from the scene
+                grid[row][col] = nil // Clear the cell
+                score += 1 // Update score per cell cleared
+            }
+        }
+        updateScoreLabel()
+    }
+
     func updateScoreLabel() {
         if let scoreLabel = childNode(withName: "scoreLabel") as? SKLabelNode {
             scoreLabel.text = "Score: \(score)"
         }
     }
-
-
 
     // Touch handling methods
 
@@ -364,36 +321,13 @@ func clearColumn(_ col: Int) {
         currentlyDraggedNode?.touchesBegan(touches, with: event)
     }
 
-
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        currentlyDraggedNode?.touchesMoved(touches, with: event)
+    }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         currentlyDraggedNode?.touchesEnded(touches, with: event)
         currentlyDraggedNode = nil
-    }
-
-    
-    // Placement logic
-
-
-    func getOccupiedCells(for node: BBoxNode, at position: (row: Int, col: Int)) -> [(row: Int, col: Int)] {
-        var occupiedCells: [(Int, Int)] = []
-
-        for r in 0..<node.gridHeight {
-            for c in 0..<node.gridWidth {
-                occupiedCells.append((position.row + r, position.col + c))
-            }
-        }
-        return occupiedCells
-    }
-
-    func placeBlock(_ block: BBoxNode, occupiedCells: [(row: Int, col: Int)]) {
-        // Update the grid with the block's occupied cells
-        for (row, col) in occupiedCells {
-            setCellOccupied(row: row, col: col, with: block)
-        }
-        block.removeFromParent() // Remove block from the parent node before adding it to the grid
-        addChild(block) // Add to the grid node
-        spawnNewBlocks() // Trigger spawning of new blocks
     }
 
     func canSpawnBlocks() -> Bool {
@@ -401,13 +335,3 @@ func clearColumn(_ col: Int) {
         return true // Placeholder
     }
 }
-
-
-
-
-
-
-
-
-
-
