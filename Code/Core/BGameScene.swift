@@ -80,17 +80,7 @@ class BGameScene: SKScene {
 
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
-        BHorizontalBlock1x4Node.self,
-        BVerticalBlock.self,
-        BSquareBlock.self,
-        BBlockTNode.self,
-        BHorizontalBlock1x3Node.self,
-       BVDoubleBlock.self,
-       BVerticalLBlock.self,
-        BHDoubleBlock.self,
-       BVerticalBlock1x4Node.self,
-        BSquareBlockNode3x3.self,
-        BRightFacingLBlockNode.self,
+        BSquareBlock2x2.self,
     ]
 
     override func didMove(to view: SKView) {
@@ -213,9 +203,91 @@ class BGameScene: SKScene {
 
 
 
-    func checkForCompletedLines() {
-        // Implement logic to check and clear completed rows or columns
+   func checkForCompletedLines() {
+    // Check for completed rows
+    for row in 0..<gridSize {
+        if grid[row].allSatisfy({ $0 != nil }) { // If all cells in the row are occupied
+            clearRow(row)
+        }
     }
+
+    // Check for completed columns
+    for col in 0..<gridSize {
+        var isCompleted = true
+        for row in 0..<gridSize {
+            if grid[row][col] == nil {
+                isCompleted = false
+                break
+            }
+        }
+        if isCompleted {
+            clearColumn(col)
+        }
+    }
+}
+
+
+   func clearRow(_ row: Int) {
+    // Increment the score based on the number of blocks cleared
+    let clearedCells = grid[row].compactMap { $0 }
+    score += clearedCells.count // Update score for cleared blocks
+    updateScoreLabel()
+
+    // Remove blocks from the scene and grid
+    for block in clearedCells {
+        block.removeFromParent() // Remove block from the scene
+    }
+
+    // Shift down the rows above the cleared row
+    for r in (0..<row).reversed() {
+        grid[r + 1] = grid[r]
+        for block in grid[r] {
+            if let block = block {
+                block.position.y += tileSize // Move the blocks down
+            }
+        }
+    }
+
+    // Clear the top row
+    grid[0] = Array(repeating: nil, count: gridSize)
+}
+
+
+func clearColumn(_ col: Int) {
+    // Increment the score based on the number of blocks cleared
+    let clearedCells = (0..<gridSize).compactMap { grid[$0][col] }
+    score += clearedCells.count // Update score for cleared blocks
+    updateScoreLabel()
+
+    // Remove blocks from the scene and clear references in the grid
+    for row in 0..<gridSize {
+        if let block = grid[row][col] {
+            block.removeFromParent() // Remove block from the scene
+            grid[row][col] = nil // Clear the cell
+        }
+    }
+
+    // Shift left the columns to the right of the cleared column
+    for r in 0..<gridSize {
+        for c in col + 1..<gridSize {
+            grid[r][c - 1] = grid[r][c] // Move blocks left
+            // Update position if block exists
+            if let block = grid[r][c - 1] {
+                block.position.x -= tileSize // Update position
+            }
+            // Clear the original position
+            grid[r][c] = nil
+        }
+    }
+    
+    // Clear the last column
+    for r in 0..<gridSize {
+        grid[r][gridSize - 1] = nil
+    }
+}
+
+
+
 
 
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {

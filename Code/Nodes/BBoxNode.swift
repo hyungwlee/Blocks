@@ -22,6 +22,8 @@ class BBoxNode: SKNode {
     var layoutInfo: BLayoutInfo
     weak var gameScene: BGameScene?
     var initialPosition: CGPoint = .zero
+    
+    
 
        required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .red) {
         self.layoutInfo = layoutInfo // Initialize layoutInfo before super.init

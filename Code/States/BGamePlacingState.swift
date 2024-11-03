@@ -38,16 +38,7 @@ func handleTouchEnded(_ touch: UITouch) {
     // Randomly select a block type
     let blockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
-        BVerticalBlock.self,
-        BSquareBlock.self,
-        BHorizontalBlock1x3Node.self,
-        BBlockTNode.self,
-        BHDoubleBlock.self,
-        BVerticalLBlock.self,
-        BHorizontalBlock1x4Node.self,
-        BVerticalBlock1x4Node.self,
-        BSquareBlockNode3x3.self,
-        BRightFacingLBlockNode.self,
+        BSquareBlock2x2.self,
     ]
 
     let randomBlockType = blockTypes.randomElement() ?? BSingleBlock.self
@@ -134,30 +125,97 @@ func handleTouchEnded(_ touch: UITouch) {
         return gridPosition
     }
 
-    private func placeBlock(shape: [(Int, Int)], at gridPosition: (row: Int, col: Int)) {
-        let (row, col) = gridPosition
-        if isValidPlacement(for: shape, at: gridPosition) {
-            // Mark cells as occupied
-            for (dx, dy) in shape {
-                let newRow = row + dy // Assuming dy is row offset
-                let newCol = col + dx // Assuming dx is column offset
-                
-                // Check bounds and mark
-                guard newRow >= 0, newRow < (scene?.grid.count ?? 0), newCol >= 0, newCol < (scene?.grid[newRow].count ?? 0) else {
-                    print("Skipping out of bounds at (\(newRow), \(newCol))")
-                    continue // Skip if out of bounds
-                }
+  private func clearFilledRowsAndColumns(for shape: [(Int, Int)]) {
+    var rowsToClear: Set<Int> = []
+    var colsToClear: Set<Int> = []
 
-                // Mark the cell as occupied
-                scene?.grid[newRow][newCol]?.color = .darkGray
-                print("Marked cell at (\(newRow), \(newCol)) as occupied")
-            }
-            print("Placed block at (\(row), \(col))")
-            stateMachine?.enter(BGameClearingState.self)
-        } else {
-            print("Invalid placement for shape at (\(row), \(col))")
+    // Determine which rows and columns need to be cleared based on the shape
+    for (dx, dy) in shape {
+        let newRow = dy
+        let newCol = dx
+        if isRowFull(newRow) {
+            rowsToClear.insert(newRow)
+        }
+        if isColumnFull(newCol) {
+            colsToClear.insert(newCol)
         }
     }
+
+    // Clear rows
+    for row in rowsToClear {
+        clearRow(row)
+    }
+
+    // Clear columns
+    for col in colsToClear {
+        clearColumn(col)
+    }
+}
+
+
+
+private func isRowFull(_ row: Int) -> Bool {
+    guard let grid = scene?.grid[row] else { return false }
+    return grid.allSatisfy { $0?.color == .darkGray } // Check if all cells in the row are occupied
+}
+
+private func isColumnFull(_ col: Int) -> Bool {
+    guard let grid = scene?.grid else { return false }
+    return grid.allSatisfy { $0[col]?.color == .darkGray } // Check if all cells in the column are occupied
+}
+
+
+private func clearRow(_ row: Int) {
+    guard let grid = scene?.grid[row] else { return }
+    for col in 0..<grid.count {
+        if grid[col]?.color == .darkGray { // Check if the block is fully occupied
+            grid[col]?.color = .lightGray // Reset color to indicate it's empty
+        }
+    }
+}
+
+private func clearColumn(_ col: Int) {
+    guard let grid = scene?.grid else { return }
+    for row in 0..<grid.count {
+        if col >= 0 && col < grid[row].count {
+            if grid[row][col]?.color == .darkGray {
+                grid[row][col]?.color = .lightGray // Reset color to indicate it's empty
+            }
+        }
+    }
+}
+
+
+
+   private func placeBlock(shape: [(Int, Int)], at gridPosition: (row: Int, col: Int)) {
+    let (row, col) = gridPosition
+    if isValidPlacement(for: shape, at: gridPosition) {
+        // Mark cells as occupied
+        for (dx, dy) in shape {
+            let newRow = row + dy // Assuming dy is row offset
+            let newCol = col + dx // Assuming dx is column offset
+            
+            // Check bounds and mark
+            guard newRow >= 0, newRow < (scene?.grid.count ?? 0), newCol >= 0, newCol < (scene?.grid[newRow].count ?? 0) else {
+                print("Skipping out of bounds at (\(newRow), \(newCol))")
+                continue // Skip if out of bounds
+            }
+
+            // Mark the cell as occupied
+            scene?.grid[newRow][newCol]?.color = .darkGray
+            print("Marked cell at (\(newRow), \(newCol)) as occupied")
+        }
+
+        // Clear filled rows and columns
+        clearFilledRowsAndColumns(for: shape)
+
+        print("Placed block at (\(row), \(col))")
+        stateMachine?.enter(BGameClearingState.self)
+    } else {
+        print("Invalid placement for shape at (\(row), \(col))")
+    }
+}
+
 
     private func isValidPlacement(for shape: [(Int, Int)], at gridPosition: (row: Int, col: Int)) -> Bool {
         for (dx, dy) in shape {
