@@ -104,17 +104,16 @@ class BGameScene: SKScene {
     }
 
     func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
-        // Check if any of the blocks can be placed on the board
         for block in blocks {
             for row in 0..<gridSize {
                 for col in 0..<gridSize {
                     if isPlacementValid(for: block, at: row, col: col) {
-                        return true // A valid move exists for at least one block
+                        return true
                     }
                 }
             }
         }
-        return false // No valid moves for any block
+        return false
     }
 
     func spawnNewBlocks() {
@@ -123,7 +122,6 @@ class BGameScene: SKScene {
             return
         }
 
-        // Remove old blocks from the scene
         boxNodes.forEach { $0.removeFromParent() }
         boxNodes.removeAll()
 
@@ -150,7 +148,6 @@ class BGameScene: SKScene {
             currentXPosition += blockWidth + spacing
         }
         
-        // Check if any of the newly spawned blocks can be placed on the board
         if !checkForPossibleMoves(for: newBlocks) {
             showGameOverScreen()
         }
@@ -227,6 +224,8 @@ class BGameScene: SKScene {
 
             block.removeFromParent()
 
+            checkForCompletedLines()
+
             if boxNodes.isEmpty {
                 spawnNewBlocks()
             } else if !checkForPossibleMoves(for: boxNodes) {
@@ -237,16 +236,58 @@ class BGameScene: SKScene {
         }
     }
 
+    // MARK: - Line Clearing Logic
+    func checkForCompletedLines() {
+        for row in 0..<gridSize {
+            if grid[row].allSatisfy({ $0 != nil }) {
+                clearRow(row)
+            }
+        }
+
+        for col in 0..<gridSize {
+            var isCompleted = true
+            for row in 0..<gridSize {
+                if grid[row][col] == nil {
+                    isCompleted = false
+                    break
+                }
+            }
+            if isCompleted {
+                clearColumn(col)
+            }
+        }
+    }
+
+    func clearRow(_ row: Int) {
+        for col in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                cellNode.removeFromParent()
+                grid[row][col] = nil
+                score += 1
+            }
+        }
+        updateScoreLabel()
+    }
+
+    func clearColumn(_ col: Int) {
+        for row in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                cellNode.removeFromParent()
+                grid[row][col] = nil
+                score += 1
+            }
+        }
+        updateScoreLabel()
+    }
+
     func showGameOverScreen() {
         isGameOver = true
-        
-        // Background overlay for the game-over screen
+
         let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
         overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
         overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
         addChild(overlay)
         
-        // Game Over text
         let gameOverLabel = SKLabelNode(text: "Game Over 😢")
         gameOverLabel.fontSize = 48
         gameOverLabel.fontColor = .white
@@ -254,7 +295,6 @@ class BGameScene: SKScene {
         gameOverLabel.zPosition = 1
         addChild(gameOverLabel)
 
-        // Final Score text
         let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
         finalScoreLabel.fontSize = 36
         finalScoreLabel.fontColor = .white
@@ -262,7 +302,6 @@ class BGameScene: SKScene {
         finalScoreLabel.zPosition = 1
         addChild(finalScoreLabel)
 
-        // Restart text
         let restartLabel = SKLabelNode(text: "Tap to Restart")
         restartLabel.fontSize = 24
         restartLabel.fontColor = .yellow
