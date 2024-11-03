@@ -65,6 +65,14 @@ class BGameScene: SKScene {
         BSingleBlock.self,
         BSquareBlock2x2.self,
         BThreeByThreeBlockNode.self,
+        BVerticalBlockNode1x2.self,
+        BHorizontalBlockNode1x2.self,
+        BLShapeNode2x2.self,
+        BRotatedLShapeNode2x2.self,
+        BVerticalBlockNode1x3.self,
+        BHorizontalBlockNode1x3.self,
+        BVerticalBlockNode1x4.self,
+        BHorizontalBlockNode1x4.self,
     ]
 
     override func didMove(to view: SKView) {
@@ -185,56 +193,59 @@ class BGameScene: SKScene {
     }
 
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-        let row = gridPosition.row
-        let col = gridPosition.col
+    let row = gridPosition.row
+    let col = gridPosition.col
 
-        if isPlacementValid(for: block, at: row, col: col) {
-            for r in 0..<block.gridHeight {
-                for c in 0..<block.gridWidth {
-                    let gridRow = row + r
-                    let gridCol = col + c
+    if isPlacementValid(for: block, at: row, col: col) {
+        var occupiedCells = 0
+        for r in 0..<block.gridHeight {
+            for c in 0..<block.gridWidth {
+                let gridRow = row + r
+                let gridCol = col + c
 
-                    let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-                    cellNode.fillColor = block.color
-                    cellNode.strokeColor = .darkGray
-                    cellNode.lineWidth = 2.0
+                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+                cellNode.fillColor = block.color
+                cellNode.strokeColor = .darkGray
+                cellNode.lineWidth = 2.0
 
-                    let gridOrigin = CGPoint(
-                        x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                        y: (size.height - CGFloat(gridSize) * tileSize) / 2
-                    )
-                    let cellPosition = CGPoint(
-                        x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
-                        y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
-                    )
-                    cellNode.position = cellPosition
+                let gridOrigin = CGPoint(
+                    x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                    y: (size.height - CGFloat(gridSize) * tileSize) / 2
+                )
+                let cellPosition = CGPoint(
+                    x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                    y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+                )
+                cellNode.position = cellPosition
 
-                    addChild(cellNode)
-                    setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-                }
+                addChild(cellNode)
+                setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
+                occupiedCells += 1  // Count each cell occupied
             }
-
-            let occupiedCells = block.gridHeight * block.gridWidth
-            score += occupiedCells
-            updateScoreLabel()
-
-            if let index = boxNodes.firstIndex(of: block) {
-                boxNodes.remove(at: index)
-            }
-
-            block.removeFromParent()
-
-            checkForCompletedLines()
-
-            if boxNodes.isEmpty {
-                spawnNewBlocks()
-            } else if !checkForPossibleMoves(for: boxNodes) {
-                showGameOverScreen()
-            }
-        } else {
-            block.position = block.initialPosition
         }
+
+        // Update the score based on occupied cells
+        score += occupiedCells
+        updateScoreLabel()
+
+        if let index = boxNodes.firstIndex(of: block) {
+            boxNodes.remove(at: index)
+        }
+
+        block.removeFromParent()
+
+        checkForCompletedLines()
+
+        if boxNodes.isEmpty {
+            spawnNewBlocks()
+        } else if !checkForPossibleMoves(for: boxNodes) {
+            showGameOverScreen()
+        }
+    } else {
+        block.position = block.initialPosition
     }
+}
+
 
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() {
