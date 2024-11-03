@@ -14,6 +14,8 @@ class BGameScene: SKScene {
     var boxNodes: [BBoxNode] = []
     var currentlyDraggedNode: BBoxNode?
     var gameContext: BGameContext
+    var isGameOver: Bool = false
+
 
     // Add new properties for dependencies and game mode
     var dependencies: Dependencies // Replace with actual type
@@ -79,6 +81,7 @@ class BGameScene: SKScene {
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
         BSquareBlock2x2.self,
+        BThreeByThreeBlockNode.self,
     ]
 
     override func didMove(to view: SKView) {
@@ -116,12 +119,32 @@ class BGameScene: SKScene {
         scoreLabel.name = "scoreLabel"
         addChild(scoreLabel)
     }
+    
+    func checkForPossibleMoves() -> Bool {
+    for row in 0..<gridSize {
+        for col in 0..<gridSize {
+            for blockType in availableBlockTypes {
+                let testBlock = blockType.init(
+                    layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
+                    tileSize: tileSize
+                )
+                if isPlacementValid(for: testBlock, at: row, col: col) {
+                    return true // A valid move exists
+                }
+            }
+        }
+    }
+    print("No valid moves found.")
+    return false // No valid moves
+}
+
 
     func spawnNewBlocks() {
-        guard canSpawnBlocks() else {
-            print("Game Over!")
-            return
-        }
+        guard !isGameOver, canSpawnBlocks() else {
+        print("Game Over!")
+        showGameOverScreen() // Call to show game over screen
+        return
+    }
 
         // Remove old blocks from the scene
         boxNodes.forEach { $0.removeFromParent() }
@@ -156,6 +179,11 @@ class BGameScene: SKScene {
             print("Added new block at position: \(newBlock.position)")
 
             currentXPosition += blockWidth + spacing
+        }
+        
+          if !checkForPossibleMoves() {
+            print("Game Over! No possible moves.")
+            showGameOverScreen() // Show game over screen if no moves available
         }
     }
 
@@ -192,68 +220,71 @@ class BGameScene: SKScene {
         return true
     }
 
-    func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-        let row = gridPosition.row
-        let col = gridPosition.col
+   func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+    let row = gridPosition.row
+    let col = gridPosition.col
 
-        // Check if the placement is valid
-        if isPlacementValid(for: block, at: row, col: col) {
-            // For each cell in the block, create a cell node and add it to the grid
-            for r in 0..<block.gridHeight {
-                for c in 0..<block.gridWidth {
-                    let gridRow = row + r
-                    let gridCol = col + c
+    // Check if the placement is valid
+    if isPlacementValid(for: block, at: row, col: col) {
+        // Place the block as before
+        for r in 0..<block.gridHeight {
+            for c in 0..<block.gridWidth {
+                let gridRow = row + r
+                let gridCol = col + c
 
-                    // Create a cell node
-                    let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-                    cellNode.fillColor = block.color // Use the block's color
-                    cellNode.strokeColor = .darkGray
-                    cellNode.lineWidth = 2.0
+                // Create a cell node
+                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+                cellNode.fillColor = block.color // Use the block's color
+                cellNode.strokeColor = .darkGray
+                cellNode.lineWidth = 2.0
 
-                    // Position the cell node at the correct grid cell
-                    let gridOrigin = CGPoint(
-                        x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                        y: (size.height - CGFloat(gridSize) * tileSize) / 2
-                    )
-                    let cellPosition = CGPoint(
-                        x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
-                        y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
-                    )
-                    cellNode.position = cellPosition
+                // Position the cell node at the correct grid cell
+                let gridOrigin = CGPoint(
+                    x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                    y: (size.height - CGFloat(gridSize) * tileSize) / 2
+                )
+                let cellPosition = CGPoint(
+                    x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                    y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+                )
+                cellNode.position = cellPosition
 
-                    // Add the cell node to the scene
-                    addChild(cellNode)
+                // Add the cell node to the scene
+                addChild(cellNode)
 
-                    // Update the grid
-                    setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-                }
+                // Update the grid
+                setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
             }
-
-            // Increase score based on the number of cells occupied by the block
-            let occupiedCells = block.gridHeight * block.gridWidth
-            score += occupiedCells
-            updateScoreLabel()
-
-            // Remove the block from draggable blocks
-            if let index = boxNodes.firstIndex(of: block) {
-                boxNodes.remove(at: index)
-            }
-
-            // Remove the block node from the scene
-            block.removeFromParent()
-
-            // Optionally, check for completed lines and update the score
-            checkForCompletedLines()
-
-            // Spawn new blocks if necessary
-            if boxNodes.isEmpty {
-                spawnNewBlocks()
-            }
-        } else {
-            // If invalid placement, move the block back to its initial position
-            block.position = block.initialPosition
         }
+
+        // Increase score based on the number of cells occupied by the block
+        let occupiedCells = block.gridHeight * block.gridWidth
+        score += occupiedCells
+        updateScoreLabel()
+
+        // Remove the block from draggable blocks
+        if let index = boxNodes.firstIndex(of: block) {
+            boxNodes.remove(at: index)
+        }
+
+        // Remove the block node from the scene
+        block.removeFromParent()
+
+        // Optionally, check for completed lines and update the score
+        checkForCompletedLines()
+
+        // Check for game over condition after placing the block
+        if !canSpawnBlocks() {
+            showGameOverScreen()
+        } else if boxNodes.isEmpty {
+            spawnNewBlocks()
+        }
+    } else {
+        // If invalid placement, move the block back to its initial position
+        block.position = block.initialPosition
     }
+}
+
 
     func checkForCompletedLines() {
         // Check for completed rows
@@ -307,19 +338,72 @@ class BGameScene: SKScene {
             scoreLabel.text = "Score: \(score)"
         }
     }
+    
+    func showGameOverScreen() {
+    isGameOver = true // Set the game over state
+
+    // Create a game over label
+    let gameOverLabel = SKLabelNode(text: "Game Over")
+    gameOverLabel.fontSize = 48
+    gameOverLabel.fontColor = .white
+    gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+    addChild(gameOverLabel)
+
+    // Create a score label to show final score
+    let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
+    finalScoreLabel.fontSize = 36
+    finalScoreLabel.fontColor = .white
+    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    addChild(finalScoreLabel)
+
+    // Create a restart button
+    let restartLabel = SKLabelNode(text: "Tap to Restart")
+    restartLabel.fontSize = 24
+    restartLabel.fontColor = .yellow
+    restartLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
+    addChild(restartLabel)
+}
+    
+   func restartGame() {
+    // Reset score
+    score = 0
+    updateScoreLabel()
+
+    // Reset grid
+    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+
+    // Remove existing nodes
+    removeAllChildren()
+
+    // Reinitialize the game state
+    isGameOver = false
+    createGrid()
+    addScoreLabel()
+    spawnNewBlocks()
+}
+
+
+
 
     // Touch handling methods
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        currentlyDraggedNode = self.nodes(at: location).first(where: { node in
-            guard let boxNode = node as? BBoxNode else { return false }
-            return boxNodes.contains(boxNode)
-        }) as? BBoxNode
-
-        currentlyDraggedNode?.touchesBegan(touches, with: event)
+   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+    
+    if isGameOver {
+        restartGame() // Call to restart the game
+        return
     }
+    
+    let location = touch.location(in: self)
+    currentlyDraggedNode = self.nodes(at: location).first(where: { node in
+        guard let boxNode = node as? BBoxNode else { return false }
+        return boxNodes.contains(boxNode)
+    }) as? BBoxNode
+
+    currentlyDraggedNode?.touchesBegan(touches, with: event)
+}
+
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         currentlyDraggedNode?.touchesMoved(touches, with: event)
@@ -331,7 +415,23 @@ class BGameScene: SKScene {
     }
 
     func canSpawnBlocks() -> Bool {
-        // Implement your logic to determine if new blocks can be spawned
-        return true // Placeholder
+    for row in 0..<gridSize {
+        for col in 0..<gridSize {
+            if !isCellOccupied(row: row, col: col) {
+                // Check if any block can be placed at the empty cell
+                for blockType in availableBlockTypes {
+                    let testBlock = blockType.init(
+                        layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
+                        tileSize: tileSize
+                    )
+                    if isPlacementValid(for: testBlock, at: row, col: col) {
+                        return true // Found at least one valid position
+                    }
+                }
+            }
+        }
     }
+    return false // No valid moves available
+}
+
 }
