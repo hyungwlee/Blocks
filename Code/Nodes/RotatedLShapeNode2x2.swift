@@ -9,44 +9,53 @@ import Foundation
 import SpriteKit
 
 class BRotatedLShapeNode2x2: BBoxNode {
-    override var gridHeight: Int { return 2 } // Height of the L shape
-    override var gridWidth: Int { return 2 }  // Width of the L shape
+    override var gridHeight: Int { return 2 }
+    override var gridWidth: Int { return 2 }
 
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .red) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
 
-        // Create the rotated L-shaped path (180 degrees clockwise)
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: tileSize * 2)) // Starting point (top-left)
-        path.addLine(to: CGPoint(x: tileSize, y: tileSize * 2)) // Top line
-        path.addLine(to: CGPoint(x: tileSize, y: tileSize)) // Down to middle-right
-        path.addLine(to: CGPoint(x: tileSize * 2, y: tileSize)) // Right line to bottom-right
-        path.addLine(to: CGPoint(x: tileSize * 2, y: 0)) // Down to bottom-right
-        path.addLine(to: CGPoint(x: 0, y: 0)) // Left line to top-left
-        path.close() // Close the path
+        // Define the two rounded rectangles to form the rotated "L" shape
+        let topRect = UIBezierPath(
+            roundedRect: CGRect(x: 0, y: tileSize, width: tileSize, height: tileSize),
+            cornerRadius: 8
+        )
+        let sideRect = UIBezierPath(
+            roundedRect: CGRect(x: tileSize, y: 0, width: tileSize, height: tileSize * 2),
+            cornerRadius: 8
+        )
+        
+        // Create shape nodes for each part of the rotated "L" shape
+        let topBox = SKShapeNode(path: topRect.cgPath)
+        topBox.fillColor = color
+        addChild(topBox)
 
-        box = SKShapeNode(path: path.cgPath) // Create shape node from the path
-        box.fillColor = color
-        addChild(box)
+        let sideBox = SKShapeNode(path: sideRect.cgPath)
+        sideBox.fillColor = color
+        addChild(sideBox)
     }
 
     required init?(coder aDecoder: NSCoder) {
-        // Call the superclass's designated initializer
-        let layoutInfo = BLayoutInfo(screenSize: CGSize(width: 640, height: 480)) // Default layout info
-        let tileSize: CGFloat = 40.0 // Default tile size
-        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .red) // Call the super initializer
+        let layoutInfo = BLayoutInfo(screenSize: CGSize(width: 640, height: 480))
+        let tileSize: CGFloat = 40.0
+        super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .red)
 
-        // Create the rotated L-shaped path (180 degrees clockwise)
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: tileSize * 2)) // Starting point (top-left)
-        path.addLine(to: CGPoint(x: tileSize, y: tileSize * 2)) // Top line
-        path.addLine(to: CGPoint(x: tileSize, y: tileSize)) // Down to middle-right
-        path.addLine(to: CGPoint(x: tileSize * 2, y: tileSize)) // Right line to bottom-right
-        path.addLine(to: CGPoint(x: tileSize * 2, y: 0)) // Down to bottom-right
-        path.addLine(to: CGPoint(x: 0, y: 0)) // Left line to top-left
-        path.close() // Close the path
+        let topRect = UIBezierPath(
+            roundedRect: CGRect(x: 0, y: tileSize, width: tileSize, height: tileSize),
+            cornerRadius: 8
+        )
+        let sideRect = UIBezierPath(
+            roundedRect: CGRect(x: tileSize, y: 0, width: tileSize, height: tileSize * 2),
+            cornerRadius: 8
+        )
 
-        box = SKShapeNode(path: path.cgPath) // Create shape node from the path
-        addChild(box)
+        let topBox = SKShapeNode(path: topRect.cgPath)
+        topBox.fillColor = .red
+        addChild(topBox)
+
+        let sideBox = SKShapeNode(path: sideRect.cgPath)
+        sideBox.fillColor = .red
+        addChild(sideBox)
     }
 }
+

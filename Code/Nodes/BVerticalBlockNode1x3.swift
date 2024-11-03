@@ -15,13 +15,11 @@ class BVerticalBlockNode1x3: BBoxNode {
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .blue) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
 
-        // Create the vertical block path
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: 0)) // Starting point (bottom)
-        path.addLine(to: CGPoint(x: 0, y: tileSize * 3)) // Vertical line up
-        path.addLine(to: CGPoint(x: tileSize, y: tileSize * 3)) // Right line up
-        path.addLine(to: CGPoint(x: tileSize, y: 0)) // Right line down
-        path.close() // Close the path
+        // Create the vertical block path with rounded corners
+        let path = UIBezierPath(
+            roundedRect: CGRect(x: 0, y: 0, width: tileSize, height: tileSize * 3),
+            cornerRadius: 8
+        )
 
         box = SKShapeNode(path: path.cgPath) // Create shape node from the path
         box.fillColor = color
@@ -34,15 +32,15 @@ class BVerticalBlockNode1x3: BBoxNode {
         let tileSize: CGFloat = 40.0 // Default tile size
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .blue) // Call the super initializer
 
-        // Create the vertical block path
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: 0)) // Starting point (bottom)
-        path.addLine(to: CGPoint(x: 0, y: tileSize * 3)) // Vertical line up
-        path.addLine(to: CGPoint(x: tileSize, y: tileSize * 3)) // Right line up
-        path.addLine(to: CGPoint(x: tileSize, y: 0)) // Right line down
-        path.close() // Close the path
+        // Create the vertical block path with rounded corners
+        let path = UIBezierPath(
+            roundedRect: CGRect(x: 0, y: 0, width: tileSize, height: tileSize * 3),
+            cornerRadius: 8
+        )
 
         box = SKShapeNode(path: path.cgPath) // Create shape node from the path
+        box.fillColor = color
         addChild(box)
     }
 }
+

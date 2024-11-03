@@ -15,13 +15,11 @@ class BHorizontalBlockNode1x4: BBoxNode {
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .green) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
 
-        // Create the horizontal block path
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: 0)) // Starting point (left)
-        path.addLine(to: CGPoint(x: tileSize * 4, y: 0)) // Horizontal line right
-        path.addLine(to: CGPoint(x: tileSize * 4, y: tileSize)) // Down to the right corner
-        path.addLine(to: CGPoint(x: 0, y: tileSize)) // Down to the left corner
-        path.close() // Close the path
+        // Create the horizontal block path with rounded corners
+        let path = UIBezierPath(
+            roundedRect: CGRect(x: 0, y: 0, width: tileSize * 4, height: tileSize),
+            cornerRadius: 8
+        )
 
         box = SKShapeNode(path: path.cgPath) // Create shape node from the path
         box.fillColor = color
@@ -34,15 +32,14 @@ class BHorizontalBlockNode1x4: BBoxNode {
         let tileSize: CGFloat = 40.0 // Default tile size
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: .green) // Call the super initializer
 
-        // Create the horizontal block path
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: 0)) // Starting point (left)
-        path.addLine(to: CGPoint(x: tileSize * 4, y: 0)) // Horizontal line right
-        path.addLine(to: CGPoint(x: tileSize * 4, y: tileSize)) // Down to the right corner
-        path.addLine(to: CGPoint(x: 0, y: tileSize)) // Down to the left corner
-        path.close() // Close the path
+        // Create the horizontal block path with rounded corners
+        let path = UIBezierPath(
+            roundedRect: CGRect(x: 0, y: 0, width: tileSize * 4, height: tileSize),
+            cornerRadius: 8
+        )
 
         box = SKShapeNode(path: path.cgPath) // Create shape node from the path
+        box.fillColor = color
         addChild(box)
     }
 }
