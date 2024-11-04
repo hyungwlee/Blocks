@@ -1,20 +1,13 @@
-//
-//  BVerticalBlockNode1x3.swift
-//  Blocks
-//
-//  Created by Jevon Williams on 11/3/24.
-//
-
 import SpriteKit
 
-class BVerticalBlockNode1x3: BBoxNode {
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .blue) {
+class BLShapeNode2x2: BBoxNode {
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .orange) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
-        // Define the shape of the 1x3 vertical block
+        // Define the shape of the L-shaped block
         let shapeCells = [
             (row: 0, col: 0),
             (row: 1, col: 0),
-            (row: 2, col: 0)
+            (row: 1, col: 1)
         ]
         setupShape(shapeCells)
     }

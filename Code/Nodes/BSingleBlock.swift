@@ -5,21 +5,19 @@
 //  Created by Jevon Williams on 10/25/24.
 //
 
-import Foundation
 import SpriteKit
-
 
 class BSingleBlock: BBoxNode {
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .blue) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
 
-        // Create a square block using the layoutInfo for size
-        box = SKShapeNode(rect: .init(origin: .zero, size: layoutInfo.boxSize), cornerRadius: 8.0)
-        box.fillColor = color // Use the provided color
-        addChild(box) // Add the box as a child to this node
+        // For a single block, the shape is just [(0, 0)]
+        let shapeCells = [(row: 0, col: 0)]
+        setupShape(shapeCells)
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+        fatalError("init(coder:) has not been implemented")
     }
 }
+

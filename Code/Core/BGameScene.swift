@@ -1,3 +1,10 @@
+//
+//  BGameScene.swift
+//  Blocks
+//
+//  Created by Jevon Williams on 10/24/24.
+//
+
 import SpriteKit
 
 class BGameScene: SKScene {
@@ -9,10 +16,10 @@ class BGameScene: SKScene {
     var currentlyDraggedNode: BBoxNode?
     var gameContext: BGameContext
     var isGameOver: Bool = false
-
+    
     var dependencies: Dependencies
     var gameMode: GameModeType
-
+    
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
         self.gameContext = context
         self.dependencies = dependencies
@@ -20,7 +27,7 @@ class BGameScene: SKScene {
         self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         super.init(size: size)
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         let defaultDependencies = Dependencies()
         self.dependencies = defaultDependencies
@@ -29,7 +36,7 @@ class BGameScene: SKScene {
         self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         super.init(coder: aDecoder)
     }
-
+    
     // MARK: - Node Management
     func addBlockNode(_ blockNode: SKShapeNode, to parentNode: SKNode) {
         if blockNode.parent == nil {
@@ -38,14 +45,14 @@ class BGameScene: SKScene {
             print("Block node already has a parent.")
         }
     }
-
+    
     func safeAddBlock(_ block: BBoxNode) {
         if block.parent != nil {
             block.removeFromParent()
         }
         addChild(block)
     }
-
+    
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
         guard row >= 0, row < gridSize, col >= 0, col < gridSize else {
@@ -53,54 +60,54 @@ class BGameScene: SKScene {
         }
         return grid[row][col] != nil
     }
-
+    
     func setCellOccupied(row: Int, col: Int, with cellNode: SKShapeNode) {
         guard row >= 0, row < gridSize, col >= 0, col < gridSize else {
             return
         }
         grid[row][col] = cellNode
     }
-
+    
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
         BSquareBlock2x2.self,
         BThreeByThreeBlockNode.self,
         BVerticalBlockNode1x2.self,
         BHorizontalBlockNode1x2.self,
-        //BLShapeNode2x2.self,
-        //BRotatedLShapeNode2x2.self,
+        BLShapeNode5Block.self,
+        BLShapeNode2x2.self, // Added the L-shaped block
         BVerticalBlockNode1x3.self,
         BHorizontalBlockNode1x3.self,
         BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
     ]
-
+    
     override func didMove(to view: SKView) {
         backgroundColor = .black
         createGrid()
         addScoreLabel()
         spawnNewBlocks()
     }
-
+    
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
                                  y: (size.height - CGFloat(gridSize) * tileSize) / 2)
-
+        
         for row in 0..<gridSize {
             for col in 0..<gridSize {
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize), cornerRadius: 4)
                 cellNode.fillColor = .lightGray
                 cellNode.strokeColor = .darkGray
                 cellNode.lineWidth = 2.0
-
+                
                 cellNode.position = CGPoint(x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
                                             y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2)
                 addChild(cellNode)
             }
         }
     }
-
+    
     func addScoreLabel() {
         let scoreLabel = SKLabelNode(text: "Score: \(score)")
         scoreLabel.fontSize = 36
@@ -110,7 +117,7 @@ class BGameScene: SKScene {
         scoreLabel.name = "scoreLabel"
         addChild(scoreLabel)
     }
-
+    
     func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
         for block in blocks {
             for row in 0..<gridSize {
@@ -123,20 +130,20 @@ class BGameScene: SKScene {
         }
         return false
     }
-
+    
     func spawnNewBlocks() {
         guard !isGameOver else {
             showGameOverScreen()
             return
         }
-
+        
         boxNodes.forEach { $0.removeFromParent() }
         boxNodes.removeAll()
-
+        
         let newBlocks = generateRandomShapes(count: 3)
         let spacing: CGFloat = 10
         var totalWidth: CGFloat = 0
-
+        
         for block in newBlocks {
             let blockWidth = CGFloat(block.gridWidth) * tileSize
             totalWidth += blockWidth
@@ -145,7 +152,7 @@ class BGameScene: SKScene {
         let startXPosition = (size.width - (totalWidth + totalSpacing)) / 2.0
         var currentXPosition = startXPosition
         let blockYPosition = size.height * 0.1
-
+        
         for newBlock in newBlocks {
             let blockWidth = CGFloat(newBlock.gridWidth) * tileSize
             newBlock.position = CGPoint(x: currentXPosition, y: blockYPosition)
@@ -160,7 +167,7 @@ class BGameScene: SKScene {
             showGameOverScreen()
         }
     }
-
+    
     func generateRandomShapes(count: Int) -> [BBoxNode] {
         var shapes: [BBoxNode] = []
         for _ in 0..<count {
@@ -173,41 +180,38 @@ class BGameScene: SKScene {
         }
         return shapes
     }
-
+    
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
-        for r in 0..<block.gridHeight {
-            for c in 0..<block.gridWidth {
-                let gridRow = row + r
-                let gridCol = col + c
-
-                if gridRow < 0 || gridRow >= gridSize || gridCol < 0 || gridCol >= gridSize {
-                    return false
-                }
-
-                if grid[gridRow][gridCol] != nil {
-                    return false
-                }
+        for cell in block.shape {
+            let gridRow = row + cell.row
+            let gridCol = col + cell.col
+            
+            if gridRow < 0 || gridRow >= gridSize || gridCol < 0 || gridCol >= gridSize {
+                return false
+            }
+            
+            if grid[gridRow][gridCol] != nil {
+                return false
             }
         }
         return true
     }
-
+    
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-    let row = gridPosition.row
-    let col = gridPosition.col
-
-    if isPlacementValid(for: block, at: row, col: col) {
-        var occupiedCells = 0
-        for r in 0..<block.gridHeight {
-            for c in 0..<block.gridWidth {
-                let gridRow = row + r
-                let gridCol = col + c
-
+        let row = gridPosition.row
+        let col = gridPosition.col
+        
+        if isPlacementValid(for: block, at: row, col: col) {
+            var occupiedCells = 0
+            for cell in block.shape {
+                let gridRow = row + cell.row
+                let gridCol = col + cell.col
+                
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
                 cellNode.fillColor = block.color
                 cellNode.strokeColor = .darkGray
                 cellNode.lineWidth = 2.0
-
+                
                 let gridOrigin = CGPoint(
                     x: (size.width - CGFloat(gridSize) * tileSize) / 2,
                     y: (size.height - CGFloat(gridSize) * tileSize) / 2
@@ -217,36 +221,34 @@ class BGameScene: SKScene {
                     y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
                 )
                 cellNode.position = cellPosition
-
+                
                 addChild(cellNode)
                 setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
                 occupiedCells += 1  // Count each cell occupied
             }
+            
+            // Update the score based on occupied cells
+            score += occupiedCells
+            updateScoreLabel()
+            
+            if let index = boxNodes.firstIndex(of: block) {
+                boxNodes.remove(at: index)
+            }
+            
+            block.removeFromParent()
+            
+            checkForCompletedLines()
+            
+            if boxNodes.isEmpty {
+                spawnNewBlocks()
+            } else if !checkForPossibleMoves(for: boxNodes) {
+                showGameOverScreen()
+            }
+        } else {
+            block.position = block.initialPosition
         }
-
-        // Update the score based on occupied cells
-        score += occupiedCells
-        updateScoreLabel()
-
-        if let index = boxNodes.firstIndex(of: block) {
-            boxNodes.remove(at: index)
-        }
-
-        block.removeFromParent()
-
-        checkForCompletedLines()
-
-        if boxNodes.isEmpty {
-            spawnNewBlocks()
-        } else if !checkForPossibleMoves(for: boxNodes) {
-            showGameOverScreen()
-        }
-    } else {
-        block.position = block.initialPosition
     }
-}
-
-
+    
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() {
         for row in 0..<gridSize {
@@ -254,7 +256,7 @@ class BGameScene: SKScene {
                 clearRow(row)
             }
         }
-
+        
         for col in 0..<gridSize {
             var isCompleted = true
             for row in 0..<gridSize {
@@ -268,7 +270,7 @@ class BGameScene: SKScene {
             }
         }
     }
-
+    
     func clearRow(_ row: Int) {
         for col in 0..<gridSize {
             if let cellNode = grid[row][col] {
@@ -279,7 +281,7 @@ class BGameScene: SKScene {
         }
         updateScoreLabel()
     }
-
+    
     func clearColumn(_ col: Int) {
         for row in 0..<gridSize {
             if let cellNode = grid[row][col] {
@@ -290,10 +292,10 @@ class BGameScene: SKScene {
         }
         updateScoreLabel()
     }
-
+    
     func showGameOverScreen() {
         isGameOver = true
-
+        
         let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
         overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
         overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -305,14 +307,14 @@ class BGameScene: SKScene {
         gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
         gameOverLabel.zPosition = 1
         addChild(gameOverLabel)
-
+        
         let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
         finalScoreLabel.fontSize = 36
         finalScoreLabel.fontColor = .white
         finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
         finalScoreLabel.zPosition = 1
         addChild(finalScoreLabel)
-
+        
         let restartLabel = SKLabelNode(text: "Tap to Restart")
         restartLabel.fontSize = 24
         restartLabel.fontColor = .yellow
@@ -321,53 +323,64 @@ class BGameScene: SKScene {
         restartLabel.zPosition = 1
         addChild(restartLabel)
     }
-
+    
     func restartGame() {
         score = 0
         updateScoreLabel()
-
+        
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         removeAllChildren()
-
+        
         isGameOver = false
         createGrid()
         addScoreLabel()
         spawnNewBlocks()
     }
-
+    
     func updateScoreLabel() {
         if let scoreLabel = childNode(withName: "scoreLabel") as? SKLabelNode {
             scoreLabel.text = "Score: \(score)"
         }
     }
-
+    
+    // In touchesBegan, set the initial touch position
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-
+        
         let location = touch.location(in: self)
-        let nodeTapped = self.nodes(at: location).first
-
+        let nodeTapped = atPoint(location)
+        
         if isGameOver {
-            if nodeTapped?.name == "restartLabel" {
+            if nodeTapped.name == "restartLabel" {
                 restartGame()
             }
             return
         }
-
-        currentlyDraggedNode = self.nodes(at: location).first(where: { node in
-            guard let boxNode = node as? BBoxNode else { return false }
-            return boxNodes.contains(boxNode)
-        }) as? BBoxNode
-
-        currentlyDraggedNode?.touchesBegan(touches, with: event)
+        
+        // Find the BBoxNode from the touched node
+        if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
+            currentlyDraggedNode = boxNode
+        } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
+            currentlyDraggedNode = boxNode
+        } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
+            currentlyDraggedNode = boxNode
+        } else {
+            currentlyDraggedNode = nil
+        }
     }
-
+    
+    // In touchesMoved, update the position of currentlyDraggedNode
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        currentlyDraggedNode?.touchesMoved(touches, with: event)
+        guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+        let touchLocation = touch.location(in: self)
+        node.updatePosition(to: touchLocation)
     }
-
+    
+    // In touchesEnded, handle placement
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        currentlyDraggedNode?.touchesEnded(touches, with: event)
+        guard let node = currentlyDraggedNode else { return }
+        let gridPos = node.gridPosition()
+        node.gameScene?.placeBlock(node, at: gridPos)
         currentlyDraggedNode = nil
     }
 }

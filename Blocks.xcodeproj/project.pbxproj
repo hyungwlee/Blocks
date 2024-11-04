@@ -12,7 +12,6 @@
 		51B2BAB42CD82A4000BB4E30 /* BVerticalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */; };
 		51B2BAB62CD82AE300BB4E30 /* BHorizontalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB52CD82AE300BB4E30 /* BHorizontalBlockNode.swift */; };
 		51B2BAB82CD82BB200BB4E30 /* BLShapeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB72CD82BB200BB4E30 /* BLShapeNode.swift */; };
-		51B2BABA2CD82CF600BB4E30 /* RotatedLShapeNode2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB92CD82CF600BB4E30 /* RotatedLShapeNode2x2.swift */; };
 		51B2BABC2CD82F8300BB4E30 /* BVerticalBlockNode1x3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BABB2CD82F8300BB4E30 /* BVerticalBlockNode1x3.swift */; };
 		51B2BABE2CD82FC800BB4E30 /* BHorizontalBlockNode1x3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BABD2CD82FC800BB4E30 /* BHorizontalBlockNode1x3.swift */; };
 		51B2BAC02CD8302E00BB4E30 /* BVerticalBlockNode1x4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BABF2CD8302E00BB4E30 /* BVerticalBlockNode1x4.swift */; };
@@ -21,6 +20,7 @@
 		8043C70E2CC3721A00AE8B4D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8043C70D2CC3721A00AE8B4D /* ContentView.swift */; };
 		8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C70F2CC3721B00AE8B4D /* Assets.xcassets */; };
 		8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */; };
+		808EFBE22CD88AA800AF1606 /* BLShapeNode5Block.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */; };
 		9E3580752CD1A407007ABB7D /* BLayoutInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580622CD1A407007ABB7D /* BLayoutInfo.swift */; };
 		9E3580762CD1A407007ABB7D /* BGameIdleState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806F2CD1A407007ABB7D /* BGameIdleState.swift */; };
 		9E3580772CD1A407007ABB7D /* BGameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35805F2CD1A407007ABB7D /* BGameScene.swift */; };
@@ -44,7 +44,6 @@
 		51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BVerticalBlockNode.swift; sourceTree = "<group>"; };
 		51B2BAB52CD82AE300BB4E30 /* BHorizontalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BHorizontalBlockNode.swift; sourceTree = "<group>"; };
 		51B2BAB72CD82BB200BB4E30 /* BLShapeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLShapeNode.swift; sourceTree = "<group>"; };
-		51B2BAB92CD82CF600BB4E30 /* RotatedLShapeNode2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotatedLShapeNode2x2.swift; sourceTree = "<group>"; };
 		51B2BABB2CD82F8300BB4E30 /* BVerticalBlockNode1x3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BVerticalBlockNode1x3.swift; sourceTree = "<group>"; };
 		51B2BABD2CD82FC800BB4E30 /* BHorizontalBlockNode1x3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BHorizontalBlockNode1x3.swift; sourceTree = "<group>"; };
 		51B2BABF2CD8302E00BB4E30 /* BVerticalBlockNode1x4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BVerticalBlockNode1x4.swift; sourceTree = "<group>"; };
@@ -54,6 +53,7 @@
 		8043C70D2CC3721A00AE8B4D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		8043C70F2CC3721B00AE8B4D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLShapeNode5Block.swift; sourceTree = "<group>"; };
 		9E35805E2CD1A407007ABB7D /* BGameContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameContext.swift; sourceTree = "<group>"; };
 		9E35805F2CD1A407007ABB7D /* BGameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameScene.swift; sourceTree = "<group>"; };
 		9E3580612CD1A407007ABB7D /* BGameInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameInfo.swift; sourceTree = "<group>"; };
@@ -119,6 +119,15 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		808EFBE02CD87D0100AF1606 /* Custom Nodes */ = {
+			isa = PBXGroup;
+			children = (
+				51B2BAB72CD82BB200BB4E30 /* BLShapeNode.swift */,
+				808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */,
+			);
+			path = "Custom Nodes";
+			sourceTree = "<group>";
+		};
 		9E3580602CD1A407007ABB7D /* Core */ = {
 			isa = PBXGroup;
 			children = (
@@ -146,12 +155,11 @@
 				5187D3852CD813FF00787D80 /* B3x3SquareNode.swift */,
 				51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */,
 				51B2BAB52CD82AE300BB4E30 /* BHorizontalBlockNode.swift */,
-				51B2BAB72CD82BB200BB4E30 /* BLShapeNode.swift */,
-				51B2BAB92CD82CF600BB4E30 /* RotatedLShapeNode2x2.swift */,
 				51B2BABB2CD82F8300BB4E30 /* BVerticalBlockNode1x3.swift */,
 				51B2BABD2CD82FC800BB4E30 /* BHorizontalBlockNode1x3.swift */,
 				51B2BABF2CD8302E00BB4E30 /* BVerticalBlockNode1x4.swift */,
 				51B2BAC12CD8305800BB4E30 /* BHorizontalBlockNode1x4.swift */,
+				808EFBE02CD87D0100AF1606 /* Custom Nodes */,
 			);
 			path = Nodes;
 			sourceTree = "<group>";
@@ -281,6 +289,7 @@
 				9E3580772CD1A407007ABB7D /* BGameScene.swift in Sources */,
 				9E3580782CD1A407007ABB7D /* BGameContext.swift in Sources */,
 				9E35807A2CD1A407007ABB7D /* BGameClearingState.swift in Sources */,
+				808EFBE22CD88AA800AF1606 /* BLShapeNode5Block.swift in Sources */,
 				9E35807D2CD1A407007ABB7D /* BBoxNode.swift in Sources */,
 				5187D3862CD813FF00787D80 /* B3x3SquareNode.swift in Sources */,
 				51B2BABC2CD82F8300BB4E30 /* BVerticalBlockNode1x3.swift in Sources */,
@@ -302,7 +311,6 @@
 				9E35808F2CD1A459007ABB7D /* GameContext.swift in Sources */,
 				8043C70E2CC3721A00AE8B4D /* ContentView.swift in Sources */,
 				8043C70C2CC3721A00AE8B4D /* BlocksApp.swift in Sources */,
-				51B2BABA2CD82CF600BB4E30 /* RotatedLShapeNode2x2.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -436,7 +444,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = GY8R2NLRXH;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -450,7 +458,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.apps;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hyel.Blocks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -466,7 +474,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = GY8R2NLRXH;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -480,7 +488,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.apps;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hyel.Blocks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
