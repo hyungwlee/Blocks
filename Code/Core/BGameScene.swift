@@ -197,57 +197,76 @@ class BGameScene: SKScene {
         return true
     }
     
-    func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-        let row = gridPosition.row
-        let col = gridPosition.col
-        
-        if isPlacementValid(for: block, at: row, col: col) {
-            var occupiedCells = 0
-            for cell in block.shape {
-                let gridRow = row + cell.row
-                let gridCol = col + cell.col
-                
-                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-                cellNode.fillColor = block.color
-                cellNode.strokeColor = .darkGray
-                cellNode.lineWidth = 2.0
-                
-                let gridOrigin = CGPoint(
-                    x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                    y: (size.height - CGFloat(gridSize) * tileSize) / 2
-                )
-                let cellPosition = CGPoint(
-                    x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
-                    y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
-                )
-                cellNode.position = cellPosition
-                
-                addChild(cellNode)
-                setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-                occupiedCells += 1  // Count each cell occupied
-            }
+   func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+    let row = gridPosition.row
+    let col = gridPosition.col
+    
+    if isPlacementValid(for: block, at: row, col: col) {
+        var occupiedCells = 0
+        for (index, cell) in block.shape.enumerated() {
+            let gridRow = row + cell.row
+            let gridCol = col + cell.col
             
-            // Update the score based on occupied cells
-            score += occupiedCells
-            updateScoreLabel()
+            // Create a cell visual node (SKShapeNode)
+            let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+            cellNode.fillColor = block.color  // Color for the block (optional)
             
-            if let index = boxNodes.firstIndex(of: block) {
-                boxNodes.remove(at: index)
-            }
+            // Retrieve the asset for the specific cell
+            let asset = block.assets[index].name  // Asset from the block's predefined assets
             
-            block.removeFromParent()
+            // Add a texture (asset) to the cell node for more detailed visuals
+            let assetTexture = SKTexture(imageNamed: asset)  // Load texture from the asset name
+            let spriteNode = SKSpriteNode(texture: assetTexture)  // Create sprite node with texture
+            spriteNode.size = CGSize(width: tileSize, height: tileSize)  // Set the size of the sprite
             
-            checkForCompletedLines()
+            // Add sprite as a child to the shape node
+            cellNode.addChild(spriteNode)
             
-            if boxNodes.isEmpty {
-                spawnNewBlocks()
-            } else if !checkForPossibleMoves(for: boxNodes) {
-                showGameOverScreen()
-            }
-        } else {
-            block.position = block.initialPosition
+            // Style the shape node (optional)
+            cellNode.strokeColor = .darkGray
+            cellNode.lineWidth = 2.0
+            
+            // Calculate the correct position on the grid
+            let gridOrigin = CGPoint(
+                x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                y: (size.height - CGFloat(gridSize) * tileSize) / 2
+            )
+            let cellPosition = CGPoint(
+                x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+            )
+            cellNode.position = cellPosition
+            
+            // Add the visual cell node directly to the scene
+            addChild(cellNode)
+            setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
+            occupiedCells += 1  // Count each occupied cell
         }
+        
+        // Update the score based on occupied cells
+        score += occupiedCells
+        updateScoreLabel()
+        
+        // Remove the block node from the scene (but keep the cells in the scene)
+        if let index = boxNodes.firstIndex(of: block) {
+            boxNodes.remove(at: index)
+        }
+        block.removeFromParent()  // This only removes the block, not its visual parts
+
+        // Check if any lines are completed and clear them
+        checkForCompletedLines()
+        
+        // Spawn new blocks or end the game if no moves are possible
+        if boxNodes.isEmpty {
+            spawnNewBlocks()
+        } else if !checkForPossibleMoves(for: boxNodes) {
+            showGameOverScreen()
+        }
+    } else {
+        block.position = block.initialPosition  // Reset the block if placement is invalid
     }
+}
+
     
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() {
