@@ -375,6 +375,7 @@ class BGameScene: SKScene {
         createGrid()
         addScoreLabel()
         spawnNewBlocks()
+        createPowerupPlaceholders()
     }
     
     func updateScoreLabel() {
