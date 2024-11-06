@@ -16,6 +16,8 @@ class BGameScene: SKScene {
     var currentlyDraggedNode: BBoxNode?
     var gameContext: BGameContext
     var isGameOver: Bool = false
+    var placedBlocks: [SKSpriteNode] = []
+
     
     var dependencies: Dependencies
     var gameMode: GameModeType
@@ -311,27 +313,48 @@ class BGameScene: SKScene {
         }
     }
     
-    func clearRow(_ row: Int) {
-        for col in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                cellNode.removeFromParent()
-                grid[row][col] = nil
-                score += 1
-            }
+   func clearRow(_ row: Int) {
+    for col in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+            let removeAction = SKAction.run { cellNode.removeFromParent() }
+
+            // Create a sequence of actions: fade out, scale down, then remove from parent
+            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+            
+            // Run the sequence and set the grid cell to nil after the animation
+            cellNode.run(clearSequence)
+            grid[row][col] = nil
+            
+            // Increment score with each cell removed
+            score += 1
         }
-        updateScoreLabel()
     }
-    
-    func clearColumn(_ col: Int) {
-        for row in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                cellNode.removeFromParent()
-                grid[row][col] = nil
-                score += 1
-            }
+    updateScoreLabel()
+}
+
+func clearColumn(_ col: Int) {
+    for row in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+            let removeAction = SKAction.run { cellNode.removeFromParent() }
+
+            // Create a sequence of actions: fade out, scale down, then remove from parent
+            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+            
+            // Run the sequence and set the grid cell to nil after the animation
+            cellNode.run(clearSequence)
+            grid[row][col] = nil
+            
+            // Increment score with each cell removed
+            score += 1
         }
-        updateScoreLabel()
     }
+    updateScoreLabel()
+}
+
     
     func showGameOverScreen() {
         isGameOver = true
@@ -385,43 +408,104 @@ class BGameScene: SKScene {
     }
     
     // In touchesBegan, set the initial touch position
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        
-        let location = touch.location(in: self)
-        let nodeTapped = atPoint(location)
-        
-        if isGameOver {
-            if nodeTapped.name == "restartLabel" {
-                restartGame()
-            }
-            return
+   // Detect when the user touches a block and increase its size
+
+// Detect when the user touches a block and increase its size
+override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+    
+    let location = touch.location(in: self)
+    let nodeTapped = atPoint(location)
+    
+    if isGameOver {
+        if nodeTapped.name == "restartLabel" {
+            restartGame()
         }
-        
-        // Find the BBoxNode from the touched node
-        if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else {
-            currentlyDraggedNode = nil
-        }
+        return
     }
     
-    // In touchesMoved, update the position of currentlyDraggedNode
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let node = currentlyDraggedNode else { return }
-        let touchLocation = touch.location(in: self)
-        node.updatePosition(to: touchLocation)
-    }
-    
-    // In touchesEnded, handle placement
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let node = currentlyDraggedNode else { return }
-        let gridPos = node.gridPosition()
-        node.gameScene?.placeBlock(node, at: gridPos)
+    // Find the BBoxNode from the touched node
+    if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else {
         currentlyDraggedNode = nil
     }
+    
+    // Increase the size of the block when it's selected for dragging
+    currentlyDraggedNode?.run(SKAction.scale(to: 1.2, duration: 0.1))
+    
+    // Add an offset between the touch point and the block's position when dragging or just touched
+    if let node = currentlyDraggedNode {
+        let touchLocation = touch.location(in: self)
+        
+        // Calculate offset to move the block away from the finger
+        let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
+        let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
+        
+        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+    }
+}
+
+// Update the position of the dragged block as it follows the touch, with offset
+override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+    
+    let touchLocation = touch.location(in: self)
+    
+    // Get the offset stored in the userData and apply it
+    if let offsetX = node.userData?["offsetX"] as? CGFloat,
+       let offsetY = node.userData?["offsetY"] as? CGFloat {
+        
+        let newPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
+        
+        // Check if the new position will collide with placed blocks
+        if !isCollisionWithPlacedBlocks(at: newPosition) {
+            // Update the position only if no collision is detected
+            node.updatePosition(to: newPosition)
+        }
+    }
+}
+
+// Check if the dragged block is colliding with any placed blocks
+func isCollisionWithPlacedBlocks(at position: CGPoint) -> Bool {
+    for placedNode in placedBlocks {
+        // Assuming placedBlocks is an array of nodes that are already placed on the grid
+        if placedNode.frame.intersects(CGRect(origin: position, size: placedNode.size)) {
+            // If the new position intersects with any placed block, return true
+            return true
+        }
+    }
+    return false
+}
+
+// Handle the block placement and reset its size when placed on the grid
+override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let node = currentlyDraggedNode else { return }
+    
+    // Determine the grid position for placement
+    let gridPos = node.gridPosition()
+    
+    // Attempt to place the block at the calculated grid position
+    if let gameScene = node.gameScene {
+        if gameScene.isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
+            gameScene.placeBlock(node, at: gridPos)
+        } else {
+            // If the placement is invalid, return the block to its original position
+            node.position = node.initialPosition
+        }
+    }
+    
+    // Return the block to its original size after placement
+    node.run(SKAction.scale(to: 1.0, duration: 0.1))
+    
+    // Remove the offset data
+    node.userData = nil
+    
+    currentlyDraggedNode = nil
+}
+
 }
