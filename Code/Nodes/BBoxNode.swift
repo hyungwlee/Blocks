@@ -53,23 +53,31 @@ class BBoxNode: SKNode {
     func createVisualRepresentation() {
         // Remove any existing child nodes
         removeAllChildren()
-
-        // For each cell in 'shape', create an SKShapeNode
-        for cell in shape {
-            let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize), cornerRadius: 4)
-            cellNode.fillColor = color
-            cellNode.strokeColor = .darkGray
-            cellNode.lineWidth = 2.0
-
-            // Position the cellNode based on its position in the shape
+        
+        // For each cell in 'shape', add the asset at the correct position
+        for (index, cell) in shape.enumerated() {
+            // Get the asset name and position
+            let assetInfo = assets[index]
+            let assetName = assetInfo.name
+            
+            // Create the asset sprite node
+            let assetNode = SKSpriteNode(imageNamed: assetName)
+            assetNode.size = CGSize(width: tileSize, height: tileSize) // Adjust as necessary
+            assetNode.name = assetName  // Assign a unique name to the asset
+            
+            // Calculate the position based on the cell's coordinates
             let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
             let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
-            cellNode.position = CGPoint(x: xPos, y: yPos)
-            cellNode.isUserInteractionEnabled = false // Ensure child nodes don't receive touches
-
-            addChild(cellNode)
+            assetNode.position = CGPoint(x: xPos, y: yPos)
+            
+            // Set zPosition to ensure the asset is visible
+            assetNode.zPosition = 1
+            
+            // Add the asset node as a child to this BBoxNode
+            addChild(assetNode)
         }
     }
+
 
     var gridHeight: Int {
         let rows = shape.map { $0.row }

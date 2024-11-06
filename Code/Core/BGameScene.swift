@@ -52,7 +52,26 @@ class BGameScene: SKScene {
         }
         addChild(block)
     }
-    
+    func createPowerupPlaceholders() {
+        let placeholderSize = CGSize(width: 50, height: 50)
+        let spacing: CGFloat = 20
+        let totalWidth = placeholderSize.width * 4 + spacing * 3
+        let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
+        let yPosition = size.height - 150 // Adjust as needed, below the score label
+
+        for i in 0..<4 {
+            let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
+            placeholder.strokeColor = .white
+            placeholder.lineWidth = 2.0
+            placeholder.fillColor = .clear // Set fill color to clear or any color you prefer
+
+            let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
+            placeholder.position = CGPoint(x: xPosition, y: yPosition)
+            placeholder.name = "powerupPlaceholder\(i)"
+            addChild(placeholder)
+        }
+    }
+
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
         guard row >= 0, row < gridSize, col >= 0, col < gridSize else {
@@ -86,8 +105,10 @@ class BGameScene: SKScene {
         backgroundColor = .black
         createGrid()
         addScoreLabel()
+        createPowerupPlaceholders() // Added this line for placeholders
         spawnNewBlocks()
     }
+
     
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
