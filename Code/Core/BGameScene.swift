@@ -6,6 +6,7 @@
 //
 
 import SpriteKit
+import AVFoundation
 
 class BGameScene: SKScene {
     let gridSize = 10
@@ -17,7 +18,7 @@ class BGameScene: SKScene {
     var gameContext: BGameContext
     var isGameOver: Bool = false
     var placedBlocks: [SKSpriteNode] = []
-
+    var dropSound: SKAudioNode?
     
     var dependencies: Dependencies
     var gameMode: GameModeType
@@ -107,9 +108,18 @@ class BGameScene: SKScene {
         backgroundColor = .black
         createGrid()
         addScoreLabel()
-        createPowerupPlaceholders() // Added this line for placeholders
+        createPowerupPlaceholders()
         spawnNewBlocks()
+        
+        // Initialize the audio node with the sound file's name
+        dropSound = SKAudioNode(fileNamed: "download.mp3")
+        dropSound?.autoplayLooped = false  // Ensure the sound doesn't loop
+        if let dropSound = dropSound {
+            addChild(dropSound)  // Add the sound node to the scene
+            dropSound.run(SKAction.play())  // Play the sound immediately to test it
+        }
     }
+
 
     
     func createGrid() {
@@ -285,6 +295,9 @@ class BGameScene: SKScene {
         } else if !checkForPossibleMoves(for: boxNodes) {
             showGameOverScreen()
         }
+        print("Playing drop sound")
+        run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
+
     } else {
         block.position = block.initialPosition  // Reset the block if placement is invalid
     }

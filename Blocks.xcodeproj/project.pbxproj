@@ -21,6 +21,7 @@
 		8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C70F2CC3721B00AE8B4D /* Assets.xcassets */; };
 		8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */; };
 		808EFBE22CD88AA800AF1606 /* BLShapeNode5Block.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */; };
+		80CA97472CDC83EF007AB840 /* download.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 80CA97462CDC83EF007AB840 /* download.mp3 */; };
 		9E3580752CD1A407007ABB7D /* BLayoutInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580622CD1A407007ABB7D /* BLayoutInfo.swift */; };
 		9E3580762CD1A407007ABB7D /* BGameIdleState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806F2CD1A407007ABB7D /* BGameIdleState.swift */; };
 		9E3580772CD1A407007ABB7D /* BGameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35805F2CD1A407007ABB7D /* BGameScene.swift */; };
@@ -54,6 +55,7 @@
 		8043C70F2CC3721B00AE8B4D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLShapeNode5Block.swift; sourceTree = "<group>"; };
+		80CA97462CDC83EF007AB840 /* download.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = download.mp3; path = ../../../../Downloads/download.mp3; sourceTree = "<group>"; };
 		9E35805E2CD1A407007ABB7D /* BGameContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameContext.swift; sourceTree = "<group>"; };
 		9E35805F2CD1A407007ABB7D /* BGameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameScene.swift; sourceTree = "<group>"; };
 		9E3580612CD1A407007ABB7D /* BGameInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameInfo.swift; sourceTree = "<group>"; };
@@ -149,6 +151,7 @@
 		9E35806D2CD1A407007ABB7D /* Nodes */ = {
 			isa = PBXGroup;
 			children = (
+				80CA97462CDC83EF007AB840 /* download.mp3 */,
 				9E3580652CD1A407007ABB7D /* BBoxNode.swift */,
 				9E3580692CD1A407007ABB7D /* BSingleBlock.swift */,
 				5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */,
@@ -272,6 +275,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80CA97472CDC83EF007AB840 /* download.mp3 in Resources */,
 				8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */,
 				8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */,
 			);
@@ -444,7 +448,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = GY8R2NLRXH;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -474,7 +478,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = GY8R2NLRXH;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
