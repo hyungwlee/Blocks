@@ -93,7 +93,7 @@ class BGameScene: SKScene {
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
         BSquareBlock2x2.self,
-        BThreeByThreeBlockNode.self,
+        BSquareBlock3x3.self,
         BVerticalBlockNode1x2.self,
         BHorizontalBlockNode1x2.self,
         BLShapeNode5Block.self,
@@ -326,7 +326,7 @@ class BGameScene: SKScene {
         }
     }
     
-   func clearRow(_ row: Int) {
+  func clearRow(_ row: Int) {
     for col in 0..<gridSize {
         if let cellNode = grid[row][col] {
             let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
@@ -344,7 +344,11 @@ class BGameScene: SKScene {
             score += 1
         }
     }
+    
     updateScoreLabel()
+
+    // Play sound after clearing the row
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
 }
 
 func clearColumn(_ col: Int) {
@@ -365,8 +369,13 @@ func clearColumn(_ col: Int) {
             score += 1
         }
     }
+    
     updateScoreLabel()
+
+    // Play sound after clearing the column
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
 }
+
 
     
     func showGameOverScreen() {

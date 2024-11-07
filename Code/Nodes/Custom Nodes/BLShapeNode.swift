@@ -3,9 +3,9 @@ import SpriteKit
 class BLShapeNode2x2: BBoxNode {
     
     // List of possible asset names for the block
-    private let availableAssets = [
+   private let availableAssets = [
         "Laughing-1", "Laughing-2", "Laughing", // Example assets
-        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1",
+        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1"
     ]
     
     // Dictionary mapping asset names to colors
@@ -18,8 +18,13 @@ class BLShapeNode2x2: BBoxNode {
         "Group 16310": .purple,
         "Group 16312-1": .cyan,
         "Group 16313": .magenta,
-        "Group 16314-1": .brown
+        "Group 16314-1": .brown,
+        "Group 16316": .blue,
+        "Group 16363-1": .yellow
     ]
+    
+    // Now directly selecting a specific asset (e.g., "Laughing-1")
+    private let selectedAsset = "Group 16316"  // Choose the asset you want
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .orange) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
@@ -31,24 +36,21 @@ class BLShapeNode2x2: BBoxNode {
             (row: 0, col: 1)
         ]
         
-        // Randomly select an asset from the available assets
-        let randomAsset = availableAssets.randomElement() ?? "Laughing-1" // Default if no random selection
-        
-        // Lookup color for the selected asset
-        let blockColor = assetColors[randomAsset] ?? .orange // Default color if not found
+        // Use the selected asset directly
+        let blockColor = assetColors[selectedAsset] ?? .orange  // Default color if not found
         
         // Set the block's color to match the selected asset
         self.color = blockColor
         
-        // Define assets at specific positions (only 1st position here as an example)
+        // Define assets at specific positions (using the selected asset)
         let assets = [
-            (name: randomAsset, position: (row: 0, col: 0)),
-            (name: randomAsset, position: (row: 0, col: 1)),
-            (name: randomAsset, position: (row: 1, col: 0))
+            (name: selectedAsset, position: (row: 0, col: 0)),
+            (name: selectedAsset, position: (row: 0, col: 1)),
+            (name: selectedAsset, position: (row: 1, col: 0))
         ]
         
         // Pass the selected asset and the shape to setupShape
-        setupShape(shapeCells, assets: assets) 
+        setupShape(shapeCells, assets: assets)
     }
 
     required init?(coder aDecoder: NSCoder) {

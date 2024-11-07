@@ -10,9 +10,9 @@ import SpriteKit
 class BHorizontalBlockNode1x3: BBoxNode {
     
     // List of possible asset names for the block
-    private let availableAssets = [
+   private let availableAssets = [
         "Laughing-1", "Laughing-2", "Laughing", // Example assets
-        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1",
+        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1"
     ]
     
     // Dictionary mapping asset names to colors
@@ -25,8 +25,12 @@ class BHorizontalBlockNode1x3: BBoxNode {
         "Group 16310": .purple,
         "Group 16312-1": .cyan,
         "Group 16313": .magenta,
-        "Group 16314-1": .brown
+        "Group 16314-1": .brown,
+        "Group 16316": .blue,
+        "Group 16363-1": .yellow
     ]
+    // Now directly selecting a specific asset (e.g., "Laughing-1")
+    private let selectedAsset = "Group 16312-1"  // Choose the asset you want
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .green) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
@@ -38,27 +42,23 @@ class BHorizontalBlockNode1x3: BBoxNode {
             (row: 0, col: 2)
         ]
         
-        // Randomly select an asset from the available assets
-        let randomAsset = availableAssets.randomElement() ?? "Laughing-1" // Default if no random selection
-        
-        // Lookup color for the selected asset
-        let blockColor = assetColors[randomAsset] ?? .green // Default color if not found
+        // Use the selected asset directly
+        let blockColor = assetColors[selectedAsset] ?? .green  // Default color if not found
         
         // Set the block's color to match the selected asset
         self.color = blockColor
         
-        // Define assets at specific positions (here, the same asset is placed in all 3x1 cells)
+        // Define assets at specific positions (using the selected asset)
         let assets = [
-            (name: randomAsset, position: (row: 0, col: 0)),
-            (name: randomAsset, position: (row: 0, col: 1)),
-            (name: randomAsset, position: (row: 0, col: 2))
+            (name: selectedAsset, position: (row: 0, col: 0)),
+            (name: selectedAsset, position: (row: 0, col: 1)),
+            (name: selectedAsset, position: (row: 0, col: 2))
         ]
         
-        setupShape(shapeCells, assets: assets) // Pass the randomly selected asset and its color
+        setupShape(shapeCells, assets: assets) // Pass the selected asset and its color
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 }
-

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5127EFFC2CDD408400FF8FC8 /* Rising_chime.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5127EFFB2CDD408300FF8FC8 /* Rising_chime.mp3 */; };
+		5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */; };
 		5156DB5E2CD6DC0B00718AD9 /* BSquareBlock2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */; };
 		5187D3862CD813FF00787D80 /* B3x3SquareNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5187D3852CD813FF00787D80 /* B3x3SquareNode.swift */; };
 		51B2BAB42CD82A4000BB4E30 /* BVerticalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */; };
@@ -40,6 +42,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5127EFFB2CDD408300FF8FC8 /* Rising_chime.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Rising_chime.mp3; sourceTree = "<group>"; };
+		5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Risingwav.mp3; sourceTree = "<group>"; };
 		5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BSquareBlock2x2.swift; sourceTree = "<group>"; };
 		5187D3852CD813FF00787D80 /* B3x3SquareNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = B3x3SquareNode.swift; sourceTree = "<group>"; };
 		51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BVerticalBlockNode.swift; sourceTree = "<group>"; };
@@ -55,7 +59,7 @@
 		8043C70F2CC3721B00AE8B4D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLShapeNode5Block.swift; sourceTree = "<group>"; };
-		80CA97462CDC83EF007AB840 /* download.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = download.mp3; path = ../../../../Downloads/download.mp3; sourceTree = "<group>"; };
+		80CA97462CDC83EF007AB840 /* download.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = download.mp3; sourceTree = "<group>"; };
 		9E35805E2CD1A407007ABB7D /* BGameContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameContext.swift; sourceTree = "<group>"; };
 		9E35805F2CD1A407007ABB7D /* BGameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameScene.swift; sourceTree = "<group>"; };
 		9E3580612CD1A407007ABB7D /* BGameInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameInfo.swift; sourceTree = "<group>"; };
@@ -152,6 +156,8 @@
 			isa = PBXGroup;
 			children = (
 				80CA97462CDC83EF007AB840 /* download.mp3 */,
+				5127EFFB2CDD408300FF8FC8 /* Rising_chime.mp3 */,
+				5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */,
 				9E3580652CD1A407007ABB7D /* BBoxNode.swift */,
 				9E3580692CD1A407007ABB7D /* BSingleBlock.swift */,
 				5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */,
@@ -276,8 +282,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				80CA97472CDC83EF007AB840 /* download.mp3 in Resources */,
+				5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */,
 				8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */,
 				8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */,
+				5127EFFC2CDD408400FF8FC8 /* Rising_chime.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,7 +456,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GY8R2NLRXH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -478,7 +486,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GY8R2NLRXH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
