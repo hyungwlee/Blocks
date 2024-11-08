@@ -23,6 +23,8 @@ class BGameScene: SKScene {
     var dependencies: Dependencies
     var gameMode: GameModeType
     
+    let initialScale: CGFloat = 0.9  // Set the initial scale to 0.9
+    
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
         self.gameContext = context
         self.dependencies = dependencies
@@ -55,6 +57,7 @@ class BGameScene: SKScene {
         }
         addChild(block)
     }
+    
     func createPowerupPlaceholders() {
         let placeholderSize = CGSize(width: 50, height: 50)
         let spacing: CGFloat = 20
@@ -120,8 +123,6 @@ class BGameScene: SKScene {
         }
     }
 
-
-    
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
@@ -177,8 +178,9 @@ class BGameScene: SKScene {
         let spacing: CGFloat = 10
         var totalWidth: CGFloat = 0
         
+        // Adjust block width calculations to include initialScale
         for block in newBlocks {
-            let blockWidth = CGFloat(block.gridWidth) * tileSize
+            let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
             totalWidth += blockWidth
         }
         let totalSpacing = spacing * CGFloat(newBlocks.count - 1)
@@ -187,10 +189,11 @@ class BGameScene: SKScene {
         let blockYPosition = size.height * 0.1
         
         for newBlock in newBlocks {
-            let blockWidth = CGFloat(newBlock.gridWidth) * tileSize
+            let blockWidth = CGFloat(newBlock.gridWidth) * tileSize * initialScale
             newBlock.position = CGPoint(x: currentXPosition, y: blockYPosition)
             newBlock.initialPosition = newBlock.position
             newBlock.gameScene = self
+            newBlock.setScale(initialScale) // Set initial smaller scale
             safeAddBlock(newBlock)
             boxNodes.append(newBlock)
             currentXPosition += blockWidth + spacing
@@ -230,80 +233,80 @@ class BGameScene: SKScene {
         return true
     }
     
-   func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-    let row = gridPosition.row
-    let col = gridPosition.col
-    
-    if isPlacementValid(for: block, at: row, col: col) {
-        var occupiedCells = 0
-        for (index, cell) in block.shape.enumerated() {
-            let gridRow = row + cell.row
-            let gridCol = col + cell.col
-            
-            // Create a cell visual node (SKShapeNode)
-            let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-            cellNode.fillColor = block.color  // Color for the block (optional)
-            
-            // Retrieve the asset for the specific cell
-            let asset = block.assets[index].name  // Asset from the block's predefined assets
-            
-            // Add a texture (asset) to the cell node for more detailed visuals
-            let assetTexture = SKTexture(imageNamed: asset)  // Load texture from the asset name
-            let spriteNode = SKSpriteNode(texture: assetTexture)  // Create sprite node with texture
-            spriteNode.size = CGSize(width: tileSize, height: tileSize)  // Set the size of the sprite
-            
-            // Add sprite as a child to the shape node
-            cellNode.addChild(spriteNode)
-            
-            // Style the shape node (optional)
-            cellNode.strokeColor = .darkGray
-            cellNode.lineWidth = 2.0
-            
-            // Calculate the correct position on the grid
-            let gridOrigin = CGPoint(
-                x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                y: (size.height - CGFloat(gridSize) * tileSize) / 2
-            )
-            let cellPosition = CGPoint(
-                x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
-                y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
-            )
-            cellNode.position = cellPosition
-            
-            // Add the visual cell node directly to the scene
-            addChild(cellNode)
-            setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-            occupiedCells += 1  // Count each occupied cell
-        }
+    func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+        let row = gridPosition.row
+        let col = gridPosition.col
         
-        // Update the score based on occupied cells
-        score += occupiedCells
-        updateScoreLabel()
-        
-        // Remove the block node from the scene (but keep the cells in the scene)
-        if let index = boxNodes.firstIndex(of: block) {
-            boxNodes.remove(at: index)
-        }
-        block.removeFromParent()  // This only removes the block, not its visual parts
+        if isPlacementValid(for: block, at: row, col: col) {
+            var occupiedCells = 0
+            for (index, cell) in block.shape.enumerated() {
+                let gridRow = row + cell.row
+                let gridCol = col + cell.col
+                
+                // Create a cell visual node (SKShapeNode)
+                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+                cellNode.fillColor = block.color  // Color for the block (optional)
+                
+                // Retrieve the asset for the specific cell
+                let asset = block.assets[index].name  // Asset from the block's predefined assets
+                
+                // Add a texture (asset) to the cell node for more detailed visuals
+                let assetTexture = SKTexture(imageNamed: asset)  // Load texture from the asset name
+                let spriteNode = SKSpriteNode(texture: assetTexture)  // Create sprite node with texture
+                spriteNode.size = CGSize(width: tileSize, height: tileSize)  // Set the size of the sprite
+                
+                // Add sprite as a child to the shape node
+                cellNode.addChild(spriteNode)
+                
+                // Style the shape node (optional)
+                cellNode.strokeColor = .darkGray
+                cellNode.lineWidth = 2.0
+                
+                // Calculate the correct position on the grid
+                let gridOrigin = CGPoint(
+                    x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                    y: (size.height - CGFloat(gridSize) * tileSize) / 2
+                )
+                let cellPosition = CGPoint(
+                    x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                    y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+                )
+                cellNode.position = cellPosition
+                
+                // Add the visual cell node directly to the scene
+                addChild(cellNode)
+                setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
+                occupiedCells += 1  // Count each occupied cell
+            }
+            
+            // Update the score based on occupied cells
+            score += occupiedCells
+            updateScoreLabel()
+            
+            // Remove the block node from the scene (but keep the cells in the scene)
+            if let index = boxNodes.firstIndex(of: block) {
+                boxNodes.remove(at: index)
+            }
+            block.removeFromParent()  // This only removes the block, not its visual parts
 
-        // Check if any lines are completed and clear them
-        checkForCompletedLines()
-        
-        // Spawn new blocks or end the game if no moves are possible
-        if boxNodes.isEmpty {
-            spawnNewBlocks()
-        } else if !checkForPossibleMoves(for: boxNodes) {
-            showGameOverScreen()
-        }
-        print("Playing drop sound")
-        run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
+            // Check if any lines are completed and clear them
+            checkForCompletedLines()
+            
+            // Spawn new blocks or end the game if no moves are possible
+            if boxNodes.isEmpty {
+                spawnNewBlocks()
+            } else if !checkForPossibleMoves(for: boxNodes) {
+                showGameOverScreen()
+            }
+            print("Playing drop sound")
+            run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
 
-    } else {
-        block.position = block.initialPosition  // Reset the block if placement is invalid
+        } else {
+            block.position = block.initialPosition  // Reset the block if placement is invalid
+            block.run(SKAction.scale(to: initialScale, duration: 0.1))  // Scale back to initial scale
+        }
     }
-}
 
-    
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() {
         for row in 0..<gridSize {
@@ -326,57 +329,55 @@ class BGameScene: SKScene {
         }
     }
     
-  func clearRow(_ row: Int) {
-    for col in 0..<gridSize {
-        if let cellNode = grid[row][col] {
-            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
-            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
-            let removeAction = SKAction.run { cellNode.removeFromParent() }
+    func clearRow(_ row: Int) {
+        for col in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+                let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+                let removeAction = SKAction.run { cellNode.removeFromParent() }
 
-            // Create a sequence of actions: fade out, scale down, then remove from parent
-            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
-            
-            // Run the sequence and set the grid cell to nil after the animation
-            cellNode.run(clearSequence)
-            grid[row][col] = nil
-            
-            // Increment score with each cell removed
-            score += 1
+                // Create a sequence of actions: fade out, scale down, then remove from parent
+                let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+                
+                // Run the sequence and set the grid cell to nil after the animation
+                cellNode.run(clearSequence)
+                grid[row][col] = nil
+                
+                // Increment score with each cell removed
+                score += 1
+            }
         }
+        
+        updateScoreLabel()
+
+        // Play sound after clearing the row
+        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
     }
-    
-    updateScoreLabel()
 
-    // Play sound after clearing the row
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-}
+    func clearColumn(_ col: Int) {
+        for row in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+                let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+                let removeAction = SKAction.run { cellNode.removeFromParent() }
 
-func clearColumn(_ col: Int) {
-    for row in 0..<gridSize {
-        if let cellNode = grid[row][col] {
-            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
-            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
-            let removeAction = SKAction.run { cellNode.removeFromParent() }
-
-            // Create a sequence of actions: fade out, scale down, then remove from parent
-            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
-            
-            // Run the sequence and set the grid cell to nil after the animation
-            cellNode.run(clearSequence)
-            grid[row][col] = nil
-            
-            // Increment score with each cell removed
-            score += 1
+                // Create a sequence of actions: fade out, scale down, then remove from parent
+                let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+                
+                // Run the sequence and set the grid cell to nil after the animation
+                cellNode.run(clearSequence)
+                grid[row][col] = nil
+                
+                // Increment score with each cell removed
+                score += 1
+            }
         }
+        
+        updateScoreLabel()
+
+        // Play sound after clearing the column
+        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
     }
-    
-    updateScoreLabel()
-
-    // Play sound after clearing the column
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-}
-
-
     
     func showGameOverScreen() {
         isGameOver = true
@@ -429,105 +430,98 @@ func clearColumn(_ col: Int) {
         }
     }
     
-    // In touchesBegan, set the initial touch position
-   // Detect when the user touches a block and increase its size
+    // MARK: - Touch Handling
 
-// Detect when the user touches a block and increase its size
-override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-    guard let touch = touches.first else { return }
-    
-    let location = touch.location(in: self)
-    let nodeTapped = atPoint(location)
-    
-    if isGameOver {
-        if nodeTapped.name == "restartLabel" {
-            restartGame()
+    // Detect when the user touches a block
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        
+        let location = touch.location(in: self)
+        let nodeTapped = atPoint(location)
+        
+        if isGameOver {
+            if nodeTapped.name == "restartLabel" {
+                restartGame()
+            }
+            return
         }
-        return
+        
+        // Find the BBoxNode from the touched node
+        if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
+            currentlyDraggedNode = boxNode
+        } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
+            currentlyDraggedNode = boxNode
+        } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
+            currentlyDraggedNode = boxNode
+        } else {
+            currentlyDraggedNode = nil
+        }
+        
+        // No scaling action here in touchesBegan
+        // Add an offset between the touch point and the block's position when dragging
+        if let node = currentlyDraggedNode {
+            let touchLocation = touch.location(in: self)
+            let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
+            let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
+            node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+        }
     }
-    
-    // Find the BBoxNode from the touched node
-    if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
-        currentlyDraggedNode = boxNode
-    } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
-        currentlyDraggedNode = boxNode
-    } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
-        currentlyDraggedNode = boxNode
-    } else {
-        currentlyDraggedNode = nil
-    }
-    
-    // Increase the size of the block when it's selected for dragging
-    currentlyDraggedNode?.run(SKAction.scale(to: 1.2, duration: 0.1))
-    
-    // Add an offset between the touch point and the block's position when dragging or just touched
-    if let node = currentlyDraggedNode {
+
+    // Update the position of the dragged block as it follows the touch, with offset
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+        
         let touchLocation = touch.location(in: self)
         
-        // Calculate offset to move the block away from the finger
-        let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
-        let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
+        // Scale up the block if not already scaled to 1.0
+        if node.xScale < 1.0 {
+            node.run(SKAction.scale(to: 1.0, duration: 0.1))
+        }
         
-        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
-    }
-}
-
-// Update the position of the dragged block as it follows the touch, with offset
-override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-    guard let touch = touches.first, let node = currentlyDraggedNode else { return }
-    
-    let touchLocation = touch.location(in: self)
-    
-    // Get the offset stored in the userData and apply it
-    if let offsetX = node.userData?["offsetX"] as? CGFloat,
-       let offsetY = node.userData?["offsetY"] as? CGFloat {
-        
-        let newPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
-        
-        // Check if the new position will collide with placed blocks
-        if !isCollisionWithPlacedBlocks(at: newPosition) {
-            // Update the position only if no collision is detected
+        // Get the offset stored in the userData and apply it
+        if let offsetX = node.userData?["offsetX"] as? CGFloat,
+           let offsetY = node.userData?["offsetY"] as? CGFloat {
+            
+            let newPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
+            
+            // Update the position
             node.updatePosition(to: newPosition)
         }
     }
-}
 
-// Check if the dragged block is colliding with any placed blocks
-func isCollisionWithPlacedBlocks(at position: CGPoint) -> Bool {
-    for placedNode in placedBlocks {
-        // Assuming placedBlocks is an array of nodes that are already placed on the grid
-        if placedNode.frame.intersects(CGRect(origin: position, size: placedNode.size)) {
-            // If the new position intersects with any placed block, return true
-            return true
+    // Handle the block placement and reset its size when placed on the grid
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let node = currentlyDraggedNode else { return }
+        
+        // Determine the grid position for placement
+        let gridPos = node.gridPosition()
+        
+        // Attempt to place the block at the calculated grid position
+        if let gameScene = node.gameScene {
+            if gameScene.isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
+                gameScene.placeBlock(node, at: gridPos)
+            } else {
+                // If the placement is invalid, return the block to its original position
+                node.position = node.initialPosition
+                node.run(SKAction.scale(to: initialScale, duration: 0.1))  // Scale back to initial scale
+            }
         }
+        
+        // Remove the offset data
+        node.userData = nil
+        
+        currentlyDraggedNode = nil
     }
-    return false
-}
 
-// Handle the block placement and reset its size when placed on the grid
-override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-    guard let node = currentlyDraggedNode else { return }
-    
-    // Determine the grid position for placement
-    let gridPos = node.gridPosition()
-    
-    // Attempt to place the block at the calculated grid position
-    if let gameScene = node.gameScene {
-        if gameScene.isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
-            gameScene.placeBlock(node, at: gridPos)
-        } else {
-            // If the placement is invalid, return the block to its original position
-            node.position = node.initialPosition
+    // Check if the dragged block is colliding with any placed blocks
+    func isCollisionWithPlacedBlocks(at position: CGPoint) -> Bool {
+        for placedNode in placedBlocks {
+            // Assuming placedBlocks is an array of nodes that are already placed on the grid
+            if placedNode.frame.intersects(CGRect(origin: position, size: placedNode.size)) {
+                // If the new position intersects with any placed block, return true
+                return true
+            }
         }
+        return false
     }
-    
-    // Return the block to its original size after placement
-    node.run(SKAction.scale(to: 1.0, duration: 0.1))
-    
-    // Remove the offset data
-    node.userData = nil
-    
-    currentlyDraggedNode = nil
-}
-
 }
