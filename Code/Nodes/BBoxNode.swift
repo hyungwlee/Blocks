@@ -41,8 +41,6 @@ class BBoxNode: SKNode {
 
     // Method to set up the shape and create the visual representation
     func setupShape(_ shape: [(row: Int, col: Int)], assets: [(name: String, position: (row: Int, col: Int))]) {
-        print("Shape received:", shape) // Check if shape is correctly received
-        print("Assets received:", assets) // Check if assets are correctly received
         self.shape = shape
         self.assets = assets
         createVisualRepresentation()

@@ -10,7 +10,7 @@
 		5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */; };
 		5156DB5E2CD6DC0B00718AD9 /* BSquareBlock2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */; };
 		5187D3862CD813FF00787D80 /* B3x3SquareNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5187D3852CD813FF00787D80 /* B3x3SquareNode.swift */; };
-		51A81AC52CDECC37002406E2 /* Muted_“Falling”_Soun.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 51A81AC12CDECC37002406E2 /* Muted_“Falling”_Soun.mp3 */; };
+		51A81AC52CDECC37002406E2 /* Muted.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 51A81AC12CDECC37002406E2 /* Muted.mp3 */; };
 		51A81AC62CDECC37002406E2 /* Soft_Pop_or_Click.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 51A81AC32CDECC37002406E2 /* Soft_Pop_or_Click.mp3 */; };
 		51B2BAB42CD82A4000BB4E30 /* BVerticalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */; };
 		51B2BAB62CD82AE300BB4E30 /* BHorizontalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB52CD82AE300BB4E30 /* BHorizontalBlockNode.swift */; };
@@ -47,7 +47,7 @@
 		5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Risingwav.mp3; sourceTree = "<group>"; };
 		5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BSquareBlock2x2.swift; sourceTree = "<group>"; };
 		5187D3852CD813FF00787D80 /* B3x3SquareNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = B3x3SquareNode.swift; sourceTree = "<group>"; };
-		51A81AC12CDECC37002406E2 /* Muted_“Falling”_Soun.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "Muted_“Falling”_Soun.mp3"; sourceTree = "<group>"; };
+		51A81AC12CDECC37002406E2 /* Muted.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Muted.mp3; sourceTree = "<group>"; };
 		51A81AC32CDECC37002406E2 /* Soft_Pop_or_Click.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Soft_Pop_or_Click.mp3; sourceTree = "<group>"; };
 		51B2BAB32CD82A4000BB4E30 /* BVerticalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BVerticalBlockNode.swift; sourceTree = "<group>"; };
 		51B2BAB52CD82AE300BB4E30 /* BHorizontalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BHorizontalBlockNode.swift; sourceTree = "<group>"; };
@@ -159,7 +159,7 @@
 		9E35806D2CD1A407007ABB7D /* Nodes */ = {
 			isa = PBXGroup;
 			children = (
-				51A81AC12CDECC37002406E2 /* Muted_“Falling”_Soun.mp3 */,
+				51A81AC12CDECC37002406E2 /* Muted.mp3 */,
 				51A81AC32CDECC37002406E2 /* Soft_Pop_or_Click.mp3 */,
 				51E0B0262CDF11BE0007EE98 /* New.mp3 */,
 				80CA97462CDC83EF007AB840 /* download.mp3 */,
@@ -289,7 +289,7 @@
 			files = (
 				80CA97472CDC83EF007AB840 /* download.mp3 in Resources */,
 				5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */,
-				51A81AC52CDECC37002406E2 /* Muted_“Falling”_Soun.mp3 in Resources */,
+				51A81AC52CDECC37002406E2 /* Muted.mp3 in Resources */,
 				51A81AC62CDECC37002406E2 /* Soft_Pop_or_Click.mp3 in Resources */,
 				8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */,
 				8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */,
@@ -464,7 +464,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GY8R2NLRXH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -494,7 +494,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GY8R2NLRXH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

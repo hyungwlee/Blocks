@@ -23,6 +23,7 @@ class BGameScene: SKScene {
     var backgroundMusic: SKAudioNode?
 var gameOverSound: SKAudioNode?
 var blockSelectionSound: SKAudioNode?
+    var audioPlayer: AVAudioPlayer?
 
     
     var dependencies: Dependencies
@@ -129,19 +130,11 @@ override func didMove(to view: SKView) {
     } else {
         print("Error: Background music file not found.")
     }
-
-    // Initialize the block drop sound
-    if let url = Bundle.main.url(forResource: "download", withExtension: "mp3") {
-        dropSound = SKAudioNode(url: url) // Set the block drop sound from the file URL
-        dropSound?.autoplayLooped = false // Ensure the sound doesn't loop
-        if let dropSound = dropSound {
-            addChild(dropSound) // Add the sound node to the scene
-            dropSound.run(SKAction.play()) // Play the drop sound
-        }
-    } else {
-        print("Error: Block drop sound file not found.")
-    }
+    
+    // Do not play block drop sound automatically here
+    // We'll handle it separately when a block is dropped
 }
+
 
 
     func createGrid() {
@@ -319,7 +312,7 @@ override func didMove(to view: SKView) {
             } else if !checkForPossibleMoves(for: boxNodes) {
                 showGameOverScreen()
             }
-            print("Playing drop sound")
+            
             run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
 
         } else {
@@ -404,14 +397,13 @@ func showGameOverScreen() {
     isGameOver = true
     
     // Play Game Over Sound
-    if let url = Bundle.main.url(forResource: "Muted_Falling_Soun", withExtension: "mp3") {
-        gameOverSound = SKAudioNode(url: url) // Set the game over sound from the file URL
-        if let gameOverSound = gameOverSound {
-            addChild(gameOverSound) // Add to the scene
-            gameOverSound.run(SKAction.play()) // Play the sound
-        }
+    if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
+        // Play sound using SKAction instead of SKAudioNode
+        let playSoundAction = SKAction.playSoundFileNamed("Muted.mp3", waitForCompletion: false)
+        self.run(playSoundAction)
+       
     } else {
-        print("Error: Game over sound file not found.")
+       
     }
 
     // Stop and remove background music when the game ends
@@ -449,6 +441,7 @@ func showGameOverScreen() {
     restartLabel.zPosition = 1
     addChild(restartLabel)
 }
+
 
 
 func restartGame() {
@@ -494,7 +487,9 @@ func restartGame() {
     // MARK: - Touch Handling
 
     // Detect when the user touches a block
- override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+
+override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first else { return }
     
     let location = touch.location(in: self)
@@ -518,12 +513,21 @@ func restartGame() {
         currentlyDraggedNode = nil
     }
     
-    // Play block selection sound when a block is selected
+    // Play block selection sound when a block is selected, only once
     if let node = currentlyDraggedNode {
-        blockSelectionSound = SKAudioNode(fileNamed: "Soft_Pop_or_Click.mp3") // Your block selection sound file
-        if let blockSelectionSound = blockSelectionSound {
-            addChild(blockSelectionSound) // Add to the scene
-            blockSelectionSound.run(SKAction.play()) // Play the sound
+        if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
+            print("Sound file found at URL: \(url)") // Debugging statement to check URL
+            
+            do {
+                // Initialize the audio player with the sound file URL
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play() // Play the sound
+            } catch {
+                print("Error: Unable to play sound - \(error)")
+            }
+        } else {
+            print("Error: Audio file not found.")
         }
         
         // Increase the size of the block when it's selected for dragging
@@ -539,6 +543,8 @@ func restartGame() {
         node.userData = ["offsetX": offsetX, "offsetY": offsetY]
     }
 }
+
+
 
 
     // Update the position of the dragged block as it follows the touch, with offset
