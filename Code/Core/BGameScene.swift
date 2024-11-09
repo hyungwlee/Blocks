@@ -9,7 +9,7 @@ import SpriteKit
 import AVFoundation
 
 class BGameScene: SKScene {
-    let gridSize = 10
+    let gridSize = 8
     let tileSize: CGFloat = 40
     var score = 0
     var grid: [[SKShapeNode?]] = []
@@ -527,7 +527,7 @@ func restartGame() {
         }
         
         // Increase the size of the block when it's selected for dragging
-        node.run(SKAction.scale(to: 1.2, duration: 0.1))
+        node.run(SKAction.scale(to: 1.0, duration: 0.1))
         
         // Add an offset between the touch point and the block's position when dragging or just touched
         let touchLocation = touch.location(in: self)

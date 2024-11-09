@@ -19,6 +19,9 @@ class BBoxNode: SKNode {
     weak var gameScene: BGameScene?
     var initialPosition: CGPoint = .zero
 
+    
+    
+
     // New property to define the shape of the block
     var shape: [(row: Int, col: Int)] = []
     var assets: [(name: String, position: (row: Int, col: Int))] = [] // Assets associated with the block
