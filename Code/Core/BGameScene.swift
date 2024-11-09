@@ -20,6 +20,11 @@ class BGameScene: SKScene {
     var placedBlocks: [SKSpriteNode] = []
     var dropSound: SKAudioNode?
     
+    var backgroundMusic: SKAudioNode?
+var gameOverSound: SKAudioNode?
+var blockSelectionSound: SKAudioNode?
+
+    
     var dependencies: Dependencies
     var gameMode: GameModeType
     
@@ -107,21 +112,37 @@ class BGameScene: SKScene {
         BHorizontalBlockNode1x4.self,
     ]
     
-    override func didMove(to view: SKView) {
-        backgroundColor = .black
-        createGrid()
-        addScoreLabel()
-        createPowerupPlaceholders()
-        spawnNewBlocks()
-        
-        // Initialize the audio node with the sound file's name
-        dropSound = SKAudioNode(fileNamed: "download.mp3")
-        dropSound?.autoplayLooped = false  // Ensure the sound doesn't loop
-        if let dropSound = dropSound {
-            addChild(dropSound)  // Add the sound node to the scene
-            dropSound.run(SKAction.play())  // Play the sound immediately to test it
+override func didMove(to view: SKView) {
+    backgroundColor = .black
+    createGrid()
+    addScoreLabel()
+    createPowerupPlaceholders()
+    spawnNewBlocks()
+
+    // Play background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url) // Set the background music from the file URL
+        if let backgroundMusic = backgroundMusic {
+            backgroundMusic.autoplayLooped = true // Loop background music
+            addChild(backgroundMusic) // Add the audio node to the scene
         }
+    } else {
+        print("Error: Background music file not found.")
     }
+
+    // Initialize the block drop sound
+    if let url = Bundle.main.url(forResource: "download", withExtension: "mp3") {
+        dropSound = SKAudioNode(url: url) // Set the block drop sound from the file URL
+        dropSound?.autoplayLooped = false // Ensure the sound doesn't loop
+        if let dropSound = dropSound {
+            addChild(dropSound) // Add the sound node to the scene
+            dropSound.run(SKAction.play()) // Play the drop sound
+        }
+    } else {
+        print("Error: Block drop sound file not found.")
+    }
+}
+
 
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
@@ -379,50 +400,90 @@ class BGameScene: SKScene {
         run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
     }
     
-    func showGameOverScreen() {
-        isGameOver = true
-        
-        let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
-        overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        addChild(overlay)
-        
-        let gameOverLabel = SKLabelNode(text: "Game Over 😢")
-        gameOverLabel.fontSize = 48
-        gameOverLabel.fontColor = .white
-        gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
-        gameOverLabel.zPosition = 1
-        addChild(gameOverLabel)
-        
-        let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
-        finalScoreLabel.fontSize = 36
-        finalScoreLabel.fontColor = .white
-        finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        finalScoreLabel.zPosition = 1
-        addChild(finalScoreLabel)
-        
-        let restartLabel = SKLabelNode(text: "Tap to Restart")
-        restartLabel.fontSize = 24
-        restartLabel.fontColor = .yellow
-        restartLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
-        restartLabel.name = "restartLabel"
-        restartLabel.zPosition = 1
-        addChild(restartLabel)
-    }
+func showGameOverScreen() {
+    isGameOver = true
     
-    func restartGame() {
-        score = 0
-        updateScoreLabel()
-        
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        removeAllChildren()
-        
-        isGameOver = false
-        createGrid()
-        addScoreLabel()
-        spawnNewBlocks()
-        createPowerupPlaceholders()
+    // Play Game Over Sound
+    if let url = Bundle.main.url(forResource: "Muted_Falling_Soun", withExtension: "mp3") {
+        gameOverSound = SKAudioNode(url: url) // Set the game over sound from the file URL
+        if let gameOverSound = gameOverSound {
+            addChild(gameOverSound) // Add to the scene
+            gameOverSound.run(SKAction.play()) // Play the sound
+        }
+    } else {
+        print("Error: Game over sound file not found.")
     }
+
+    // Stop and remove background music when the game ends
+    backgroundMusic?.removeFromParent() // Completely remove the background music node
+    backgroundMusic = nil // Set it to nil to make sure it gets reinitialized when restarting
+    
+    // Overlay to show game over screen
+    let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
+    overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
+    overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    addChild(overlay)
+    
+    // Game Over Label
+    let gameOverLabel = SKLabelNode(text: "Game Over 😢")
+    gameOverLabel.fontSize = 48
+    gameOverLabel.fontColor = .white
+    gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+    gameOverLabel.zPosition = 1
+    addChild(gameOverLabel)
+    
+    // Final Score Label
+    let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
+    finalScoreLabel.fontSize = 36
+    finalScoreLabel.fontColor = .white
+    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    finalScoreLabel.zPosition = 1
+    addChild(finalScoreLabel)
+    
+    // Restart Label
+    let restartLabel = SKLabelNode(text: "Tap to Restart")
+    restartLabel.fontSize = 24
+    restartLabel.fontColor = .yellow
+    restartLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
+    restartLabel.name = "restartLabel"
+    restartLabel.zPosition = 1
+    addChild(restartLabel)
+}
+
+
+func restartGame() {
+    print("Restarting game...")  // Debugging line
+    score = 0
+    updateScoreLabel()
+    
+    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+    removeAllChildren() // Remove all existing nodes from the scene
+    
+    isGameOver = false
+    createGrid()
+    addScoreLabel()
+    spawnNewBlocks()
+    createPowerupPlaceholders()
+    
+    // Remove existing background music if it exists
+    backgroundMusic?.removeFromParent()
+    backgroundMusic = nil
+    
+    // Restart background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url) // Create a new SKAudioNode with the correct file
+        if let backgroundMusic = backgroundMusic {
+            print("Background music found and will play.")  // Debugging line
+            backgroundMusic.autoplayLooped = true // Loop background music
+            addChild(backgroundMusic) // Add the audio node to the scene
+        }
+    } else {
+        print("Error: Background music file not found.")
+    }
+}
+
+
+
     
     func updateScoreLabel() {
         if let scoreLabel = childNode(withName: "scoreLabel") as? SKLabelNode {
@@ -433,39 +494,52 @@ class BGameScene: SKScene {
     // MARK: - Touch Handling
 
     // Detect when the user touches a block
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        
-        let location = touch.location(in: self)
-        let nodeTapped = atPoint(location)
-        
-        if isGameOver {
-            if nodeTapped.name == "restartLabel" {
-                restartGame()
-            }
-            return
+ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+    
+    let location = touch.location(in: self)
+    let nodeTapped = atPoint(location)
+    
+    if isGameOver {
+        if nodeTapped.name == "restartLabel" {
+            restartGame()
         }
-        
-        // Find the BBoxNode from the touched node
-        if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else {
-            currentlyDraggedNode = nil
-        }
-        
-        // No scaling action here in touchesBegan
-        // Add an offset between the touch point and the block's position when dragging
-        if let node = currentlyDraggedNode {
-            let touchLocation = touch.location(in: self)
-            let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
-            let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
-            node.userData = ["offsetX": offsetX, "offsetY": offsetY]
-        }
+        return
     }
+    
+    // Find the BBoxNode from the touched node
+    if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else {
+        currentlyDraggedNode = nil
+    }
+    
+    // Play block selection sound when a block is selected
+    if let node = currentlyDraggedNode {
+        blockSelectionSound = SKAudioNode(fileNamed: "Soft_Pop_or_Click.mp3") // Your block selection sound file
+        if let blockSelectionSound = blockSelectionSound {
+            addChild(blockSelectionSound) // Add to the scene
+            blockSelectionSound.run(SKAction.play()) // Play the sound
+        }
+        
+        // Increase the size of the block when it's selected for dragging
+        node.run(SKAction.scale(to: 1.2, duration: 0.1))
+        
+        // Add an offset between the touch point and the block's position when dragging or just touched
+        let touchLocation = touch.location(in: self)
+        
+        // Calculate offset to move the block away from the finger
+        let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
+        let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
+        
+        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+    }
+}
+
 
     // Update the position of the dragged block as it follows the touch, with offset
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
