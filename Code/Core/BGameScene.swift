@@ -208,29 +208,8 @@ class BGameScene: SKScene {
         boxNodes.removeAll()
 
         let newBlocks = generateRandomShapes(count: 3)
-        let spacing: CGFloat = 10
-        var totalWidth: CGFloat = 0
-
-        // Adjust block width calculations to include initialScale
-        for block in newBlocks {
-            let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
-            totalWidth += blockWidth
-        }
-        let totalSpacing = spacing * CGFloat(newBlocks.count - 1)
-        let startXPosition = (size.width - (totalWidth + totalSpacing)) / 2.0
-        var currentXPosition = startXPosition
-        let blockYPosition = size.height * 0.1
-
-        for newBlock in newBlocks {
-            let blockWidth = CGFloat(newBlock.gridWidth) * tileSize * initialScale
-            newBlock.position = CGPoint(x: currentXPosition, y: blockYPosition)
-            newBlock.initialPosition = newBlock.position
-            newBlock.gameScene = self
-            newBlock.setScale(initialScale) // Set initial smaller scale
-            safeAddBlock(newBlock)
-            boxNodes.append(newBlock)
-            currentXPosition += blockWidth + spacing
-        }
+        boxNodes = newBlocks
+        layoutSpawnedBlocks()
 
         if !checkForPossibleMoves(for: newBlocks) {
             showGameOverScreen()
@@ -248,6 +227,31 @@ class BGameScene: SKScene {
             shapes.append(newBlock)
         }
         return shapes
+    }
+
+    func layoutSpawnedBlocks() {
+        let spacing: CGFloat = 10
+        var totalWidth: CGFloat = 0
+
+        // Adjust block width calculations to include initialScale
+        for block in boxNodes {
+            let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
+            totalWidth += blockWidth
+        }
+        let totalSpacing = spacing * CGFloat(boxNodes.count - 1)
+        let startXPosition = (size.width - (totalWidth + totalSpacing)) / 2.0
+        var currentXPosition = startXPosition
+        let blockYPosition = size.height * 0.1
+
+        for block in boxNodes {
+            let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
+            block.position = CGPoint(x: currentXPosition, y: blockYPosition)
+            block.initialPosition = block.position
+            block.gameScene = self
+            block.setScale(initialScale) // Set initial smaller scale
+            safeAddBlock(block)
+            currentXPosition += blockWidth + spacing
+        }
     }
 
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
@@ -339,6 +343,9 @@ class BGameScene: SKScene {
                 boxNodes.remove(at: index)
             }
             block.removeFromParent()  // This only removes the block, not its visual parts
+
+            // Re-layout the remaining spawned blocks
+            layoutSpawnedBlocks()
 
             // Check if any lines are completed and clear them
             checkForCompletedLines()
@@ -679,25 +686,12 @@ class BGameScene: SKScene {
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
             placedBlocks.remove(at: index)
         }
-        // Optionally, increment the score
-        score += placedBlock.cellNodes.count
-        updateScoreLabel()
+        // Do not change the score when deleting with power-up
+        // score += placedBlock.cellNodes.count // Commented out
+        // updateScoreLabel() // Not needed
     }
 
     func deleteBlock(_ blockNode: BBoxNode) {
-        // Get all occupied cells for the block
-        let occupiedCells = blockNode.occupiedCells()
-
-        for cell in occupiedCells {
-            let row = cell.row
-            let col = cell.col
-            if row >= 0, row < gridSize, col >= 0, col < gridSize {
-                // Remove the node from the grid and scene
-                grid[row][col]?.removeFromParent()
-                grid[row][col] = nil
-            }
-        }
-
         // Remove the block node from the scene
         blockNode.removeFromParent()
 
@@ -706,9 +700,19 @@ class BGameScene: SKScene {
             boxNodes.remove(at: index)
         }
 
-        // Optionally, increment the score for removing the block
-        score += occupiedCells.count
-        updateScoreLabel()
+        // Generate a new block to replace the deleted one
+        let newBlock = generateRandomShapes(count: 1).first!
+        newBlock.gameScene = self
+        newBlock.setScale(initialScale)
+        boxNodes.append(newBlock)
+        safeAddBlock(newBlock)
+
+        // Update the positions of the spawning blocks
+        layoutSpawnedBlocks()
+
+        // Do not change the score when deleting with power-up
+        // score += occupiedCells.count // Commented out
+        // updateScoreLabel() // Not needed
     }
 
     // Update the position of the dragged block as it follows the touch, with offset
