@@ -28,7 +28,7 @@ class BRotatedLBlock2x2: BBoxNode {
         "Group 16316": .blue,
         "Group 16363-1": .yellow,
         "Group 16315": .green,
-        "Group 16362" : .orange
+        "Group 16362": .orange
     ]
     
     private let selectedAsset = "Group 16362"  // Choose the asset you want
@@ -36,10 +36,10 @@ class BRotatedLBlock2x2: BBoxNode {
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .orange) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
         
-        // Define the shape cells for a 90-degree clockwise rotation of the L-shape
+        // Define the flipped shape cells to mirror the L-shape horizontally
         let shapeCells = [
             (row: 0, col: 0),
-            (row: 0, col: 1),
+            (row: 0, col: -1),
             (row: 1, col: 0)
         ]
         
@@ -48,10 +48,10 @@ class BRotatedLBlock2x2: BBoxNode {
         
         self.color = blockColor
         
-        // Define assets at specific positions for the rotated shape
+        // Define assets at specific positions for the flipped shape
         let assets = [
             (name: selectedAsset, position: (row: 0, col: 0)),
-            (name: selectedAsset, position: (row: 0, col: 1)),
+            (name: selectedAsset, position: (row: 0, col: -1)),
             (name: selectedAsset, position: (row: 1, col: 0))
         ]
         
