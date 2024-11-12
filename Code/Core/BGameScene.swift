@@ -18,7 +18,10 @@ class BGameScene: SKScene {
     var gameContext: BGameContext
     var isGameOver: Bool = false
     var placedBlocks: [PlacedBlock] = []
-    var isPowerupActive = false
+
+    // Power-up state variables
+    var isDeletePowerupActive = false
+    var isRotatePowerupActive = false
 
     var dropSound: SKAudioNode?
     var backgroundMusic: SKAudioNode?
@@ -76,37 +79,84 @@ class BGameScene: SKScene {
             placeholder.strokeColor = .white
             placeholder.lineWidth = 2.0
             placeholder.fillColor = .clear // Set fill color to clear or any color you prefer
+            placeholder.name = "powerupPlaceholder\(i)"
 
             let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
             placeholder.position = CGPoint(x: xPosition, y: yPosition)
-            placeholder.name = "powerupPlaceholder\(i)"
             addChild(placeholder)
+
+            // Add the question icon initially
+            let questionIcon = SKSpriteNode(imageNamed: "question.png")
+            questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
+            questionIcon.position = CGPoint.zero // Center within the placeholder
+            questionIcon.name = "questionIcon\(i)"
+            placeholder.addChild(questionIcon)
         }
     }
 
-    func spawnPowerupQuestion() {
-        // Locate an available placeholder
+
+    func spawnPowerups() {
+        // Spawn both delete and rotate power-ups
+        spawnDeletePowerup()
+        spawnRotatePowerup()
+    }
+
+    func spawnDeletePowerup() {
         for i in 0..<4 {
-            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode, placeholder.children.isEmpty {
-                // Create the question power-up icon
-                let questionPowerup = SKSpriteNode(imageNamed: "question.png")
-                questionPowerup.size = CGSize(width: 40, height: 40) // Adjust size as needed
-                questionPowerup.position = CGPoint.zero
-                questionPowerup.name = "questionPowerup"
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
 
-                // Add a subtle glow or pulse effect
-                let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
-                let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
-                let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
-                let pulseEffect = SKAction.repeatForever(pulseSequence)
-                questionPowerup.run(pulseEffect)
+                    // Create the delete power-up icon
+                    let deletePowerup = SKSpriteNode(imageNamed: "delete.png")
+                    deletePowerup.size = CGSize(width: 40, height: 40)
+                    deletePowerup.position = CGPoint.zero
+                    deletePowerup.name = "deletePowerup"
 
-                // Add the power-up icon as a child of the placeholder
-                placeholder.addChild(questionPowerup)
-                break // Exit the loop after placing the power-up
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    deletePowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(deletePowerup)
+                    break
+                }
             }
         }
     }
+
+    func spawnRotatePowerup() {
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
+
+                    // Create the rotate power-up icon
+                    let rotatePowerup = SKSpriteNode(imageNamed: "swap.png")
+                    rotatePowerup.size = CGSize(width: 40, height: 40)
+                    rotatePowerup.position = CGPoint.zero
+                    rotatePowerup.name = "rotatePowerup"
+
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    rotatePowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(rotatePowerup)
+                    break
+                }
+            }
+        }
+    }
+
 
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
@@ -124,7 +174,7 @@ class BGameScene: SKScene {
     }
 
     private var availableBlockTypes: [BBoxNode.Type] = [
-       /* BSingleBlock.self,
+        BSingleBlock.self,
         BSquareBlock2x2.self,
         BSquareBlock3x3.self,
         BVerticalBlockNode1x2.self,
@@ -134,7 +184,7 @@ class BGameScene: SKScene {
         BVerticalBlockNode1x3.self,
         BHorizontalBlockNode1x3.self,
         BVerticalBlockNode1x4.self,
-        BHorizontalBlockNode1x4.self,*/
+        BHorizontalBlockNode1x4.self,
         BRotatedLShapeNode2x2.self,
         BRotatedLBlock2x2.self,
         BLShapeNode5Block.self,
@@ -214,12 +264,13 @@ class BGameScene: SKScene {
 
         let newBlocks = generateRandomShapes(count: 3)
         boxNodes = newBlocks
-        layoutSpawnedBlocks()
+        layoutSpawnedBlocks() // Only call here after new blocks are added
 
         if !checkForPossibleMoves(for: newBlocks) {
             showGameOverScreen()
         }
     }
+
 
     func generateRandomShapes(count: Int) -> [BBoxNode] {
         var shapes: [BBoxNode] = []
@@ -288,26 +339,17 @@ class BGameScene: SKScene {
                 let gridRow = row + cell.row
                 let gridCol = col + cell.col
 
-                // Create a cell visual node (SKShapeNode)
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-                cellNode.fillColor = block.color  // Color for the block (optional)
+                cellNode.fillColor = block.color
 
-                // Retrieve the asset for the specific cell
-                let asset = block.assets[index].name  // Asset from the block's predefined assets
-
-                // Add a texture (asset) to the cell node for more detailed visuals
-                let assetTexture = SKTexture(imageNamed: asset)  // Load texture from the asset name
-                let spriteNode = SKSpriteNode(texture: assetTexture)  // Create sprite node with texture
-                spriteNode.size = CGSize(width: tileSize, height: tileSize)  // Set the size of the sprite
-
-                // Add sprite as a child to the shape node
+                let asset = block.assets[index].name
+                let assetTexture = SKTexture(imageNamed: asset)
+                let spriteNode = SKSpriteNode(texture: assetTexture)
+                spriteNode.size = CGSize(width: tileSize, height: tileSize)
                 cellNode.addChild(spriteNode)
-
-                // Style the shape node (optional)
                 cellNode.strokeColor = .darkGray
                 cellNode.lineWidth = 2.0
 
-                // Calculate the correct position on the grid
                 let gridOrigin = CGPoint(
                     x: (size.width - CGFloat(gridSize) * tileSize) / 2,
                     y: (size.height - CGFloat(gridSize) * tileSize) / 2
@@ -318,63 +360,53 @@ class BGameScene: SKScene {
                 )
                 cellNode.position = cellPosition
 
-                // Add the visual cell node directly to the scene
                 addChild(cellNode)
                 setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-                occupiedCells += 1  // Count each occupied cell
+                occupiedCells += 1
 
-                // Collect cellNodes and their grid positions
                 cellNodes.append(cellNode)
                 gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
             }
 
-            // Create a PlacedBlock instance
             let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
 
-            // Store a reference to the placedBlock in each cellNode's userData
             for cellNode in cellNodes {
                 cellNode.userData = ["placedBlock": placedBlock]
             }
 
-            // Add the placedBlock to the array
             placedBlocks.append(placedBlock)
-
-            // Update the score based on occupied cells
             score += occupiedCells
             updateScoreLabel()
 
-            // Remove the block node from the scene (but keep the cells in the scene)
             if let index = boxNodes.firstIndex(of: block) {
                 boxNodes.remove(at: index)
             }
-            block.removeFromParent()  // This only removes the block, not its visual parts
+            block.removeFromParent()
 
-            // Re-layout the remaining spawned blocks
-            layoutSpawnedBlocks()
-
-            // Check if any lines are completed and clear them
             checkForCompletedLines()
 
-            // Spawn new blocks or end the game if no moves are possible
             if boxNodes.isEmpty {
-                spawnNewBlocks()
+                spawnNewBlocks()  // This will call layoutSpawnedBlocks
             } else if !checkForPossibleMoves(for: boxNodes) {
                 showGameOverScreen()
             }
 
             run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
-
         } else {
-            block.position = block.initialPosition  // Reset the block if placement is invalid
-            block.run(SKAction.scale(to: initialScale, duration: 0.1))  // Scale back to initial scale
+            block.position = block.initialPosition
+            block.run(SKAction.scale(to: initialScale, duration: 0.1))
         }
     }
 
+
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() {
+        var lineCleared = false
+
         for row in 0..<gridSize {
             if grid[row].allSatisfy({ $0 != nil }) {
                 clearRow(row)
+                lineCleared = true
             }
         }
 
@@ -388,7 +420,13 @@ class BGameScene: SKScene {
             }
             if isCompleted {
                 clearColumn(col)
+                lineCleared = true
             }
+        }
+
+        // If any line was cleared, spawn power-ups
+        if lineCleared {
+            spawnPowerups()
         }
     }
 
@@ -427,9 +465,6 @@ class BGameScene: SKScene {
         }
 
         updateScoreLabel()
-
-        // After clearing the row, spawn one power-up
-        spawnPowerupQuestion()
 
         // Play sound after clearing the row
         run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -470,9 +505,6 @@ class BGameScene: SKScene {
         }
 
         updateScoreLabel()
-
-        // After clearing the column, spawn one power-up
-        spawnPowerupQuestion()
 
         // Play sound after clearing the column
         run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -579,9 +611,9 @@ class BGameScene: SKScene {
             return
         }
 
-        // Check if the power-up icon is tapped
-        if nodeTapped.name == "questionPowerup" {
-            isPowerupActive = true
+        // Check if the delete power-up icon is tapped
+        if nodeTapped.name == "deletePowerup" {
+            isDeletePowerupActive = true
             nodeTapped.removeFromParent()  // Remove the power-up icon after activation
 
             // Visual indication of activation: flash background
@@ -598,30 +630,71 @@ class BGameScene: SKScene {
             return
         }
 
-        // If power-up is active, delete the selected block (entire PlacedBlock)
-        if isPowerupActive {
+        // Check if the rotate power-up icon is tapped
+        if nodeTapped.name == "rotatePowerup" {
+            isRotatePowerupActive.toggle()  // Toggle the rotate power-up state
+
+            // Visual indication of activation: change icon appearance
+            if let rotatePowerupIcon = nodeTapped as? SKSpriteNode {
+                if isRotatePowerupActive {
+                    rotatePowerupIcon.color = .yellow
+                    rotatePowerupIcon.colorBlendFactor = 0.5
+                } else {
+                    rotatePowerupIcon.colorBlendFactor = 0.0
+                }
+            } else if let parentNode = nodeTapped.parent as? SKSpriteNode, parentNode.name == "rotatePowerup" {
+                if isRotatePowerupActive {
+                    parentNode.color = .yellow
+                    parentNode.colorBlendFactor = 0.5
+                } else {
+                    parentNode.colorBlendFactor = 0.0
+                }
+            }
+
+            return
+        }
+
+        // If delete power-up is active, delete the selected block (entire PlacedBlock)
+        if isDeletePowerupActive {
             // Check if the tapped node is a cell node in the grid
             if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
                 deletePlacedBlock(placedBlock)
-                isPowerupActive = false
+                isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
                 return
             } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
                 deletePlacedBlock(placedBlock)
-                isPowerupActive = false
+                isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
                 return
             }
             // If the tapped node is a block in the spawning area (BBoxNode)
             else if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
                 deleteBlock(blockNode)
-                isPowerupActive = false  // Deactivate the power-up after use
+                isDeletePowerupActive = false  // Deactivate the power-up after use
                 performPowerupDeactivationEffect()
                 return
             } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
                 deleteBlock(blockNode)
-                isPowerupActive = false
+                isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
+                return
+            }
+        }
+
+        // If rotate power-up is active, rotate the tapped block
+        if isRotatePowerupActive {
+            if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
+                blockNode.rotateBlock()
+                performRotateEffect(on: blockNode)
+                return
+            } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
+                blockNode.rotateBlock()
+                performRotateEffect(on: blockNode)
+                return
+            } else if let blockNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(blockNode) {
+                blockNode.rotateBlock()
+                performRotateEffect(on: blockNode)
                 return
             }
         }
@@ -639,6 +712,14 @@ class BGameScene: SKScene {
 
         // Play block selection sound when a block is selected, only once
         if let node = currentlyDraggedNode {
+            // Cancel rotate power-up if it was active
+            isRotatePowerupActive = false
+
+            // Reset rotate power-up icon appearance
+            if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
+                rotatePowerupIcon.colorBlendFactor = 0.0
+            }
+
             if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
                 do {
                     // Initialize the audio player with the sound file URL
@@ -679,6 +760,23 @@ class BGameScene: SKScene {
         deactivateFlash.run(SKAction.sequence([fadeOut, remove]))
     }
 
+    func performRotateEffect(on blockNode: BBoxNode) {
+        let rotateAction = SKAction.rotate(byAngle: CGFloat.pi / 2, duration: 0.2)
+        blockNode.run(rotateAction)
+    }
+
+    func isDeletePowerupAvailable() -> Bool {
+        // Check if any delete power-up is still available in the placeholders
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                if placeholder.children.contains(where: { $0.name == "deletePowerup" }) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     func deletePlacedBlock(_ placedBlock: PlacedBlock) {
         // Remove all the cell nodes from the scene and grid
         for cellNode in placedBlock.cellNodes {
@@ -691,9 +789,14 @@ class BGameScene: SKScene {
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
             placedBlocks.remove(at: index)
         }
-        // Do not change the score when deleting with power-up
-        // score += placedBlock.cellNodes.count // Commented out
-        // updateScoreLabel() // Not needed
+        // Optionally, increment the score
+        score += placedBlock.cellNodes.count
+        updateScoreLabel()
+
+        // Check for game-over condition after deletion
+        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
+            showGameOverScreen()
+        }
     }
 
     func deleteBlock(_ blockNode: BBoxNode) {
@@ -715,10 +818,12 @@ class BGameScene: SKScene {
         // Update the positions of the spawning blocks
         layoutSpawnedBlocks()
 
-        // Do not change the score when deleting with power-up
-        // score += occupiedCells.count // Commented out
-        // updateScoreLabel() // Not needed
+        // Check for game-over condition after deletion
+        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
+            showGameOverScreen()
+        }
     }
+
 
     // Update the position of the dragged block as it follows the touch, with offset
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {

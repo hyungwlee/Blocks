@@ -25,6 +25,8 @@
 		51B31FBA2CE3088200C74417 /* BRotatedLShapeBlock3x3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B31FB92CE3088200C74417 /* BRotatedLShapeBlock3x3.swift */; };
 		51E0B0272CDF11BE0007EE98 /* New.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 51E0B0262CDF11BE0007EE98 /* New.mp3 */; };
 		80214D652CE1474600D6D44B /* question.png in Resources */ = {isa = PBXBuildFile; fileRef = 80214D642CE1474600D6D44B /* question.png */; };
+		80214D6B2CE31E3000D6D44B /* delete.png in Resources */ = {isa = PBXBuildFile; fileRef = 80214D6A2CE31E3000D6D44B /* delete.png */; };
+		80214D6F2CE3203B00D6D44B /* swap.png in Resources */ = {isa = PBXBuildFile; fileRef = 80214D6E2CE3203B00D6D44B /* swap.png */; };
 		8043C70C2CC3721A00AE8B4D /* BlocksApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8043C70B2CC3721A00AE8B4D /* BlocksApp.swift */; };
 		8043C70E2CC3721A00AE8B4D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8043C70D2CC3721A00AE8B4D /* ContentView.swift */; };
 		8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C70F2CC3721B00AE8B4D /* Assets.xcassets */; };
@@ -67,6 +69,8 @@
 		51B31FB92CE3088200C74417 /* BRotatedLShapeBlock3x3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BRotatedLShapeBlock3x3.swift; sourceTree = "<group>"; };
 		51E0B0262CDF11BE0007EE98 /* New.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = New.mp3; sourceTree = "<group>"; };
 		80214D642CE1474600D6D44B /* question.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = question.png; sourceTree = "<group>"; };
+		80214D6A2CE31E3000D6D44B /* delete.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = delete.png; path = ../../../../Desktop/delete.png; sourceTree = "<group>"; };
+		80214D6E2CE3203B00D6D44B /* swap.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = swap.png; path = ../../../../Downloads/swap.png; sourceTree = "<group>"; };
 		8043C7082CC3721A00AE8B4D /* Blocks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blocks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8043C70B2CC3721A00AE8B4D /* BlocksApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlocksApp.swift; sourceTree = "<group>"; };
 		8043C70D2CC3721A00AE8B4D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -173,6 +177,8 @@
 		9E35806D2CD1A407007ABB7D /* Nodes */ = {
 			isa = PBXGroup;
 			children = (
+				80214D6E2CE3203B00D6D44B /* swap.png */,
+				80214D6A2CE31E3000D6D44B /* delete.png */,
 				80214D642CE1474600D6D44B /* question.png */,
 				51A81AC12CDECC37002406E2 /* Muted.mp3 */,
 				51A81AC32CDECC37002406E2 /* Soft_Pop_or_Click.mp3 */,
@@ -305,8 +311,10 @@
 				80CA97472CDC83EF007AB840 /* download.mp3 in Resources */,
 				5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */,
 				51A81AC52CDECC37002406E2 /* Muted.mp3 in Resources */,
+				80214D6B2CE31E3000D6D44B /* delete.png in Resources */,
 				51A81AC62CDECC37002406E2 /* Soft_Pop_or_Click.mp3 in Resources */,
 				8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */,
+				80214D6F2CE3203B00D6D44B /* swap.png in Resources */,
 				8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */,
 				51E0B0272CDF11BE0007EE98 /* New.mp3 in Resources */,
 				80214D652CE1474600D6D44B /* question.png in Resources */,
@@ -484,7 +492,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = GY8R2NLRXH;
+				DEVELOPMENT_TEAM = AXV2JL5X7V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -514,7 +522,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = GY8R2NLRXH;
+				DEVELOPMENT_TEAM = AXV2JL5X7V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

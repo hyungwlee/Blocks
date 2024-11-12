@@ -18,14 +18,11 @@ class BBoxNode: SKNode {
     var layoutInfo: BLayoutInfo
     weak var gameScene: BGameScene?
     var initialPosition: CGPoint = .zero
-
     
-    
-
-    // New property to define the shape of the block
+    // Property to define the shape of the block
     var shape: [(row: Int, col: Int)] = []
     var assets: [(name: String, position: (row: Int, col: Int))] = [] // Assets associated with the block
-
+    
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .red) {
         self.layoutInfo = layoutInfo
         self.tileSize = tileSize
@@ -33,24 +30,19 @@ class BBoxNode: SKNode {
         super.init()
         isUserInteractionEnabled = false // Disable touch handling in BBoxNode
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         // Implement if using storyboard or XIBs
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // Method to set up the shape and create the visual representation
     func setupShape(_ shape: [(row: Int, col: Int)], assets: [(name: String, position: (row: Int, col: Int))]) {
         self.shape = shape
         self.assets = assets
         createVisualRepresentation()
-
-        // Add the assets after creating the visual representation
-        for asset in assets {
-            addAsset(named: asset.name, at: asset.position)
-        }
     }
-
+    
     func createVisualRepresentation() {
         // Remove any existing child nodes
         removeAllChildren()
@@ -78,33 +70,22 @@ class BBoxNode: SKNode {
             addChild(assetNode)
         }
     }
-
-
+    
     var gridHeight: Int {
         let rows = shape.map { $0.row }
         return (rows.max() ?? 0) + 1
     }
-
+    
     var gridWidth: Int {
         let cols = shape.map { $0.col }
         return (cols.max() ?? 0) + 1
     }
-
+    
     func updatePosition(to position: CGPoint) {
         // Update the position of the block itself
         self.position = CGPoint(x: position.x - self.frame.width / 2, y: position.y - self.frame.height / 2)
-        
-        // Update the positions of all the attached assets
-        for asset in assets {
-            let assetNode = childNode(withName: asset.name)
-            if let assetNode = assetNode as? SKSpriteNode {
-                let newX = CGFloat(asset.position.col) * tileSize + tileSize / 2
-                let newY = CGFloat(asset.position.row) * tileSize + tileSize / 2
-                assetNode.position = CGPoint(x: newX, y: newY)
-            }
-        }
     }
-
+    
     func gridPosition() -> (row: Int, col: Int) {
         guard let gameScene = gameScene else { return (0, 0) }
         let tileSize = gameScene.tileSize
@@ -116,32 +97,21 @@ class BBoxNode: SKNode {
         let row = Int((adjustedPosition.y + tileSize / 2) / tileSize)
         return (row, col)
     }
-
-    func addAsset(named assetName: String, at gridPosition: (row: Int, col: Int)) {
-        let assetNode = SKSpriteNode(imageNamed: assetName)
-        
-        // Set the size of the asset node to match your desired dimensions
-        assetNode.size = CGSize(width: tileSize, height: tileSize) // Adjust as necessary
-        assetNode.name = assetName  // Assign a unique name to the asset
-        
-        // Calculate the position based on the grid coordinates
-        let xPos = CGFloat(gridPosition.col) * tileSize + tileSize / 2
-        let yPos = CGFloat(gridPosition.row) * tileSize + tileSize / 2
-        assetNode.position = CGPoint(x: xPos, y: yPos)
-        
-        // Optionally, you can disable user interaction for the asset node
-        assetNode.isUserInteractionEnabled = false
-        
-        // Add the asset node as a child to this BBoxNode
-        addChild(assetNode)
+    
+    func rotateBlock() {
+        // Rotate the block's shape 90 degrees clockwise
+        shape = shape.map { (row: $0.col, col: -$0.row) }
+        // Update assets positions accordingly
+        assets = assets.map { (name: $0.name, position: (row: $0.position.col, col: -$0.position.row)) }
+        createVisualRepresentation()
     }
-
+    
     func occupiedCells() -> [GridCoordinate] {
         var occupied: [GridCoordinate] = []
         let gridPosition = self.gridPosition()
         let baseRow = gridPosition.row
         let baseCol = gridPosition.col
-
+        
         for cell in shape {
             let gridRow = baseRow + cell.row
             let gridCol = baseCol + cell.col
@@ -150,5 +120,3 @@ class BBoxNode: SKNode {
         return occupied
     }
 }
-
-
