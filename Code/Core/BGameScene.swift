@@ -124,7 +124,7 @@ class BGameScene: SKScene {
     }
 
     private var availableBlockTypes: [BBoxNode.Type] = [
-        BSingleBlock.self,
+       /* BSingleBlock.self,
         BSquareBlock2x2.self,
         BSquareBlock3x3.self,
         BVerticalBlockNode1x2.self,
@@ -134,7 +134,12 @@ class BGameScene: SKScene {
         BVerticalBlockNode1x3.self,
         BHorizontalBlockNode1x3.self,
         BVerticalBlockNode1x4.self,
-        BHorizontalBlockNode1x4.self,
+        BHorizontalBlockNode1x4.self,*/
+        BRotatedLShapeNode2x2.self,
+        BRotatedLBlock2x2.self,
+        BLShapeNode5Block.self,
+        BRotatedLShapeNode5Block.self,
+        BRotatedLShape5Block.self
     ]
 
     override func didMove(to view: SKView) {
