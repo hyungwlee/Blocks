@@ -598,7 +598,6 @@ class BGameScene: SKScene {
 
     // MARK: - Touch Handling
 
-    // Detect when the user touches a block
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
@@ -658,12 +657,12 @@ class BGameScene: SKScene {
         if isDeletePowerupActive {
             // Check if the tapped node is a cell node in the grid
             if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock)
+                deletePlacedBlock(placedBlock, updateScore: false) // Pass `false` to prevent score increment
                 isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
                 return
             } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock)
+                deletePlacedBlock(placedBlock, updateScore: false) // Pass `false` to prevent score increment
                 isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
                 return
@@ -777,7 +776,7 @@ class BGameScene: SKScene {
         return false
     }
 
-    func deletePlacedBlock(_ placedBlock: PlacedBlock) {
+    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) {
         // Remove all the cell nodes from the scene and grid
         for cellNode in placedBlock.cellNodes {
             cellNode.removeFromParent()
@@ -785,19 +784,24 @@ class BGameScene: SKScene {
         for gridPos in placedBlock.gridPositions {
             grid[gridPos.row][gridPos.col] = nil
         }
+
         // Remove the placedBlock from the placedBlocks array
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
             placedBlocks.remove(at: index)
         }
-        // Optionally, increment the score
-        score += placedBlock.cellNodes.count
-        updateScoreLabel()
 
-        // Check for game-over condition after deletion
+        // Update score only if this deletion should impact the score (i.e., it's not from a delete power-up)
+        if updateScore {
+            score += placedBlock.cellNodes.count
+            updateScoreLabel()
+        }
+
+        // Check for game-over condition after deletion if there are no available moves and no delete power-ups left
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
         }
     }
+
 
     func deleteBlock(_ blockNode: BBoxNode) {
         // Remove the block node from the scene
