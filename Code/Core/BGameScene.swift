@@ -192,24 +192,35 @@ class BGameScene: SKScene {
         BRotatedLShape5Block.self
     ]
 
-    override func didMove(to view: SKView) {
-        backgroundColor = .black
-        createGrid()
-        addScoreLabel()
-        createPowerupPlaceholders()
-        spawnNewBlocks()
+   override func didMove(to view: SKView) {
+    // Set the background color to clear to make the background image visible
+    backgroundColor = .clear
+    
+    // Add the background image
+    let background = SKSpriteNode(imageNamed: "create_an_animated_g")
+    background.size = size // Resize background to fit the screen size
+    background.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    background.zPosition = -1 // Ensure the background is behind other elements
+    addChild(background)
+    
+    // Existing setup
+    createGrid()
+    addScoreLabel()
+    createPowerupPlaceholders()
+    spawnNewBlocks()
 
-        // Play background music
-        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-            backgroundMusic = SKAudioNode(url: url) // Set the background music from the file URL
-            if let backgroundMusic = backgroundMusic {
-                backgroundMusic.autoplayLooped = true // Loop background music
-                addChild(backgroundMusic) // Add the audio node to the scene
-            }
-        } else {
-            print("Error: Background music file not found.")
+    // Play background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url)
+        if let backgroundMusic = backgroundMusic {
+            backgroundMusic.autoplayLooped = true
+            addChild(backgroundMusic)
         }
+    } else {
+        print("Error: Background music file not found.")
     }
+}
+
 
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
