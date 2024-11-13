@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		510CED812CE4476000EFE45E /* ezgif.com-animated-gif-maker.gif in Resources */ = {isa = PBXBuildFile; fileRef = 510CED802CE4476000EFE45E /* ezgif.com-animated-gif-maker.gif */; };
 		5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */; };
 		5156DB5E2CD6DC0B00718AD9 /* BSquareBlock2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */; };
 		516084AE2CE26C370036A6BA /* BRotatedLShape2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516084AD2CE26C370036A6BA /* BRotatedLShape2x2.swift */; };
@@ -51,6 +52,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		510CED802CE4476000EFE45E /* ezgif.com-animated-gif-maker.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "ezgif.com-animated-gif-maker.gif"; sourceTree = "<group>"; };
 		5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Risingwav.mp3; sourceTree = "<group>"; };
 		5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BSquareBlock2x2.swift; sourceTree = "<group>"; };
 		516084AD2CE26C370036A6BA /* BRotatedLShape2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BRotatedLShape2x2.swift; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				80214D7C2CE404B200D6D44B /* swap.png */,
+				510CED802CE4476000EFE45E /* ezgif.com-animated-gif-maker.gif */,
 				80214D7A2CE404AD00D6D44B /* delete.png */,
 				80214D642CE1474600D6D44B /* question.png */,
 				51A81AC12CDECC37002406E2 /* Muted.mp3 */,
@@ -315,6 +318,7 @@
 				51A81AC62CDECC37002406E2 /* Soft_Pop_or_Click.mp3 in Resources */,
 				8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */,
 				80214D7D2CE404B200D6D44B /* swap.png in Resources */,
+				510CED812CE4476000EFE45E /* ezgif.com-animated-gif-maker.gif in Resources */,
 				8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */,
 				51E0B0272CDF11BE0007EE98 /* New.mp3 in Resources */,
 				80214D652CE1474600D6D44B /* question.png in Resources */,
