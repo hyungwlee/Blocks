@@ -21,7 +21,9 @@ class BGameScene: SKScene {
 
     // Power-up state variables
     var isDeletePowerupActive = false
-    var isRotatePowerupActive = false
+    var isSwapPowerupActive = false
+
+//    var isRotatePowerupActive = false
 
     var dropSound: SKAudioNode?
     var backgroundMusic: SKAudioNode?
@@ -98,6 +100,7 @@ class BGameScene: SKScene {
     func spawnPowerups() {
         // Spawn both delete and rotate power-ups
         spawnDeletePowerup()
+        spawnSwapPowerup()
 //        spawnRotatePowerup()
     }
 
@@ -123,6 +126,33 @@ class BGameScene: SKScene {
 
                     // Add the power-up icon as a child of the placeholder
                     placeholder.addChild(deletePowerup)
+                    break
+                }
+            }
+        }
+    }
+    func spawnSwapPowerup() {
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
+
+                    // Create the swap power-up icon
+                    let swapPowerup = SKSpriteNode(imageNamed: "swap.png")
+                    swapPowerup.size = CGSize(width: 40, height: 40)
+                    swapPowerup.position = CGPoint.zero
+                    swapPowerup.name = "swapPowerup"
+
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    swapPowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(swapPowerup)
                     break
                 }
             }
@@ -675,7 +705,28 @@ override func didMove(to view: SKView) {
 
             return
         }
+        if nodeTapped.name == "swapPowerup" {
+            isSwapPowerupActive = true
+            if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+                if let index = placeholderIndex(for: parentPlaceholder) {
+                    resetPlaceholder(at: index)
+                }
+            }
+            nodeTapped.removeFromParent()  // Remove the power-up icon after activation
 
+            // Visual indication of activation: flash background
+            let flashBackground = SKShapeNode(rectOf: size)
+            flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
+            flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            flashBackground.zPosition = -1
+            addChild(flashBackground)
+
+            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+            let remove = SKAction.removeFromParent()
+            flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+            return
+        }
         // Check if the rotate power-up icon is tapped
         if nodeTapped.name == "rotatePowerup" {
 //            isRotatePowerupActive.toggle()  // Toggle the rotate power-up state
@@ -704,32 +755,37 @@ override func didMove(to view: SKView) {
         if isDeletePowerupActive {
             // Check if the tapped node is a cell node in the grid
             if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock, updateScore: false) // Pass `false` to prevent score increment
+                deletePlacedBlock(placedBlock, updateScore: false) // Pass false to prevent score increment
                 isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
                 return
             } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock, updateScore: false) // Pass `false` to prevent score increment
-                isDeletePowerupActive = false
-                performPowerupDeactivationEffect()
-                return
-            }
-            // If the tapped node is a block in the spawning area (BBoxNode)
-            else if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
-                isDeletePowerupActive = false  // Deactivate the power-up after use
-                performPowerupDeactivationEffect()
-                return
-            } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
+                deletePlacedBlock(placedBlock, updateScore: false)
                 isDeletePowerupActive = false
                 performPowerupDeactivationEffect()
                 return
             }
         }
 
-        // If rotate power-up is active, rotate the tapped block
-        if isRotatePowerupActive {
+        
+        if isSwapPowerupActive {
+            // Check if the tapped node is a block in the spawning area (BBoxNode)
+            if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
+                deleteBlock(blockNode)
+                isSwapPowerupActive = false  // Deactivate the power-up after use
+                performPowerupDeactivationEffect()
+                return
+            } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
+                deleteBlock(blockNode)
+                isSwapPowerupActive = false
+                performPowerupDeactivationEffect()
+                return
+            }
+        }
+
+
+//        // If rotate power-up is active, rotate the tapped block
+//        if isRotatePowerupActive {
 //            if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
 //                blockNode.rotateBlock()
 //                performRotateEffect(on: blockNode)
@@ -743,7 +799,7 @@ override func didMove(to view: SKView) {
 //                performRotateEffect(on: blockNode)
 //                return
 //            }
-        }
+//        }
 
         // Existing code for handling block dragging or other actions
         if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
@@ -759,7 +815,7 @@ override func didMove(to view: SKView) {
         // Play block selection sound when a block is selected, only once
         if let node = currentlyDraggedNode {
             // Cancel rotate power-up if it was active
-            isRotatePowerupActive = false
+//            isRotatePowerupActive = false
 
             // Reset rotate power-up icon appearance
             if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
