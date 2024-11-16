@@ -12,7 +12,7 @@ class BRotatedLBlock2x2: BBoxNode {
     
     private let availableAssets = [
         "Laughing-1", "Laughing-2", "Laughing", // Example assets
-        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16315","Group 16362"
+        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16315","Group 16362","Blank"
     ]
     
     private let assetColors: [String: UIColor] = [
@@ -28,10 +28,11 @@ class BRotatedLBlock2x2: BBoxNode {
         "Group 16316": .blue,
         "Group 16363-1": .yellow,
         "Group 16315": .green,
-        "Group 16362": .orange
+        "Group 16362": .orange,
+        "Blank":.systemOrange
     ]
     
-    private let selectedAsset = "Group 16362"  // Choose the asset you want
+    private let selectedAsset = "Blank"  // Choose the asset you want
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .orange) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
