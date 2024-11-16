@@ -24,6 +24,7 @@ class BGameScene: SKScene {
     var isSwapPowerupActive = false
 
 //    var isRotatePowerupActive = false
+    var highlightGrid: [[SKShapeNode?]] = []
 
     var dropSound: SKAudioNode?
     var backgroundMusic: SKAudioNode?
@@ -221,6 +222,60 @@ class BGameScene: SKScene {
         BRotatedLShapeNode5Block.self,
         BRotatedLShape5Block.self
     ]
+    func setupGridHighlights() {
+        // Create a grid of highlight nodes with the same size as the main grid
+        highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+
+        let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+                                 y: (size.height - CGFloat(gridSize) * tileSize) / 2)
+        
+        // Add highlight nodes for each grid cell
+        for row in 0..<gridSize {
+            for col in 0..<gridSize {
+                let node = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+                node.fillColor = .clear // Transparent by default
+                node.strokeColor = .blue // Highlight border color
+                node.alpha = 0.0 // Hidden initially
+                node.position = CGPoint(x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
+                                        y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2)
+                highlightGrid[row][col] = node
+                addChild(node)
+            }
+        }
+    }
+    func clearHighlights() {
+        for row in highlightGrid {
+            for node in row {
+                node?.fillColor = .clear
+                node?.alpha = 0.0
+            }
+        }
+    }
+
+    func highlightValidCells(for block: BBoxNode) {
+        clearHighlights()
+
+        let occupiedCells = block.occupiedCells()
+        var isValidPlacement = true
+
+        for cell in occupiedCells {
+            // Check if cell is outside the grid or already occupied
+            if cell.row < 0 || cell.row >= gridSize || cell.col < 0 || cell.col >= gridSize || grid[cell.row][cell.col] != nil {
+                isValidPlacement = false
+                break
+            }
+        }
+
+        let highlightColor: UIColor = isValidPlacement ? .green : .red
+        for cell in occupiedCells {
+            if cell.row >= 0, cell.row < gridSize, cell.col >= 0, cell.col < gridSize {
+                if let highlightNode = highlightGrid[cell.row][cell.col] {
+                    highlightNode.fillColor = highlightColor
+                    highlightNode.alpha = 0.5
+                }
+            }
+        }
+    }
 
 override func didMove(to view: SKView) {
     // Set the background color to clear to make the background visible
@@ -238,6 +293,7 @@ override func didMove(to view: SKView) {
     addScoreLabel()
     createPowerupPlaceholders()
     spawnNewBlocks()
+    setupGridHighlights()
 
     // Play background music
     if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
@@ -622,6 +678,7 @@ override func didMove(to view: SKView) {
     addScoreLabel()
     spawnNewBlocks()
     createPowerupPlaceholders()
+    setupGridHighlights()
 
     // Remove existing background music if it exists
     backgroundMusic?.removeFromParent()
@@ -952,6 +1009,9 @@ override func didMove(to view: SKView) {
             // Update the position
             node.updatePosition(to: newPosition)
         }
+        if let draggedNode = currentlyDraggedNode {
+               highlightValidCells(for: draggedNode)
+           }
     }
 
     // Handle the block placement and reset its size when placed on the grid
@@ -976,6 +1036,7 @@ override func didMove(to view: SKView) {
         node.userData = nil
 
         currentlyDraggedNode = nil
+        clearHighlights()
     }
 
     // Check if the dragged block is colliding with any placed blocks
