@@ -34,6 +34,7 @@
 		8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C70F2CC3721B00AE8B4D /* Assets.xcassets */; };
 		8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */; };
 		808EFBE22CD88AA800AF1606 /* BLShapeNode5Block.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */; };
+		80C28C742CEB422A00AC4B5E /* undo.png in Resources */ = {isa = PBXBuildFile; fileRef = 80C28C732CEB422A00AC4B5E /* undo.png */; };
 		80CA97472CDC83EF007AB840 /* download.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 80CA97462CDC83EF007AB840 /* download.mp3 */; };
 		9E3580752CD1A407007ABB7D /* BLayoutInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580622CD1A407007ABB7D /* BLayoutInfo.swift */; };
 		9E3580762CD1A407007ABB7D /* BGameIdleState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806F2CD1A407007ABB7D /* BGameIdleState.swift */; };
@@ -81,6 +82,7 @@
 		8043C70F2CC3721B00AE8B4D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8043C7122CC3721B00AE8B4D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLShapeNode5Block.swift; sourceTree = "<group>"; };
+		80C28C732CEB422A00AC4B5E /* undo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = undo.png; sourceTree = "<group>"; };
 		80CA97462CDC83EF007AB840 /* download.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = download.mp3; sourceTree = "<group>"; };
 		9E35805E2CD1A407007ABB7D /* BGameContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameContext.swift; sourceTree = "<group>"; };
 		9E35805F2CD1A407007ABB7D /* BGameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameScene.swift; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 		9E35806D2CD1A407007ABB7D /* Nodes */ = {
 			isa = PBXGroup;
 			children = (
+				80C28C732CEB422A00AC4B5E /* undo.png */,
 				80214D7E2CE8008500D6D44B /* swap.png */,
 				80214D7C2CE404B200D6D44B /* rotate.png */,
 				510714902CE6C3D500E7B201 /* bg.png */,
@@ -321,6 +324,7 @@
 				80214D7B2CE404AD00D6D44B /* delete.png in Resources */,
 				51A81AC62CDECC37002406E2 /* Soft_Pop_or_Click.mp3 in Resources */,
 				8043C7132CC3721B00AE8B4D /* Preview Assets.xcassets in Resources */,
+				80C28C742CEB422A00AC4B5E /* undo.png in Resources */,
 				80214D7D2CE404B200D6D44B /* rotate.png in Resources */,
 				8043C7102CC3721B00AE8B4D /* Assets.xcassets in Resources */,
 				51E0B0272CDF11BE0007EE98 /* New.mp3 in Resources */,
