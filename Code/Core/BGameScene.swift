@@ -22,8 +22,8 @@ class BGameScene: SKScene {
     // Power-up state variables
     var isDeletePowerupActive = false
     var isSwapPowerupActive = false
+    var undoStack: [Move] = []  // Updated to store Move objects
 
-//    var isRotatePowerupActive = false
     var highlightGrid: [[SKShapeNode?]] = []
 
     var dropSound: SKAudioNode?
@@ -97,12 +97,12 @@ class BGameScene: SKScene {
         }
     }
 
-
     func spawnPowerups() {
         // Spawn both delete and rotate power-ups
         spawnDeletePowerup()
         spawnSwapPowerup()
-//        spawnRotatePowerup()
+        spawnUndoPowerup()
+        // spawnRotatePowerup()
     }
 
     func spawnDeletePowerup() {
@@ -132,6 +132,7 @@ class BGameScene: SKScene {
             }
         }
     }
+
     func spawnSwapPowerup() {
         for i in 0..<4 {
             if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
@@ -160,34 +161,37 @@ class BGameScene: SKScene {
         }
     }
 
-    func spawnRotatePowerup() {
-//        for i in 0..<4 {
-//            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
-//                // Check if the placeholder only contains the question icon
-//                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
-//                    // Remove the question icon
-//                    placeholder.children.first?.removeFromParent()
-//
-//                    // Create the rotate power-up icon
-//                    let rotatePowerup = SKSpriteNode(imageNamed: "swap.png")
-//                    rotatePowerup.size = CGSize(width: 40, height: 40)
-//                    rotatePowerup.position = CGPoint.zero
-//                    rotatePowerup.name = "rotatePowerup"
-//
-//                    // Add a subtle glow or pulse effect
-//                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
-//                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
-//                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
-//                    rotatePowerup.run(SKAction.repeatForever(pulseSequence))
-//
-//                    // Add the power-up icon as a child of the placeholder
-//                    placeholder.addChild(rotatePowerup)
-//                    break
-//                }
-//            }
-//        }
+    func spawnUndoPowerup() {
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
+
+                    // Create the undo power-up icon
+                    let undoPowerup = SKSpriteNode(imageNamed: "undo.png")
+                    undoPowerup.size = CGSize(width: 40, height: 40)
+                    undoPowerup.position = CGPoint.zero
+                    undoPowerup.name = "undoPowerup"
+
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    undoPowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(undoPowerup)
+                    break
+                }
+            }
+        }
     }
 
+    func spawnRotatePowerup() {
+        // Implement if you have a rotate power-up
+    }
 
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
@@ -222,13 +226,14 @@ class BGameScene: SKScene {
         BRotatedLShapeNode5Block.self,
         BRotatedLShape5Block.self
     ]
+
     func setupGridHighlights() {
         // Create a grid of highlight nodes with the same size as the main grid
         highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
 
         let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
                                  y: (size.height - CGFloat(gridSize) * tileSize) / 2)
-        
+
         // Add highlight nodes for each grid cell
         for row in 0..<gridSize {
             for col in 0..<gridSize {
@@ -243,6 +248,7 @@ class BGameScene: SKScene {
             }
         }
     }
+
     func clearHighlights() {
         for row in highlightGrid {
             for node in row {
@@ -277,35 +283,35 @@ class BGameScene: SKScene {
         }
     }
 
-override func didMove(to view: SKView) {
-    // Set the background color to clear to make the background visible
-    backgroundColor = .clear
-    
-    // Load a single background image
-    let background = SKSpriteNode(imageNamed: "bg") // Replace with the actual name of your image file
-    background.size = size // Resize background to fit the screen size
-    background.position = CGPoint(x: size.width / 2, y: size.height / 2)
-    background.zPosition = -1 // Ensure the background is behind other elements
-    addChild(background)
-    
-    // Existing setup
-    createGrid()
-    addScoreLabel()
-    createPowerupPlaceholders()
-    spawnNewBlocks()
-    setupGridHighlights()
+    override func didMove(to view: SKView) {
+        // Set the background color to clear to make the background visible
+        backgroundColor = .clear
 
-    // Play background music
-    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-        backgroundMusic = SKAudioNode(url: url)
-        if let backgroundMusic = backgroundMusic {
-            backgroundMusic.autoplayLooped = true
-            addChild(backgroundMusic)
+        // Load a single background image
+        let background = SKSpriteNode(imageNamed: "bg") // Replace with the actual name of your image file
+        background.size = size // Resize background to fit the screen size
+        background.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        background.zPosition = -1 // Ensure the background is behind other elements
+        addChild(background)
+
+        // Existing setup
+        createGrid()
+        addScoreLabel()
+        createPowerupPlaceholders()
+        spawnNewBlocks()
+        setupGridHighlights()
+
+        // Play background music
+        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+            backgroundMusic = SKAudioNode(url: url)
+            if let backgroundMusic = backgroundMusic {
+                backgroundMusic.autoplayLooped = true
+                addChild(backgroundMusic)
+            }
+        } else {
+            print("Error: Background music file not found.")
         }
-    } else {
-        print("Error: Background music file not found.")
     }
-}
 
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
@@ -367,7 +373,6 @@ override func didMove(to view: SKView) {
         }
     }
 
-
     func generateRandomShapes(count: Int) -> [BBoxNode] {
         var shapes: [BBoxNode] = []
         for _ in 0..<count {
@@ -427,6 +432,9 @@ override func didMove(to view: SKView) {
         let col = gridPosition.col
 
         if isPlacementValid(for: block, at: row, col: col) {
+            let previousScore = score  // Save the score before placing the block
+            var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+
             var occupiedCells = 0
             var cellNodes: [SKShapeNode] = []
             var gridPositions: [GridCoordinate] = []
@@ -462,6 +470,9 @@ override func didMove(to view: SKView) {
 
                 cellNodes.append(cellNode)
                 gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
+
+                // Collect added cells for undo
+                addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
             }
 
             let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
@@ -479,7 +490,12 @@ override func didMove(to view: SKView) {
             }
             block.removeFromParent()
 
-            checkForCompletedLines()
+            // Check for completed lines and collect cleared lines
+            let clearedLines = checkForCompletedLines()
+
+            // Create a Move object and push it onto the undo stack
+            let move = Move(placedBlock: placedBlock, blockNode: block, previousScore: previousScore, addedCells: addedCells, clearedLines: clearedLines)
+            undoStack.append(move)
 
             if boxNodes.isEmpty {
                 spawnNewBlocks()  // This will call layoutSpawnedBlocks
@@ -494,15 +510,15 @@ override func didMove(to view: SKView) {
         }
     }
 
-
     // MARK: - Line Clearing Logic
-    func checkForCompletedLines() {
-        var lineCleared = false
+    func checkForCompletedLines() -> [LineClear] {
+        var lineClears: [LineClear] = []
 
         for row in 0..<gridSize {
             if grid[row].allSatisfy({ $0 != nil }) {
-                clearRow(row)
-                lineCleared = true
+                let clearedCells = clearRow(row)
+                let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+                lineClears.append(lineClear)
             }
         }
 
@@ -515,18 +531,22 @@ override func didMove(to view: SKView) {
                 }
             }
             if isCompleted {
-                clearColumn(col)
-                lineCleared = true
+                let clearedCells = clearColumn(col)
+                let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+                lineClears.append(lineClear)
             }
         }
 
         // If any line was cleared, spawn power-ups
-        if lineCleared {
+        if !lineClears.isEmpty {
             spawnPowerups()
         }
+
+        return lineClears
     }
 
-    func clearRow(_ row: Int) {
+    func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
         for col in 0..<gridSize {
             if let cellNode = grid[row][col] {
                 let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
@@ -536,37 +556,25 @@ override func didMove(to view: SKView) {
                 // Create a sequence of actions: fade out, scale down, then remove from parent
                 let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
 
-                // Run the sequence and set the grid cell to nil after the animation
+                // Run the sequence
                 cellNode.run(clearSequence)
 
-                // Remove cellNode from its placedBlock
-                if let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                    if let index = placedBlock.cellNodes.firstIndex(of: cellNode) {
-                        placedBlock.cellNodes.remove(at: index)
-                        placedBlock.gridPositions.remove(at: index)
-                    }
-                    // If the placedBlock has no more cells, remove it from placedBlocks
-                    if placedBlock.cellNodes.isEmpty {
-                        if let placedBlockIndex = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
-                            placedBlocks.remove(at: placedBlockIndex)
-                        }
-                    }
-                }
-
+                // Set the grid cell to nil after the animation
                 grid[row][col] = nil
 
-                // Increment score with each cell removed
-                score += 1
+                // Collect cleared cell for undo
+                clearedCells.append((row: row, col: col, cellNode: cellNode))
             }
         }
 
         updateScoreLabel()
-
-        // Play sound after clearing the row
         run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+
+        return clearedCells
     }
 
-    func clearColumn(_ col: Int) {
+    func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
         for row in 0..<gridSize {
             if let cellNode = grid[row][col] {
                 let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
@@ -576,34 +584,21 @@ override func didMove(to view: SKView) {
                 // Create a sequence of actions: fade out, scale down, then remove from parent
                 let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
 
-                // Run the sequence and set the grid cell to nil after the animation
+                // Run the sequence
                 cellNode.run(clearSequence)
 
-                // Remove cellNode from its placedBlock
-                if let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                    if let index = placedBlock.cellNodes.firstIndex(of: cellNode) {
-                        placedBlock.cellNodes.remove(at: index)
-                        placedBlock.gridPositions.remove(at: index)
-                    }
-                    // If the placedBlock has no more cells, remove it from placedBlocks
-                    if placedBlock.cellNodes.isEmpty {
-                        if let placedBlockIndex = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
-                            placedBlocks.remove(at: placedBlockIndex)
-                        }
-                    }
-                }
-
+                // Set the grid cell to nil after the animation
                 grid[row][col] = nil
 
-                // Increment score with each cell removed
-                score += 1
+                // Collect cleared cell for undo
+                clearedCells.append((row: row, col: col, cellNode: cellNode))
             }
         }
 
         updateScoreLabel()
-
-        // Play sound after clearing the column
         run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+
+        return clearedCells
     }
 
     func showGameOverScreen() {
@@ -654,48 +649,50 @@ override func didMove(to view: SKView) {
         addChild(restartLabel)
     }
 
-   func restartGame() {
-    print("Restarting game...")
-    score = 0
-    updateScoreLabel()
+    func restartGame() {
+        print("Restarting game...")
+        score = 0
+        updateScoreLabel()
 
-    // Reset the grid and remove all children from the scene
-    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-    removeAllChildren()
-    
-    isGameOver = false
-    placedBlocks.removeAll() // Clear the placed blocks
+        // Reset the grid and remove all children from the scene
+        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+        removeAllChildren()
 
-    // Add the background image back
-    let background = SKSpriteNode(imageNamed: "bg") // Replace with the actual name of your image file
-    background.size = size // Resize to fit the screen
-    background.position = CGPoint(x: size.width / 2, y: size.height / 2)
-    background.zPosition = -1 // Ensure it’s behind other elements
-    addChild(background)
+        isGameOver = false
+        placedBlocks.removeAll() // Clear the placed blocks
+        undoStack.removeAll()    // Clear the undo stack
 
-    // Re-add other game elements
-    createGrid()
-    addScoreLabel()
-    spawnNewBlocks()
-    createPowerupPlaceholders()
-    setupGridHighlights()
+        // Add the background image back
+        let background = SKSpriteNode(imageNamed: "bg") // Replace with the actual name of your image file
+        background.size = size // Resize to fit the screen
+        background.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        background.zPosition = -1 // Ensure it’s behind other elements
+        addChild(background)
 
-    // Remove existing background music if it exists
-    backgroundMusic?.removeFromParent()
-    backgroundMusic = nil
+        // Re-add other game elements
+        createGrid()
+        addScoreLabel()
+        spawnNewBlocks()
+        createPowerupPlaceholders()
+        setupGridHighlights()
 
-    // Restart background music
-    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-        backgroundMusic = SKAudioNode(url: url)
-        if let backgroundMusic = backgroundMusic {
-            print("Background music found and will play.")
-            backgroundMusic.autoplayLooped = true
-            addChild(backgroundMusic)
+        // Remove existing background music if it exists
+        backgroundMusic?.removeFromParent()
+        backgroundMusic = nil
+
+        // Restart background music
+        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+            backgroundMusic = SKAudioNode(url: url)
+            if let backgroundMusic = backgroundMusic {
+                print("Background music found and will play.")
+                backgroundMusic.autoplayLooped = true
+                addChild(backgroundMusic)
+            }
+        } else {
+            print("Error: Background music file not found.")
         }
-    } else {
-        print("Error: Background music file not found.")
     }
-}
+
     func placeholderIndex(for placeholder: SKShapeNode) -> Int? {
         for i in 0..<4 {
             if childNode(withName: "powerupPlaceholder\(i)") === placeholder {
@@ -762,6 +759,7 @@ override func didMove(to view: SKView) {
 
             return
         }
+
         if nodeTapped.name == "swapPowerup" {
             isSwapPowerupActive = true
             if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
@@ -784,26 +782,29 @@ override func didMove(to view: SKView) {
 
             return
         }
-        // Check if the rotate power-up icon is tapped
-        if nodeTapped.name == "rotatePowerup" {
-//            isRotatePowerupActive.toggle()  // Toggle the rotate power-up state
-//
-//            // Visual indication of activation: change icon appearance
-//            if let rotatePowerupIcon = nodeTapped as? SKSpriteNode {
-//                if isRotatePowerupActive {
-//                    rotatePowerupIcon.color = .yellow
-//                    rotatePowerupIcon.colorBlendFactor = 0.5
-//                } else {
-//                    rotatePowerupIcon.colorBlendFactor = 0.0
-//                }
-//            } else if let parentNode = nodeTapped.parent as? SKSpriteNode, parentNode.name == "rotatePowerup" {
-//                if isRotatePowerupActive {
-//                    parentNode.color = .yellow
-//                    parentNode.colorBlendFactor = 0.5
-//                } else {
-//                    parentNode.colorBlendFactor = 0.0
-//                }
-//            }
+
+        if nodeTapped.name == "undoPowerup" {
+            // Activate undo functionality
+            undoLastMove()
+
+            // Remove the undo power-up from the placeholder
+            if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+                if let index = placeholderIndex(for: parentPlaceholder) {
+                    resetPlaceholder(at: index)
+                }
+            }
+            nodeTapped.removeFromParent() // Remove the undo power-up icon after activation
+
+            // Optional: Visual indication of undo
+            let flashBackground = SKShapeNode(rectOf: size)
+            flashBackground.fillColor = UIColor.yellow.withAlphaComponent(0.3)
+            flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            flashBackground.zPosition = -1
+            addChild(flashBackground)
+
+            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+            let remove = SKAction.removeFromParent()
+            flashBackground.run(SKAction.sequence([fadeOut, remove]))
 
             return
         }
@@ -824,7 +825,6 @@ override func didMove(to view: SKView) {
             }
         }
 
-        
         if isSwapPowerupActive {
             // Check if the tapped node is a block in the spawning area (BBoxNode)
             if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
@@ -840,24 +840,6 @@ override func didMove(to view: SKView) {
             }
         }
 
-
-//        // If rotate power-up is active, rotate the tapped block
-//        if isRotatePowerupActive {
-//            if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
-//                blockNode.rotateBlock()
-//                performRotateEffect(on: blockNode)
-//                return
-//            } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
-//                blockNode.rotateBlock()
-//                performRotateEffect(on: blockNode)
-//                return
-//            } else if let blockNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(blockNode) {
-//                blockNode.rotateBlock()
-//                performRotateEffect(on: blockNode)
-//                return
-//            }
-//        }
-
         // Existing code for handling block dragging or other actions
         if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
             currentlyDraggedNode = boxNode
@@ -872,7 +854,7 @@ override func didMove(to view: SKView) {
         // Play block selection sound when a block is selected, only once
         if let node = currentlyDraggedNode {
             // Cancel rotate power-up if it was active
-//            isRotatePowerupActive = false
+            // isRotatePowerupActive = false
 
             // Reset rotate power-up icon appearance
             if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
@@ -940,6 +922,8 @@ override func didMove(to view: SKView) {
         // Remove all the cell nodes from the scene and grid
         for cellNode in placedBlock.cellNodes {
             cellNode.removeFromParent()
+            // Clear userData
+            cellNode.userData = nil
         }
         for gridPos in placedBlock.gridPositions {
             grid[gridPos.row][gridPos.col] = nil
@@ -961,7 +945,6 @@ override func didMove(to view: SKView) {
             showGameOverScreen()
         }
     }
-
 
     func deleteBlock(_ blockNode: BBoxNode) {
         // Remove the block node from the scene
@@ -988,7 +971,6 @@ override func didMove(to view: SKView) {
         }
     }
 
-
     // Update the position of the dragged block as it follows the touch, with offset
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first, let node = currentlyDraggedNode else { return }
@@ -1010,9 +992,70 @@ override func didMove(to view: SKView) {
             node.updatePosition(to: newPosition)
         }
         if let draggedNode = currentlyDraggedNode {
-               highlightValidCells(for: draggedNode)
-           }
+            highlightValidCells(for: draggedNode)
+        }
     }
+
+    func undoLastMove() {
+        guard let move = undoStack.popLast() else { return }
+
+        // Remove the added cells
+        for (row, col, cellNode) in move.addedCells {
+            grid[row][col] = nil
+            cellNode.removeFromParent()
+        }
+
+        // Restore the cleared cells
+        for lineClear in move.clearedLines {
+            for (row, col, cellNode) in lineClear.clearedCells {
+                grid[row][col] = cellNode
+
+                // Add the cellNode back to the scene if needed
+                if cellNode.parent == nil {
+                    addChild(cellNode)
+                }
+
+                // Restore the cellNode's properties
+                cellNode.alpha = 1.0
+                cellNode.setScale(1.0)
+
+                // Ensure the cellNode's placedBlock is in placedBlocks
+                if let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+                    if !placedBlocks.contains(where: { $0 === placedBlock }) {
+                        placedBlocks.append(placedBlock)
+                    }
+
+                    // Ensure the cellNode is in placedBlock.cellNodes
+                    if !placedBlock.cellNodes.contains(cellNode) {
+                        placedBlock.cellNodes.append(cellNode)
+                        placedBlock.gridPositions.append(GridCoordinate(row: row, col: col))
+                    }
+                }
+            }
+        }
+
+        // Remove the placedBlock from placedBlocks
+        if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
+            placedBlocks.remove(at: index)
+        }
+
+        // Restore the blockNode to boxNodes and scene
+        boxNodes.append(move.blockNode)
+        addChild(move.blockNode)
+        move.blockNode.position = move.blockNode.initialPosition
+        move.blockNode.setScale(initialScale)
+
+        // Re-layout the spawned blocks
+        layoutSpawnedBlocks()
+
+        // Restore the score
+        score = move.previousScore
+        updateScoreLabel()
+
+        // Clear highlights
+        clearHighlights()
+    }
+
 
     // Handle the block placement and reset its size when placed on the grid
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -1025,6 +1068,7 @@ override func didMove(to view: SKView) {
         if let gameScene = node.gameScene {
             if gameScene.isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
                 gameScene.placeBlock(node, at: gridPos)
+                // saveStateForUndo() is now handled inside placeBlock
             } else {
                 // If the placement is invalid, return the block to its original position
                 node.position = node.initialPosition
@@ -1060,5 +1104,35 @@ class PlacedBlock {
     init(cellNodes: [SKShapeNode], gridPositions: [GridCoordinate]) {
         self.cellNodes = cellNodes
         self.gridPositions = gridPositions
+    }
+}
+
+// Define the Move class for undo functionality
+class Move {
+    let placedBlock: PlacedBlock
+    let blockNode: BBoxNode
+    let previousScore: Int
+    let addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)]
+    let clearedLines: [LineClear]
+
+    init(placedBlock: PlacedBlock, blockNode: BBoxNode, previousScore: Int, addedCells: [(Int, Int, SKShapeNode)], clearedLines: [LineClear]) {
+        self.placedBlock = placedBlock
+        self.blockNode = blockNode
+        self.previousScore = previousScore
+        self.addedCells = addedCells
+        self.clearedLines = clearedLines
+    }
+}
+
+// Define the LineClear class to store cleared lines
+class LineClear {
+    let isRow: Bool
+    let index: Int
+    let clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)]
+
+    init(isRow: Bool, index: Int, clearedCells: [(Int, Int, SKShapeNode)]) {
+        self.isRow = isRow
+        self.index = index
+        self.clearedCells = clearedCells
     }
 }
