@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		510714912CE6C3D500E7B201 /* bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 510714902CE6C3D500E7B201 /* bg.png */; };
 		5110A1132CEBD08C004AB60D /* BT5Block.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5110A1122CEBD08C004AB60D /* BT5Block.swift */; };
+		5110A1152CEBE813004AB60D /* BZShapeBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5110A1142CEBE813004AB60D /* BZShapeBlock.swift */; };
 		5127EFFE2CDD413900FF8FC8 /* Risingwav.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */; };
 		5156DB5E2CD6DC0B00718AD9 /* BSquareBlock2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */; };
 		516084AE2CE26C370036A6BA /* BRotatedLShape2x2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516084AD2CE26C370036A6BA /* BRotatedLShape2x2.swift */; };
@@ -55,6 +56,7 @@
 /* Begin PBXFileReference section */
 		510714902CE6C3D500E7B201 /* bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bg.png; sourceTree = "<group>"; };
 		5110A1122CEBD08C004AB60D /* BT5Block.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BT5Block.swift; sourceTree = "<group>"; };
+		5110A1142CEBE813004AB60D /* BZShapeBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BZShapeBlock.swift; sourceTree = "<group>"; };
 		5127EFFD2CDD413900FF8FC8 /* Risingwav.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Risingwav.mp3; sourceTree = "<group>"; };
 		5156DB5D2CD6DC0B00718AD9 /* BSquareBlock2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BSquareBlock2x2.swift; sourceTree = "<group>"; };
 		516084AD2CE26C370036A6BA /* BRotatedLShape2x2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BRotatedLShape2x2.swift; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 				516084AD2CE26C370036A6BA /* BRotatedLShape2x2.swift */,
 				51B31FB72CE2FAC900C74417 /* BRotated5LBlock3x3.swift */,
 				5110A1122CEBD08C004AB60D /* BT5Block.swift */,
+				5110A1142CEBE813004AB60D /* BZShapeBlock.swift */,
 			);
 			path = "Custom Nodes";
 			sourceTree = "<group>";
@@ -357,6 +360,7 @@
 				51B2BAC02CD8302E00BB4E30 /* BVerticalBlockNode1x4.swift in Sources */,
 				51B2BABE2CD82FC800BB4E30 /* BHorizontalBlockNode1x3.swift in Sources */,
 				9E3580852CD1A407007ABB7D /* GameState.swift in Sources */,
+				5110A1152CEBE813004AB60D /* BZShapeBlock.swift in Sources */,
 				51B2BAC22CD8305800BB4E30 /* BHorizontalBlockNode1x4.swift in Sources */,
 				9E35808C2CD1A459007ABB7D /* GameType.swift in Sources */,
 				5156DB5E2CD6DC0B00718AD9 /* BSquareBlock2x2.swift in Sources */,
@@ -514,7 +518,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.hyel.Blocks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.Blocks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -544,7 +548,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.hyel.Blocks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.Blocks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
