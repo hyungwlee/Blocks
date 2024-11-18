@@ -75,7 +75,7 @@ class BGameScene: SKScene {
         let spacing: CGFloat = 20
         let totalWidth = placeholderSize.width * 4 + spacing * 3
         let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
-        let yPosition = size.height - 150 // Adjust as needed, below the score label
+        let yPosition = size.height - 160 // Adjust as needed, below the score label
 
         for i in 0..<4 {
             let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
@@ -333,15 +333,41 @@ class BGameScene: SKScene {
         }
     }
 
+    // MARK: - Updated Score Label
     func addScoreLabel() {
-        let scoreLabel = SKLabelNode(text: "Score: \(score)")
-        scoreLabel.fontSize = 36
-        scoreLabel.fontColor = .white
+        // Create a smaller and modern container node for the score
+        let scoreContainer = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25) // Slightly reduced size and corner radius
+        scoreContainer.fillColor = .white
+        scoreContainer.strokeColor = .clear
+        scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100) // Adjusted Y position slightly lower for balance
+        scoreContainer.name = "scoreContainer"
+
+        // Add a subtle shadow effect to the container for a modern look
+        let shadowNode = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25)
+        shadowNode.fillColor = UIColor.black.withAlphaComponent(0.15)
+        shadowNode.strokeColor = .clear
+        shadowNode.position = CGPoint(x: scoreContainer.position.x + 2, y: scoreContainer.position.y - 2)
+        shadowNode.zPosition = -1
+        addChild(shadowNode)
+
+        // Add the score label inside the container
+        let scoreLabel = SKLabelNode(text: "\(score)")
+        scoreLabel.fontSize = 24 // Reduced font size to match smaller container
+        scoreLabel.fontColor = .black
         scoreLabel.fontName = "Helvetica-Bold"
-        scoreLabel.position = CGPoint(x: size.width / 2, y: size.height - 100)
+        scoreLabel.verticalAlignmentMode = .center
+        scoreLabel.position = CGPoint.zero // Centered within the container
         scoreLabel.name = "scoreLabel"
-        addChild(scoreLabel)
+
+        // Add the label to the container
+        scoreContainer.addChild(scoreLabel)
+
+        // Add the container to the scene
+        addChild(scoreContainer)
     }
+
+
+
 
     func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
         for block in blocks {
@@ -606,7 +632,7 @@ class BGameScene: SKScene {
         isGameOver = true
 
         // Play Game Over Sound
-        if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
+        if Bundle.main.url(forResource: "Muted", withExtension: "mp3") != nil {
             // Play sound using SKAction instead of SKAudioNode
             let playSoundAction = SKAction.playSoundFileNamed("Muted.mp3", waitForCompletion: false)
             self.run(playSoundAction)
@@ -718,10 +744,12 @@ class BGameScene: SKScene {
     }
 
     func updateScoreLabel() {
-        if let scoreLabel = childNode(withName: "scoreLabel") as? SKLabelNode {
-            scoreLabel.text = "Score: \(score)"
+        if let scoreContainer = childNode(withName: "scoreContainer") as? SKShapeNode,
+           let scoreLabel = scoreContainer.childNode(withName: "scoreLabel") as? SKLabelNode {
+            scoreLabel.text = "\(score)"
         }
     }
+
 
     // MARK: - Touch Handling
 
