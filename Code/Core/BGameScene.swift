@@ -221,10 +221,11 @@ class BGameScene: SKScene {
         BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
         BRotatedLShapeNode2x2.self,
-        BRotatedLBlock2x2.self,
         BLShapeNode5Block.self,
         BRotatedLShapeNode5Block.self,
-        BRotatedLShape5Block.self
+        BTShapedBlock.self
+        
+        
     ]
 
     func setupGridHighlights() {
