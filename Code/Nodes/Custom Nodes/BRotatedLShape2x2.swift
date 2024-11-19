@@ -28,7 +28,7 @@ class BRotatedLShapeNode2x2: BBoxNode {
         "Group 16316": .blue,
         "Group 16363-1": .yellow,
         "Group 16315": .green,
-        "Straight Face": .systemBlue
+        "Straight Face": .purple
     ]
     
     private let selectedAsset = "Straight Face"  // Choose the asset you want
