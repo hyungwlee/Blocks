@@ -283,35 +283,29 @@ class BGameScene: SKScene {
         }
     }
 
-    override func didMove(to view: SKView) {
-        // Set the background color to clear to make the background visible
-        backgroundColor = .clear
+override func didMove(to view: SKView) {
+    // Set the background color to black
+    backgroundColor = .black
 
-        // Load a single background image
-        let background = SKSpriteNode(imageNamed: "bg") // Replace with the actual name of your image file
-        background.size = size // Resize background to fit the screen size
-        background.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        background.zPosition = -1 // Ensure the background is behind other elements
-        addChild(background)
+    // Existing setup
+    createGrid()
+    addScoreLabel()
+    createPowerupPlaceholders()
+    spawnNewBlocks()
+    setupGridHighlights()
 
-        // Existing setup
-        createGrid()
-        addScoreLabel()
-        createPowerupPlaceholders()
-        spawnNewBlocks()
-        setupGridHighlights()
-
-        // Play background music
-        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-            backgroundMusic = SKAudioNode(url: url)
-            if let backgroundMusic = backgroundMusic {
-                backgroundMusic.autoplayLooped = true
-                addChild(backgroundMusic)
-            }
-        } else {
-            print("Error: Background music file not found.")
+    // Play background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url)
+        if let backgroundMusic = backgroundMusic {
+            backgroundMusic.autoplayLooped = true
+            addChild(backgroundMusic)
         }
+    } else {
+        print("Error: Background music file not found.")
     }
+}
+
 
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
@@ -675,49 +669,46 @@ class BGameScene: SKScene {
         addChild(restartLabel)
     }
 
-    func restartGame() {
-        print("Restarting game...")
-        score = 0
-        updateScoreLabel()
+  func restartGame() {
+    print("Restarting game...")
+    score = 0
+    updateScoreLabel()
 
-        // Reset the grid and remove all children from the scene
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        removeAllChildren()
+    // Reset the grid and remove all children from the scene
+    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+    removeAllChildren()
 
-        isGameOver = false
-        placedBlocks.removeAll() // Clear the placed blocks
-        undoStack.removeAll()    // Clear the undo stack
+    isGameOver = false
+    placedBlocks.removeAll() // Clear the placed blocks
+    undoStack.removeAll()    // Clear the undo stack
 
-        // Add the background image back
-        let background = SKSpriteNode(imageNamed: "bg") // Replace with the actual name of your image file
-        background.size = size // Resize to fit the screen
-        background.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        background.zPosition = -1 // Ensure it’s behind other elements
-        addChild(background)
+    // Set the background color to black
+    backgroundColor = .black
 
-        // Re-add other game elements
-        createGrid()
-        addScoreLabel()
-        spawnNewBlocks()
-        createPowerupPlaceholders()
-        setupGridHighlights()
+    // Re-add other game elements
+    createGrid()
+    addScoreLabel()
+    spawnNewBlocks()
+    createPowerupPlaceholders()
+    setupGridHighlights()
 
-        // Remove existing background music if it exists
-        backgroundMusic?.removeFromParent()
-        backgroundMusic = nil
+    // Remove existing background music if it exists
+    backgroundMusic?.removeFromParent()
+    backgroundMusic = nil
 
-        // Restart background music
-        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-            backgroundMusic = SKAudioNode(url: url)
-            if let backgroundMusic = backgroundMusic {
-                print("Background music found and will play.")
-                backgroundMusic.autoplayLooped = true
-                addChild(backgroundMusic)
-            }
-        } else {
-            print("Error: Background music file not found.")
+    // Restart background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url)
+        if let backgroundMusic = backgroundMusic {
+            print("Background music found and will play.")
+            backgroundMusic.autoplayLooped = true
+            addChild(backgroundMusic)
         }
+    } else {
+        print("Error: Background music file not found.")
     }
+}
+
 
     func placeholderIndex(for placeholder: SKShapeNode) -> Int? {
         for i in 0..<4 {
