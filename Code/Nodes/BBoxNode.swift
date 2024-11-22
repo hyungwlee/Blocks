@@ -27,8 +27,10 @@ class BBoxNode: SKNode {
         self.layoutInfo = layoutInfo
         self.tileSize = tileSize
         self.color = color
+        
         super.init()
         isUserInteractionEnabled = false // Disable touch handling in BBoxNode
+        self.zPosition = 1  // Set zPosition for block nodes
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -42,34 +44,47 @@ class BBoxNode: SKNode {
         self.assets = assets
         createVisualRepresentation()
     }
+
     
     func createVisualRepresentation() {
         // Remove any existing child nodes
         removeAllChildren()
-        
-        // For each cell in 'shape', add the asset at the correct position
+
         for (index, cell) in shape.enumerated() {
-            // Get the asset name and position
             let assetInfo = assets[index]
             let assetName = assetInfo.name
-            
-            // Create the asset sprite node
-            let assetNode = SKSpriteNode(imageNamed: assetName)
-            assetNode.size = CGSize(width: tileSize, height: tileSize) // Adjust as necessary
-            assetNode.name = assetName  // Assign a unique name to the asset
-            
-            // Calculate the position based on the cell's coordinates
+
+            // Create the shadow node
+            let shadowNode = SKSpriteNode(imageNamed: assetName)
+            shadowNode.size = CGSize(width: tileSize, height: tileSize)
+            shadowNode.alpha = 0.3  // Subtle shadow effect
+            shadowNode.zPosition = -1  // Ensure it is beneath the block
+            shadowNode.color = .black
+            shadowNode.colorBlendFactor = 0.5  // Slightly darkened shadow
+
+            // Slight offset for the shadow to give depth
+            let xOffset: CGFloat = 5
+            let yOffset: CGFloat = -5
             let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
             let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
-            assetNode.position = CGPoint(x: xPos, y: yPos)
-            
-            // Set zPosition to ensure the asset is visible
-            assetNode.zPosition = 1
-            
-            // Add the asset node as a child to this BBoxNode
-            addChild(assetNode)
+            shadowNode.position = CGPoint(x: xPos + xOffset, y: yPos + yOffset)
+
+            // Create the block sprite node
+            let spriteNode = SKSpriteNode(imageNamed: assetName)
+            spriteNode.size = CGSize(width: tileSize, height: tileSize)
+            spriteNode.zPosition = 1  // Ensure it is above the shadow
+            spriteNode.alpha = 1.0  // Fully opaque block
+            spriteNode.position = CGPoint(x: xPos, y: yPos)
+
+            // Add nodes to the block
+            addChild(shadowNode)
+            addChild(spriteNode)
         }
     }
+
+
+
+
     
     var gridHeight: Int {
         let rows = shape.map { $0.row }
@@ -105,6 +120,23 @@ class BBoxNode: SKNode {
         assets = assets.map { (name: $0.name, position: (row: $0.position.col, col: -$0.position.row)) }
         createVisualRepresentation()
     }
+    func occupiedCellsWithAssets() -> [(gridCoordinate: GridCoordinate, assetName: String)] {
+        var occupied: [(gridCoordinate: GridCoordinate, assetName: String)] = []
+        let gridPosition = self.gridPosition()
+        let baseRow = gridPosition.row
+        let baseCol = gridPosition.col
+
+        for (index, cell) in shape.enumerated() {
+            let gridRow = baseRow + cell.row
+            let gridCol = baseCol + cell.col
+            let gridCoordinate = GridCoordinate(row: gridRow, col: gridCol)
+            let assetName = assets[index].name
+            occupied.append((gridCoordinate: gridCoordinate, assetName: assetName))
+        }
+        return occupied
+    }
+
+
     
     func occupiedCells() -> [GridCoordinate] {
         var occupied: [GridCoordinate] = []

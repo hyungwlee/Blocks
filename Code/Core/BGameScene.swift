@@ -29,7 +29,8 @@ class BGameScene: SKScene {
     var isSwapPowerupActive = false
     var undoStack: [Move] = []  // Updated to store Move objects
 
-    var highlightGrid: [[SKShapeNode?]] = []
+    var highlightGrid: [[SKNode?]] = []
+
 
     var dropSound: SKAudioNode?
     var backgroundMusic: SKAudioNode?
@@ -258,60 +259,79 @@ func spawnMultiplierPowerup() {
     ]
 
     func setupGridHighlights() {
-        // Create a grid of highlight nodes with the same size as the main grid
         highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
 
         let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
                                  y: (size.height - CGFloat(gridSize) * tileSize) / 2)
 
-        // Add highlight nodes for each grid cell
         for row in 0..<gridSize {
             for col in 0..<gridSize {
-                let node = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-                node.fillColor = .clear // Transparent by default
-                node.strokeColor = .blue // Highlight border color
-                node.alpha = 0.0 // Hidden initially
+                let node = SKNode()
                 node.position = CGPoint(x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
                                         y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2)
+                node.zPosition = 0  // Set zPosition for highlight nodes
                 highlightGrid[row][col] = node
                 addChild(node)
             }
         }
     }
 
+
+
     func clearHighlights() {
         for row in highlightGrid {
             for node in row {
-                node?.fillColor = .clear
-                node?.alpha = 0.0
+                node?.removeAllChildren()
             }
         }
     }
 
+
+
     func highlightValidCells(for block: BBoxNode) {
         clearHighlights()
 
-        let occupiedCells = block.occupiedCells()
+        let occupiedCellsWithAssets = block.occupiedCellsWithAssets()
         var isValidPlacement = true
 
-        for cell in occupiedCells {
-            // Check if cell is outside the grid or already occupied
+        // Check if placement is valid
+        for occupiedCell in occupiedCellsWithAssets {
+            let cell = occupiedCell.gridCoordinate
             if cell.row < 0 || cell.row >= gridSize || cell.col < 0 || cell.col >= gridSize || grid[cell.row][cell.col] != nil {
                 isValidPlacement = false
                 break
             }
         }
 
-        let highlightColor: UIColor = isValidPlacement ? .green : .red
-        for cell in occupiedCells {
+        for occupiedCell in occupiedCellsWithAssets {
+            let cell = occupiedCell.gridCoordinate
+            let assetName = occupiedCell.assetName
+
             if cell.row >= 0, cell.row < gridSize, cell.col >= 0, cell.col < gridSize {
                 if let highlightNode = highlightGrid[cell.row][cell.col] {
-                    highlightNode.fillColor = highlightColor
-                    highlightNode.alpha = 0.5
+                    // Create the shadow node (ensure it sticks below the block)
+                    let shadowNode = SKSpriteNode(imageNamed: assetName)
+                    shadowNode.size = CGSize(width: tileSize, height: tileSize)
+                    shadowNode.alpha = 0.3  // Subtle shadow transparency
+                    shadowNode.zPosition = -1  // Always beneath the block
+
+                    // Create the block sprite node
+                    let spriteNode = SKSpriteNode(imageNamed: assetName)
+                    spriteNode.size = CGSize(width: tileSize, height: tileSize)
+                    spriteNode.alpha = 0.8  // Adjust alpha if needed
+                    spriteNode.zPosition = 1  // Above the shadow
+
+                    // Add shadow and block to the highlight node
+                    highlightNode.addChild(shadowNode)
+                    highlightNode.addChild(spriteNode)
                 }
             }
         }
     }
+
+
+
+
 
 override func didMove(to view: SKView) {
     // Set the background color to black
@@ -1138,7 +1158,11 @@ func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
     guard let touch = touches.first, let node = currentlyDraggedNode else { return }
 
     let touchLocation = touch.location(in: self)
+      // Set the block to fully opaque while dragging
+       node.alpha = 1.0
 
+       // Update block position to follow the touch
+       node.position = touchLocation
     // Scale up the block smoothly if not already scaled
     if node.xScale < 1.0 {
         let scaleAction = SKAction.scale(to: 1.0, duration: 0.1)
