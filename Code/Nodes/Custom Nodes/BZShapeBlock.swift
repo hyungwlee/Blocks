@@ -8,7 +8,7 @@ class BZShapedBlock: BBoxNode {
     private let availableAssets = [
         "Z-Block-1", "Z-Block-2", "Z-Block", // Example assets
         "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1",
-        "Group 16313", "Group 16314-1", "Group 16316", "Group 16363-1", "Group 16316-1"
+        "Group 16313", "Group 16314-1", "Group 16316", "Group 16363-1", "Group 16316-1","Group 16316-1 "
     ]
     
     // Dictionary mapping asset names to colors
@@ -24,11 +24,11 @@ class BZShapedBlock: BBoxNode {
         "Group 16314-1": .brown,
         "Group 16316": .blue,
         "Group 16363-1": .yellow,
-        "Group 16316-1": .red
+        "Group 16316-1 ":.red,
     ]
     
     // Selected asset for the block
-    private let selectedAsset = "Group 16316-1"
+    private let selectedAsset = "Group 16316-1 "
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .blue) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)

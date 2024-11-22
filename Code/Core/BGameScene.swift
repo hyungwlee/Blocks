@@ -18,6 +18,11 @@ class BGameScene: SKScene {
     var gameContext: BGameContext
     var isGameOver: Bool = false
     var placedBlocks: [PlacedBlock] = []
+    
+    var multiplier: Int = 2  // Default multiplier is 1 (no multiplier)
+    var isMultiplierPowerupActive = false  // Track if the multiplier power-up is active
+
+
 
     // Power-up state variables
     var isDeletePowerupActive = false
@@ -71,39 +76,67 @@ class BGameScene: SKScene {
     }
 
     func createPowerupPlaceholders() {
-        let placeholderSize = CGSize(width: 50, height: 50)
-        let spacing: CGFloat = 20
-        let totalWidth = placeholderSize.width * 4 + spacing * 3
-        let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
-        let yPosition = size.height - 160 // Adjust as needed, below the score label
+    let placeholderSize = CGSize(width: 50, height: 50)
+    let spacing: CGFloat = 20
+    let totalWidth = placeholderSize.width * 4 + spacing * 3
+    let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
+    let yPosition = size.height - 160 // Adjust as needed, below the score label
 
-        for i in 0..<4 {
-            let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
-            placeholder.strokeColor = .white
-            placeholder.lineWidth = 2.0
-            placeholder.fillColor = .clear // Set fill color to clear or any color you prefer
-            placeholder.name = "powerupPlaceholder\(i)"
+    for i in 0..<4 {
+        let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
+        placeholder.strokeColor = .white
+        placeholder.lineWidth = 2.0
+        placeholder.fillColor = .clear
+        placeholder.name = "powerupPlaceholder\(i)"
 
-            let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
-            placeholder.position = CGPoint(x: xPosition, y: yPosition)
-            addChild(placeholder)
+        let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
+        placeholder.position = CGPoint(x: xPosition, y: yPosition)
+        addChild(placeholder)
 
-            // Add the question icon initially
-            let questionIcon = SKSpriteNode(imageNamed: "question.png")
-            questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
-            questionIcon.position = CGPoint.zero // Center within the placeholder
-            questionIcon.name = "questionIcon\(i)"
-            placeholder.addChild(questionIcon)
+        // Add the question icon initially
+        let questionIcon = SKSpriteNode(imageNamed: "question.png")
+        questionIcon.size = CGSize(width: 40, height: 40)
+        questionIcon.position = CGPoint.zero // Center within the placeholder
+        questionIcon.name = "questionIcon\(i)"
+        placeholder.addChild(questionIcon)
+    }
+}
+
+func spawnMultiplierPowerup() {
+    for i in 0..<4 {
+        if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+            // Check if the placeholder only contains the question icon
+            if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                // Remove the question icon
+                placeholder.children.first?.removeFromParent()
+
+                // Create the multiplier power-up icon
+                let multiplierPowerup = SKSpriteNode(imageNamed: "multiplier.webp")
+                multiplierPowerup.size = CGSize(width: 40, height: 40)
+                multiplierPowerup.position = CGPoint.zero
+                multiplierPowerup.name = "multiplierPowerup"
+
+                // Add a subtle glow or pulse effect
+                let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                multiplierPowerup.run(SKAction.repeatForever(pulseSequence))
+
+                // Add the power-up icon as a child of the placeholder
+                placeholder.addChild(multiplierPowerup)
+                break
+            }
         }
     }
+}
 
-    func spawnPowerups() {
-        // Spawn both delete and rotate power-ups
-        spawnDeletePowerup()
-        spawnSwapPowerup()
-        spawnUndoPowerup()
-        // spawnRotatePowerup()
-    }
+   func spawnPowerups() {
+    spawnDeletePowerup()
+    spawnSwapPowerup()
+    spawnUndoPowerup()
+    spawnMultiplierPowerup()
+}
+
 
     func spawnDeletePowerup() {
         for i in 0..<4 {
@@ -189,9 +222,6 @@ class BGameScene: SKScene {
         }
     }
 
-    func spawnRotatePowerup() {
-        // Implement if you have a rotate power-up
-    }
 
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
@@ -209,21 +239,21 @@ class BGameScene: SKScene {
     }
 
     private var availableBlockTypes: [BBoxNode.Type] = [
-        //BSingleBlock.self,
-        //BSquareBlock2x2.self,
-        //BSquareBlock3x3.self,
-        //BVerticalBlockNode1x2.self,
-        //BHorizontalBlockNode1x2.self,
+        BSingleBlock.self,
+        BSquareBlock2x2.self,
+        BSquareBlock3x3.self,
+        BVerticalBlockNode1x2.self,
+        BHorizontalBlockNode1x2.self,
         BLShapeNode2x2.self, // Added the L-shaped block
-        //BVerticalBlockNode1x3.self,
-        //BHorizontalBlockNode1x3.self,
-        //BVerticalBlockNode1x4.self,
-        //BHorizontalBlockNode1x4.self,
+        BVerticalBlockNode1x3.self,
+        BHorizontalBlockNode1x3.self,
+        BVerticalBlockNode1x4.self,
+        BHorizontalBlockNode1x4.self,
         BRotatedLShapeNode2x2.self,
         BLShapeNode5Block.self,
         BRotatedLShapeNode5Block.self,
-        //BTShapedBlock.self,
-        //BZShapedBlock.self
+        BTShapedBlock.self,
+        BZShapedBlock.self
         
     ]
 
@@ -565,61 +595,141 @@ override func didMove(to view: SKView) {
         return lineClears
     }
 
-    func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-        for col in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
-                let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
-                let removeAction = SKAction.run { cellNode.removeFromParent() }
+func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+    
+    // If the multiplier is active, trigger a custom animation
+    if isMultiplierPowerupActive {
+        playMultiplierEffect(atLine: row, isRow: true)
+    }
+    
+    for col in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+            let removeAction = SKAction.run { cellNode.removeFromParent() }
 
-                // Create a sequence of actions: fade out, scale down, then remove from parent
-                let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
-
-                // Run the sequence
-                cellNode.run(clearSequence)
-
-                // Set the grid cell to nil after the animation
-                grid[row][col] = nil
-
-                // Collect cleared cell for undo
-                clearedCells.append((row: row, col: col, cellNode: cellNode))
-            }
+            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+            cellNode.run(clearSequence)
+            grid[row][col] = nil
+            clearedCells.append((row: row, col: col, cellNode: cellNode))
         }
+    }
+    
+    // Apply the multiplier if it's active
+    let points = 8 * (isMultiplierPowerupActive ? 2 : 1)
+    score += points
+    updateScoreLabel()
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
 
-        updateScoreLabel()
-        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-
-        return clearedCells
+    if isMultiplierPowerupActive {
+        isMultiplierPowerupActive = false
     }
 
-    func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-        for row in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
-                let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
-                let removeAction = SKAction.run { cellNode.removeFromParent() }
+    return clearedCells
+}
 
-                // Create a sequence of actions: fade out, scale down, then remove from parent
-                let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
-
-                // Run the sequence
-                cellNode.run(clearSequence)
-
-                // Set the grid cell to nil after the animation
-                grid[row][col] = nil
-
-                // Collect cleared cell for undo
-                clearedCells.append((row: row, col: col, cellNode: cellNode))
-            }
-        }
-
-        updateScoreLabel()
-        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-
-        return clearedCells
+func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+    
+    // If the multiplier is active, trigger a custom animation
+    if isMultiplierPowerupActive {
+        playMultiplierEffect(atLine: col, isRow: false)
     }
+
+    for row in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+            let removeAction = SKAction.run { cellNode.removeFromParent() }
+
+            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+            cellNode.run(clearSequence)
+            grid[row][col] = nil
+            clearedCells.append((row: row, col: col, cellNode: cellNode))
+        }
+    }
+    
+    // Apply the multiplier if it's active
+    let points = 8 * (isMultiplierPowerupActive ? 2 : 1)
+    score += points
+    updateScoreLabel()
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+
+    if isMultiplierPowerupActive {
+        isMultiplierPowerupActive = false
+    }
+
+    return clearedCells
+}
+
+// Custom animation for the multiplier effect
+func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
+    // Dynamically calculate the grid's origin based on scene size and grid size
+    let gridOrigin = CGPoint(
+        x: (size.width - CGFloat(gridSize) * tileSize) / 2,
+        y: (size.height - CGFloat(gridSize) * tileSize) / 2
+    )
+    
+    // Dimensions of the effect based on whether it's a row or column
+    let effectWidth = isRow ? CGFloat(gridSize) * tileSize : tileSize
+    let effectHeight = isRow ? tileSize : CGFloat(gridSize) * tileSize
+
+    // Create the effect node
+    let lineEffectNode = SKShapeNode(rectOf: CGSize(width: effectWidth, height: effectHeight))
+    lineEffectNode.fillColor = .yellow
+    lineEffectNode.alpha = 0.5  // Softer highlight to avoid overwhelming the display
+
+    // Create the multiplier label
+    let multiplierLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+    multiplierLabel.text = "2x"
+    multiplierLabel.fontSize = 40
+    multiplierLabel.fontColor = .red
+    multiplierLabel.zPosition = 5  // Ensure it's above other nodes
+    multiplierLabel.alpha = 0.0  // Start invisible for a fade-in effect
+    
+    // Calculate the position of the effect node and label
+    let xPosition: CGFloat
+    let yPosition: CGFloat
+    
+    if isRow {
+        // For a row, center the effect horizontally across the grid
+        xPosition = gridOrigin.x + (tileSize * CGFloat(gridSize)) / 2
+        yPosition = gridOrigin.y + tileSize * CGFloat(lineIndex) + tileSize / 2
+    } else {
+        // For a column, center the effect vertically across the grid
+        xPosition = gridOrigin.x + tileSize * CGFloat(lineIndex) + tileSize / 2
+        yPosition = gridOrigin.y + (tileSize * CGFloat(gridSize)) / 2
+    }
+
+    // Set positions
+    lineEffectNode.position = CGPoint(x: xPosition, y: yPosition)
+    multiplierLabel.position = CGPoint(x: xPosition, y: yPosition)
+    
+    // Add nodes to the scene
+    addChild(lineEffectNode)
+    addChild(multiplierLabel)
+    
+    // Animation for the effect node
+    let scaleUpAction = SKAction.scale(by: 1.2, duration: 0.2)
+    let scaleDownAction = SKAction.scale(to: 1.0, duration: 0.2)
+    let fadeOutEffect = SKAction.fadeOut(withDuration: 0.3)
+    let removeEffect = SKAction.run { lineEffectNode.removeFromParent() }
+    let effectSequence = SKAction.sequence([scaleUpAction, scaleDownAction, fadeOutEffect, removeEffect])
+    
+    // Animation for the multiplier label
+    let fadeInLabel = SKAction.fadeIn(withDuration: 0.2)
+    let scaleLabel = SKAction.scale(to: 1.5, duration: 0.2)
+    let waitLabel = SKAction.wait(forDuration: 0.3)
+    let fadeOutLabel = SKAction.fadeOut(withDuration: 0.3)
+    let removeLabel = SKAction.run { multiplierLabel.removeFromParent() }
+    let labelSequence = SKAction.sequence([fadeInLabel, scaleLabel, waitLabel, fadeOutLabel, removeLabel])
+    
+    // Run animations
+    lineEffectNode.run(effectSequence)
+    multiplierLabel.run(labelSequence)
+}
+
 
     func showGameOverScreen() {
         isGameOver = true
@@ -732,6 +842,8 @@ override func didMove(to view: SKView) {
             placeholder.addChild(questionIcon)
         }
     }
+    
+    
 
     func updateScoreLabel() {
         if let scoreContainer = childNode(withName: "scoreContainer") as? SKShapeNode,
@@ -743,169 +855,200 @@ override func didMove(to view: SKView) {
 
     // MARK: - Touch Handling
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let nodeTapped = atPoint(location)
+   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+    let location = touch.location(in: self)
+    let nodeTapped = atPoint(location)
 
-        if isGameOver {
-            if nodeTapped.name == "restartLabel" {
-                restartGame()
-            }
-            return
+    if isGameOver {
+        if nodeTapped.name == "restartLabel" {
+            restartGame()
         }
+        return
+    }
 
-        // Check if the delete power-up icon is tapped
-        if nodeTapped.name == "deletePowerup" {
-            isDeletePowerupActive = true
-            if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
-                if let index = placeholderIndex(for: parentPlaceholder) {
-                    resetPlaceholder(at: index)
-                }
-            }
-            nodeTapped.removeFromParent()  // Remove the power-up icon after activation
-
-            // Visual indication of activation: flash background
-            let flashBackground = SKShapeNode(rectOf: size)
-            flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
-            flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            flashBackground.zPosition = -1
-            addChild(flashBackground)
-
-            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-            let remove = SKAction.removeFromParent()
-            flashBackground.run(SKAction.sequence([fadeOut, remove]))
-
-            return
-        }
-
-        if nodeTapped.name == "swapPowerup" {
-            isSwapPowerupActive = true
-            if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
-                if let index = placeholderIndex(for: parentPlaceholder) {
-                    resetPlaceholder(at: index)
-                }
-            }
-            nodeTapped.removeFromParent()  // Remove the power-up icon after activation
-
-            // Visual indication of activation: flash background
-            let flashBackground = SKShapeNode(rectOf: size)
-            flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
-            flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            flashBackground.zPosition = -1
-            addChild(flashBackground)
-
-            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-            let remove = SKAction.removeFromParent()
-            flashBackground.run(SKAction.sequence([fadeOut, remove]))
-
-            return
-        }
-
-        if nodeTapped.name == "undoPowerup" {
-            // Activate undo functionality
-            undoLastMove()
-
-            // Remove the undo power-up from the placeholder
-            if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
-                if let index = placeholderIndex(for: parentPlaceholder) {
-                    resetPlaceholder(at: index)
-                }
-            }
-            nodeTapped.removeFromParent() // Remove the undo power-up icon after activation
-
-            // Optional: Visual indication of undo
-            let flashBackground = SKShapeNode(rectOf: size)
-            flashBackground.fillColor = UIColor.yellow.withAlphaComponent(0.3)
-            flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            flashBackground.zPosition = -1
-            addChild(flashBackground)
-
-            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-            let remove = SKAction.removeFromParent()
-            flashBackground.run(SKAction.sequence([fadeOut, remove]))
-
-            return
-        }
-
-        // If delete power-up is active, delete the selected block (entire PlacedBlock)
-        if isDeletePowerupActive {
-            // Check if the tapped node is a cell node in the grid
-            if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock, updateScore: false) // Pass false to prevent score increment
-                isDeletePowerupActive = false
-                performPowerupDeactivationEffect()
-                return
-            } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock, updateScore: false)
-                isDeletePowerupActive = false
-                performPowerupDeactivationEffect()
-                return
+    // Check if the delete power-up icon is tapped
+    if nodeTapped.name == "deletePowerup" {
+        isDeletePowerupActive = true
+        if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+            if let index = placeholderIndex(for: parentPlaceholder) {
+                resetPlaceholder(at: index)
             }
         }
+        nodeTapped.removeFromParent()  // Remove the power-up icon after activation
 
-        if isSwapPowerupActive {
-            // Check if the tapped node is a block in the spawning area (BBoxNode)
-            if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
-                isSwapPowerupActive = false  // Deactivate the power-up after use
-                performPowerupDeactivationEffect()
-                return
-            } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
-                isSwapPowerupActive = false
-                performPowerupDeactivationEffect()
-                return
+        // Visual indication of activation: flash background
+        let flashBackground = SKShapeNode(rectOf: size)
+        flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
+        flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flashBackground.zPosition = -1
+        addChild(flashBackground)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+        return
+    }
+
+    // Check if the swap power-up icon is tapped
+    if nodeTapped.name == "swapPowerup" {
+        isSwapPowerupActive = true
+        if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+            if let index = placeholderIndex(for: parentPlaceholder) {
+                resetPlaceholder(at: index)
             }
         }
+        nodeTapped.removeFromParent()  // Remove the power-up icon after activation
 
-        // Existing code for handling block dragging or other actions
-        if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else {
-            currentlyDraggedNode = nil
+        // Visual indication of activation: flash background
+        let flashBackground = SKShapeNode(rectOf: size)
+        flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
+        flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flashBackground.zPosition = -1
+        addChild(flashBackground)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+        return
+    }
+
+    // Check if the undo power-up icon is tapped
+    if nodeTapped.name == "undoPowerup" {
+        // Activate undo functionality
+        undoLastMove()
+
+        // Remove the undo power-up from the placeholder
+        if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+            if let index = placeholderIndex(for: parentPlaceholder) {
+                resetPlaceholder(at: index)
+            }
         }
+        nodeTapped.removeFromParent() // Remove the undo power-up icon after activation
 
-        // Play block selection sound when a block is selected, only once
-        if let node = currentlyDraggedNode {
-            // Cancel rotate power-up if it was active
-            // isRotatePowerupActive = false
+        // Optional: Visual indication of undo
+        let flashBackground = SKShapeNode(rectOf: size)
+        flashBackground.fillColor = UIColor.yellow.withAlphaComponent(0.3)
+        flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flashBackground.zPosition = -1
+        addChild(flashBackground)
 
-            // Reset rotate power-up icon appearance
-            if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
-                rotatePowerupIcon.colorBlendFactor = 0.0
-            }
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        flashBackground.run(SKAction.sequence([fadeOut, remove]))
 
-            if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
-                do {
-                    // Initialize the audio player with the sound file URL
-                    audioPlayer = try AVAudioPlayer(contentsOf: url)
-                    audioPlayer?.prepareToPlay()
-                    audioPlayer?.play() // Play the sound
-                } catch {
-                    print("Error: Unable to play sound - \(error)")
-                }
-            } else {
-                print("Error: Audio file not found.")
-            }
+        return
+    }
 
-            // Increase the size of the block when it's selected for dragging
-            node.run(SKAction.scale(to: 1.0, duration: 0.1))
-
-            // Add an offset between the touch point and the block's position when dragging or just touched
-            let touchLocation = touch.location(in: self)
-
-            // Calculate offset to move the block away from the finger
-            let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
-            let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
-
-            node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+    // Check if the multiplier power-up icon is tapped
+    if nodeTapped.name == "multiplierPowerup" {
+    isMultiplierPowerupActive = true
+    multiplier = 2  // Set the multiplier value (e.g., 2x)
+    
+    if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+        if let index = placeholderIndex(for: parentPlaceholder) {
+            resetPlaceholder(at: index)
         }
     }
+    nodeTapped.removeFromParent()  // Remove the power-up icon after activation
+
+    // Visual indication of activation: flash background
+    let flashBackground = SKShapeNode(rectOf: size)
+    flashBackground.fillColor = UIColor.green.withAlphaComponent(0.3)
+    flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    flashBackground.zPosition = -1
+    addChild(flashBackground)
+
+    let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+    let remove = SKAction.removeFromParent()
+    flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+    return
+}
+
+
+    // If delete power-up is active, delete the selected block (entire PlacedBlock)
+    if isDeletePowerupActive {
+        // Check if the tapped node is a cell node in the grid
+        if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+            deletePlacedBlock(placedBlock, updateScore: false) // Pass false to prevent score increment
+            isDeletePowerupActive = false
+            performPowerupDeactivationEffect()
+            return
+        } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+            deletePlacedBlock(placedBlock, updateScore: false)
+            isDeletePowerupActive = false
+            performPowerupDeactivationEffect()
+            return
+        }
+    }
+
+    // If swap power-up is active
+    if isSwapPowerupActive {
+        // Check if the tapped node is a block in the spawning area (BBoxNode)
+        if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
+            deleteBlock(blockNode)
+            isSwapPowerupActive = false  // Deactivate the power-up after use
+            performPowerupDeactivationEffect()
+            return
+        } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
+            deleteBlock(blockNode)
+            isSwapPowerupActive = false
+            performPowerupDeactivationEffect()
+            return
+        }
+    }
+
+    // Existing code for handling block dragging or other actions
+    if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else {
+        currentlyDraggedNode = nil
+    }
+
+    // Play block selection sound when a block is selected, only once
+    if let node = currentlyDraggedNode {
+        // Cancel rotate power-up if it was active
+        // isRotatePowerupActive = false
+
+        // Reset rotate power-up icon appearance
+        if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
+            rotatePowerupIcon.colorBlendFactor = 0.0
+        }
+
+        if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
+            do {
+                // Initialize the audio player with the sound file URL
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play() // Play the sound
+            } catch {
+                print("Error: Unable to play sound - \(error)")
+            }
+        } else {
+            print("Error: Audio file not found.")
+        }
+
+        // Increase the size of the block when it's selected for dragging
+        node.run(SKAction.scale(to: 1.0, duration: 0.1))
+
+        // Add an offset between the touch point and the block's position when dragging or just touched
+        let touchLocation = touch.location(in: self)
+
+        // Calculate offset to move the block away from the finger
+        let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
+        let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
+
+        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+    }
+}
+
 
     func performPowerupDeactivationEffect() {
         // Deactivation effect
@@ -991,29 +1134,42 @@ override func didMove(to view: SKView) {
     }
 
     // Update the position of the dragged block as it follows the touch, with offset
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+  override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first, let node = currentlyDraggedNode else { return }
 
-        let touchLocation = touch.location(in: self)
+    let touchLocation = touch.location(in: self)
 
-        // Scale up the block if not already scaled to 1.0
-        if node.xScale < 1.0 {
-            node.run(SKAction.scale(to: 1.0, duration: 0.1))
-        }
-
-        // Get the offset stored in the userData and apply it
-        if let offsetX = node.userData?["offsetX"] as? CGFloat,
-           let offsetY = node.userData?["offsetY"] as? CGFloat {
-
-            let newPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
-
-            // Update the position
-            node.updatePosition(to: newPosition)
-        }
-        if let draggedNode = currentlyDraggedNode {
-            highlightValidCells(for: draggedNode)
-        }
+    // Scale up the block smoothly if not already scaled
+    if node.xScale < 1.0 {
+        let scaleAction = SKAction.scale(to: 1.0, duration: 0.1)
+        scaleAction.timingMode = .easeOut
+        node.run(scaleAction, withKey: "scaling")
     }
+
+    // Retrieve the offset stored in userData and apply it
+    if let offsetX = node.userData?["offsetX"] as? CGFloat,
+       let offsetY = node.userData?["offsetY"] as? CGFloat {
+
+        let targetPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
+
+        // Interpolate for smoother movement
+        let currentPosition = node.position
+        let easedPosition = interpolate(from: currentPosition, to: targetPosition, fraction: 0.3)
+
+        // Update the position
+        node.position = easedPosition
+    }
+
+    // Highlight valid cells based on the updated position
+    highlightValidCells(for: node)
+}
+
+func interpolate(from start: CGPoint, to end: CGPoint, fraction: CGFloat) -> CGPoint {
+    let x = start.x + (end.x - start.x) * fraction
+    let y = start.y + (end.y - start.y) * fraction
+    return CGPoint(x: x, y: y)
+}
+
 
     func undoLastMove() {
         guard let move = undoStack.popLast() else { return }
