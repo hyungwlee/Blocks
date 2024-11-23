@@ -77,31 +77,34 @@ class BGameScene: SKScene {
     }
 
     func createPowerupPlaceholders() {
-    let placeholderSize = CGSize(width: 50, height: 50)
-    let spacing: CGFloat = 20
-    let totalWidth = placeholderSize.width * 4 + spacing * 3
-    let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
-    let yPosition = size.height - 160 // Adjust as needed, below the score label
+        let placeholderSize = CGSize(width: 50, height: 50)
+        let spacing: CGFloat = 20
+        let totalWidth = placeholderSize.width * 4 + spacing * 3
+        let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
 
-    for i in 0..<4 {
-        let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
-        placeholder.strokeColor = .white
-        placeholder.lineWidth = 2.0
-        placeholder.fillColor = .clear
-        placeholder.name = "powerupPlaceholder\(i)"
+        // Position the placeholders below the spawned blocks
+        let yPosition = size.height * 0.1  // Adjusted to place beneath the blocks
 
-        let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
-        placeholder.position = CGPoint(x: xPosition, y: yPosition)
-        addChild(placeholder)
+        for i in 0..<4 {
+            let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
+            placeholder.strokeColor = .white
+            placeholder.lineWidth = 2.0
+            placeholder.fillColor = .clear
+            placeholder.name = "powerupPlaceholder\(i)"
 
-        // Add the question icon initially
-        let questionIcon = SKSpriteNode(imageNamed: "question.png")
-        questionIcon.size = CGSize(width: 40, height: 40)
-        questionIcon.position = CGPoint.zero // Center within the placeholder
-        questionIcon.name = "questionIcon\(i)"
-        placeholder.addChild(questionIcon)
+            let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
+            placeholder.position = CGPoint(x: xPosition, y: yPosition)
+            addChild(placeholder)
+
+            // Add the question icon initially
+            let questionIcon = SKSpriteNode(imageNamed: "question.png")
+            questionIcon.size = CGSize(width: 40, height: 40)
+            questionIcon.position = CGPoint.zero // Center within the placeholder
+            questionIcon.name = "questionIcon\(i)"
+            placeholder.addChild(questionIcon)
+        }
     }
-}
+
 
 func spawnMultiplierPowerup() {
     for i in 0..<4 {
@@ -261,8 +264,8 @@ func spawnMultiplierPowerup() {
     func setupGridHighlights() {
         highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
 
-        let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                                 y: (size.height - CGFloat(gridSize) * tileSize) / 2)
+        let gridOrigin = getGridOrigin()
+
 
         for row in 0..<gridSize {
             for col in 0..<gridSize {
@@ -355,12 +358,27 @@ override func didMove(to view: SKView) {
         print("Error: Background music file not found.")
     }
 }
+    func getGridOrigin() -> CGPoint {
+        // Calculate gridOrigin.x as before
+        let gridOriginX = (size.width - CGFloat(gridSize) * tileSize) / 2
+
+        // Calculate gridOrigin.y based on placeholders
+        let placeholderSize = CGSize(width: 50, height: 50)
+        let spacing: CGFloat = 20
+        let yPosition = size.height - 160 // From createPowerupPlaceholders()
+        let placeholdersBottomY = yPosition - placeholderSize.height / 2
+
+        let gridTopSpacing: CGFloat = 20
+        let gridHeightInPixels = CGFloat(gridSize) * tileSize
+        let gridOriginY = placeholdersBottomY - gridTopSpacing - gridHeightInPixels
+
+        return CGPoint(x: gridOriginX, y: gridOriginY)
+    }
 
 
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        let gridOrigin = CGPoint(x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                                 y: (size.height - CGFloat(gridSize) * tileSize) / 2)
+        let gridOrigin = getGridOrigin()
 
         for row in 0..<gridSize {
             for col in 0..<gridSize {
@@ -375,6 +393,7 @@ override func didMove(to view: SKView) {
             }
         }
     }
+
 
     // MARK: - Updated Score Label
     func addScoreLabel() {
@@ -467,8 +486,11 @@ override func didMove(to view: SKView) {
         }
         let totalSpacing = spacing * CGFloat(boxNodes.count - 1)
         let startXPosition = (size.width - (totalWidth + totalSpacing)) / 2.0
+
+        // Move the blocks higher on the screen
+        let blockYPosition = size.height * 0.2  // Adjusted for a higher position
+
         var currentXPosition = startXPosition
-        let blockYPosition = size.height * 0.1
 
         for block in boxNodes {
             let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
@@ -500,7 +522,7 @@ override func didMove(to view: SKView) {
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         let row = gridPosition.row
         let col = gridPosition.col
-
+        let gridOrigin = getGridOrigin()
         if isPlacementValid(for: block, at: row, col: col) {
             let previousScore = score  // Save the score before placing the block
             var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
@@ -524,10 +546,8 @@ override func didMove(to view: SKView) {
                 cellNode.strokeColor = .darkGray
                 cellNode.lineWidth = 2.0
 
-                let gridOrigin = CGPoint(
-                    x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-                    y: (size.height - CGFloat(gridSize) * tileSize) / 2
-                )
+                let gridOrigin = getGridOrigin()
+
                 let cellPosition = CGPoint(
                     x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
                     y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
@@ -686,10 +706,8 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 // Custom animation for the multiplier effect
 func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
     // Dynamically calculate the grid's origin based on scene size and grid size
-    let gridOrigin = CGPoint(
-        x: (size.width - CGFloat(gridSize) * tileSize) / 2,
-        y: (size.height - CGFloat(gridSize) * tileSize) / 2
-    )
+    let gridOrigin = getGridOrigin()
+
     
     // Dimensions of the effect based on whether it's a row or column
     let effectWidth = isRow ? CGFloat(gridSize) * tileSize : tileSize

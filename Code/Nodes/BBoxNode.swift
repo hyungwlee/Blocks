@@ -104,14 +104,14 @@ class BBoxNode: SKNode {
     func gridPosition() -> (row: Int, col: Int) {
         guard let gameScene = gameScene else { return (0, 0) }
         let tileSize = gameScene.tileSize
-        let gridOrigin = CGPoint(x: (gameScene.size.width - CGFloat(gameScene.gridSize) * tileSize) / 2,
-                                 y: (gameScene.size.height - CGFloat(gameScene.gridSize) * tileSize) / 2)
+        let gridOrigin = gameScene.getGridOrigin()
         let adjustedPosition = CGPoint(x: self.position.x - gridOrigin.x,
                                        y: self.position.y - gridOrigin.y)
         let col = Int((adjustedPosition.x + tileSize / 2) / tileSize)
         let row = Int((adjustedPosition.y + tileSize / 2) / tileSize)
         return (row, col)
     }
+
     
     func rotateBlock() {
         // Rotate the block's shape 90 degrees clockwise
