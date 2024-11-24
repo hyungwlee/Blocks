@@ -41,7 +41,7 @@ class BGameScene: SKScene {
     var dependencies: Dependencies
     var gameMode: GameModeType
 
-    let initialScale: CGFloat = 0.9  // Set the initial scale to 0.9
+    let initialScale: CGFloat = 0.7  // Set the initial scale to 0.9
 
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
         self.gameContext = context
@@ -78,7 +78,7 @@ class BGameScene: SKScene {
 
     func createPowerupPlaceholders() {
         let placeholderSize = CGSize(width: 50, height: 50)
-        let spacing: CGFloat = 20
+        let spacing: CGFloat = 40
         let totalWidth = placeholderSize.width * 4 + spacing * 3
         let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
 
@@ -260,6 +260,42 @@ func spawnMultiplierPowerup() {
         BZShapedBlock.self
         
     ]
+    func addHorizontalLines() {
+        let scaledTileSize = tileSize * 0.7
+        let verticalBlockHeight = 4 * scaledTileSize  // Adjusted height for scaled blocks
+        let placeholderHeight: CGFloat = 50
+        let spacing: CGFloat = 10  // Reduced spacing for a tighter layout
+
+        // Calculate positions for the lines
+        let centerX = size.width / 2
+        let topLineY = size.height * 0.325  // Adjusted Y position for the top line
+        let bottomLineY = topLineY - verticalBlockHeight - spacing  // Spaced below the top line
+
+        // Line thickness
+        let lineThickness: CGFloat = 1.5
+
+        // Create the top line
+        let topLine = SKShapeNode(rectOf: CGSize(width: size.width, height: lineThickness))
+        topLine.position = CGPoint(x: centerX, y: topLineY)
+        topLine.fillColor = .white
+        topLine.strokeColor = .clear
+        topLine.zPosition = 1
+        addChild(topLine)
+
+        // Create the bottom line
+        let bottomLine = SKShapeNode(rectOf: CGSize(width: size.width, height: lineThickness))
+        bottomLine.position = CGPoint(x: centerX, y: bottomLineY)
+        bottomLine.fillColor = .white
+        bottomLine.strokeColor = .clear
+        bottomLine.zPosition = 1
+        addChild(bottomLine)
+    }
+
+
+
+
+
+
 
     func setupGridHighlights() {
         highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
@@ -342,28 +378,32 @@ func spawnMultiplierPowerup() {
 
 
 
-override func didMove(to view: SKView) {
-    // Set the background color to black
-    backgroundColor = .black
+    override func didMove(to view: SKView) {
+        super.didMove(to: view)
 
-    // Existing setup
-    createGrid()
-    addScoreLabel()
-    createPowerupPlaceholders()
-    spawnNewBlocks()
-    setupGridHighlights()
+        // Existing setup
+        createGrid()
+        addScoreLabel()
+        createPowerupPlaceholders()
+        spawnNewBlocks()
+        setupGridHighlights()
 
-    // Play background music
-    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-        backgroundMusic = SKAudioNode(url: url)
-        if let backgroundMusic = backgroundMusic {
-            backgroundMusic.autoplayLooped = true
-            addChild(backgroundMusic)
+        // Add horizontal lines
+        addHorizontalLines()
+
+        // Play background music
+        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+            backgroundMusic = SKAudioNode(url: url)
+            if let backgroundMusic = backgroundMusic {
+                backgroundMusic.autoplayLooped = true
+                addChild(backgroundMusic)
+            }
+        } else {
+            print("Error: Background music file not found.")
         }
-    } else {
-        print("Error: Background music file not found.")
     }
-}
+
+
     func getGridOrigin() -> CGPoint {
         // Calculate gridOrigin.x as before
         let gridOriginX = (size.width - CGFloat(gridSize) * tileSize) / 2
@@ -482,32 +522,33 @@ override func didMove(to view: SKView) {
     }
 
     func layoutSpawnedBlocks() {
-        let spacing: CGFloat = 10
+        let spacing: CGFloat = 50  // Spacing between blocks
+        let scaledTileSize = tileSize * 0.7  // Adjust for scaled blocks
         var totalWidth: CGFloat = 0
 
-        // Adjust block width calculations to include initialScale
+        // Calculate total width of all blocks with spacing
         for block in boxNodes {
-            let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
+            let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
             totalWidth += blockWidth
         }
         let totalSpacing = spacing * CGFloat(boxNodes.count - 1)
         let startXPosition = (size.width - (totalWidth + totalSpacing)) / 2.0
 
-        // Move the blocks higher on the screen
-        let blockYPosition = size.height * 0.2  // Adjusted for a higher position
-
+        let blockYPosition = size.height * 0.2  // Adjust Y position for the spawn area
         var currentXPosition = startXPosition
 
+        // Position each block
         for block in boxNodes {
-            let blockWidth = CGFloat(block.gridWidth) * tileSize * initialScale
+            let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
             block.position = CGPoint(x: currentXPosition, y: blockYPosition)
             block.initialPosition = block.position
             block.gameScene = self
-            block.setScale(initialScale) // Set initial smaller scale
+            block.setScale(0.7)  // Ensure block scale matches
             safeAddBlock(block)
             currentXPosition += blockWidth + spacing
         }
     }
+
 
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
         for cell in block.shape {
@@ -845,7 +886,7 @@ func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
     spawnNewBlocks()
     createPowerupPlaceholders()
     setupGridHighlights()
-
+    addHorizontalLines()
     // Remove existing background music if it exists
     backgroundMusic?.removeFromParent()
     backgroundMusic = nil
