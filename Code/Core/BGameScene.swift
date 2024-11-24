@@ -292,12 +292,12 @@ func spawnMultiplierPowerup() {
 
 
     func highlightValidCells(for block: BBoxNode) {
-        clearHighlights()
+        clearHighlights() // Clear previous highlights
 
         let occupiedCellsWithAssets = block.occupiedCellsWithAssets()
         var isValidPlacement = true
 
-        // Check if placement is valid
+        // Check if all cells are valid
         for occupiedCell in occupiedCellsWithAssets {
             let cell = occupiedCell.gridCoordinate
             if cell.row < 0 || cell.row >= gridSize || cell.col < 0 || cell.col >= gridSize || grid[cell.row][cell.col] != nil {
@@ -306,11 +306,16 @@ func spawnMultiplierPowerup() {
             }
         }
 
+        if !isValidPlacement {
+            return // If any cell is invalid, don't show any highlights
+        }
+
+        // Highlight cells only if placement is valid
         for occupiedCell in occupiedCellsWithAssets {
             let cell = occupiedCell.gridCoordinate
             let assetName = occupiedCell.assetName
 
-            if cell.row >= 0, cell.row < gridSize, cell.col >= 0, cell.col < gridSize {
+            if cell.row >= 0, cell.row < gridSize, cell.col >= 0, cell.col < gridSize, grid[cell.row][cell.col] == nil {
                 if let highlightNode = highlightGrid[cell.row][cell.col] {
                     // Create the shadow node (ensure it sticks below the block)
                     let shadowNode = SKSpriteNode(imageNamed: assetName)
@@ -331,6 +336,7 @@ func spawnMultiplierPowerup() {
             }
         }
     }
+
 
 
 
