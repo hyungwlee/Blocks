@@ -18,6 +18,7 @@ class BGameScene: SKScene {
     var gameContext: BGameContext
     var isGameOver: Bool = false
     var placedBlocks: [PlacedBlock] = []
+    var gameOverAudioPlayer: AVAudioPlayer?
     
     var multiplier: Int = 2  // Default multiplier is 1 (no multiplier)
     var isMultiplierPowerupActive = false  // Track if the multiplier power-up is active
@@ -816,56 +817,67 @@ func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
 }
 
 
-    func showGameOverScreen() {
-        isGameOver = true
+func showGameOverScreen() {
+    isGameOver = true
 
-        // Play Game Over Sound
-        if Bundle.main.url(forResource: "Muted", withExtension: "mp3") != nil {
-            // Play sound using SKAction instead of SKAudioNode
-            let playSoundAction = SKAction.playSoundFileNamed("Muted.mp3", waitForCompletion: false)
-            self.run(playSoundAction)
-        } else {
-            print("Error: Game over sound file not found.")
+    // Play Game Over Sound using AVAudioPlayer
+    if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
+        do {
+            gameOverAudioPlayer = try AVAudioPlayer(contentsOf: url)
+            gameOverAudioPlayer?.play()
+        } catch {
+            print("Error: Unable to play Game Over sound. \(error.localizedDescription)")
         }
-
-        // Stop and remove background music when the game ends
-        backgroundMusic?.removeFromParent() // Completely remove the background music node
-        backgroundMusic = nil // Set it to nil to make sure it gets reinitialized when restarting
-
-        // Overlay to show game over screen
-        let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
-        overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        addChild(overlay)
-
-        // Game Over Label
-        let gameOverLabel = SKLabelNode(text: "Game Over 😢")
-        gameOverLabel.fontSize = 48
-        gameOverLabel.fontColor = .white
-        gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
-        gameOverLabel.zPosition = 1
-        addChild(gameOverLabel)
-
-        // Final Score Label
-        let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
-        finalScoreLabel.fontSize = 36
-        finalScoreLabel.fontColor = .white
-        finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        finalScoreLabel.zPosition = 1
-        addChild(finalScoreLabel)
-
-        // Restart Label
-        let restartLabel = SKLabelNode(text: "Tap to Restart")
-        restartLabel.fontSize = 24
-        restartLabel.fontColor = .yellow
-        restartLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
-        restartLabel.name = "restartLabel"
-        restartLabel.zPosition = 1
-        addChild(restartLabel)
+    } else {
+        print("Error: Game Over sound file not found.")
     }
 
-  func restartGame() {
+    // Stop and remove background music when the game ends
+    backgroundMusic?.removeFromParent()
+    backgroundMusic = nil
+
+    // Overlay to show game over screen
+    let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
+    overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
+    overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    addChild(overlay)
+
+    // Game Over Label
+    let gameOverLabel = SKLabelNode(text: "Game Over 😢")
+    gameOverLabel.fontSize = 48
+    gameOverLabel.fontColor = .white
+    gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+    gameOverLabel.zPosition = 1
+    addChild(gameOverLabel)
+
+    // Final Score Label
+    let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
+    finalScoreLabel.fontSize = 36
+    finalScoreLabel.fontColor = .white
+    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    finalScoreLabel.zPosition = 1
+    addChild(finalScoreLabel)
+
+    // Restart Label
+    let restartLabel = SKLabelNode(text: "Tap to Restart")
+    restartLabel.fontSize = 24
+    restartLabel.fontColor = .yellow
+    restartLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
+    restartLabel.name = "restartLabel"
+    restartLabel.zPosition = 1
+    addChild(restartLabel)
+}
+
+
+func restartGame() {
     print("Restarting game...")
+
+    // Stop the Game Over sound
+    if let gameOverAudioPlayer = gameOverAudioPlayer {
+        gameOverAudioPlayer.stop()
+        self.gameOverAudioPlayer = nil
+    }
+
     score = 0
     updateScoreLabel()
 
@@ -887,6 +899,7 @@ func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
     createPowerupPlaceholders()
     setupGridHighlights()
     addHorizontalLines()
+
     // Remove existing background music if it exists
     backgroundMusic?.removeFromParent()
     backgroundMusic = nil
@@ -903,6 +916,7 @@ func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
         print("Error: Background music file not found.")
     }
 }
+
 
 
     func placeholderIndex(for placeholder: SKShapeNode) -> Int? {
