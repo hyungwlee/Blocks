@@ -820,7 +820,7 @@ func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
 func showGameOverScreen() {
     isGameOver = true
 
-    // Play Game Over Sound using AVAudioPlayer
+    // Play Game Over Sound
     if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
         do {
             gameOverAudioPlayer = try AVAudioPlayer(contentsOf: url)
@@ -828,45 +828,101 @@ func showGameOverScreen() {
         } catch {
             print("Error: Unable to play Game Over sound. \(error.localizedDescription)")
         }
-    } else {
-        print("Error: Game Over sound file not found.")
     }
 
-    // Stop and remove background music when the game ends
+    // Stop background music
     backgroundMusic?.removeFromParent()
     backgroundMusic = nil
 
-    // Overlay to show game over screen
-    let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.8, height: size.height * 0.3), cornerRadius: 10)
-    overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
-    overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-    addChild(overlay)
+    // Semi-transparent background overlay
+  let overlay = SKShapeNode(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
+overlay.strokeColor = UIColor.clear // Ensure no border is drawn
+overlay.zPosition = 10
+overlay.name = "gameOverUI"
+overlay.position = CGPoint(x: 0, y: 0) // Align to screen's bottom-left corner
+addChild(overlay)
 
-    // Game Over Label
-    let gameOverLabel = SKLabelNode(text: "Game Over 😢")
-    gameOverLabel.fontSize = 48
-    gameOverLabel.fontColor = .white
-    gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
-    gameOverLabel.zPosition = 1
-    addChild(gameOverLabel)
+    // Create the red Game Over banner
+    let banner = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
+    banner.fillColor = UIColor.systemRed
+    banner.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    banner.zPosition = 11
+    banner.name = "gameOverUI" // For cleanup
+    addChild(banner)
 
-    // Final Score Label
-    let finalScoreLabel = SKLabelNode(text: "Final Score: \(score)")
+    // Custom Smiley Face
+    let faceRadius: CGFloat = 50
+    let faceCenter = CGPoint(x: size.width / 2, y: size.height / 2)
+
+    // Face circle
+    let face = SKShapeNode(circleOfRadius: faceRadius)
+    face.fillColor = UIColor.white
+    face.strokeColor = UIColor.clear
+    face.position = faceCenter
+    face.zPosition = 12
+    face.name = "gameOverUI"
+    addChild(face)
+
+    // Left eye
+    let leftEye = SKShapeNode(circleOfRadius: 8)
+    leftEye.fillColor = UIColor.systemRed // Matches the banner
+    leftEye.strokeColor = UIColor.clear
+    leftEye.position = CGPoint(x: faceCenter.x - 20, y: faceCenter.y + 15)
+    leftEye.zPosition = 13
+    leftEye.name = "gameOverUI"
+    addChild(leftEye)
+
+    // Right eye
+    let rightEye = SKShapeNode(circleOfRadius: 8)
+    rightEye.fillColor = UIColor.systemRed // Matches the banner
+    rightEye.strokeColor = UIColor.clear
+    rightEye.position = CGPoint(x: faceCenter.x + 20, y: faceCenter.y + 15)
+    rightEye.zPosition = 13
+    rightEye.name = "gameOverUI"
+    addChild(rightEye)
+
+   // Sad mouth
+let mouthPath = CGMutablePath()
+mouthPath.addArc(center: CGPoint.zero, radius: 20, startAngle: CGFloat.pi, endAngle: CGFloat(2 * Double.pi), clockwise: true)
+let mouth = SKShapeNode(path: mouthPath)
+mouth.strokeColor = UIColor.systemRed // Matches the banner
+mouth.lineWidth = 3
+mouth.position = CGPoint(x: faceCenter.x, y: faceCenter.y - 20)
+mouth.zPosition = 13
+mouth.name = "gameOverUI"
+addChild(mouth)
+    
+    // Final score label
+    let finalScoreLabel = SKLabelNode(text: "Score: \(score)")
     finalScoreLabel.fontSize = 36
-    finalScoreLabel.fontColor = .white
-    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-    finalScoreLabel.zPosition = 1
+    finalScoreLabel.fontColor = UIColor.white
+    finalScoreLabel.fontName = "HelveticaNeue-Bold"
+    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.75)
+    finalScoreLabel.zPosition = 12
+    finalScoreLabel.name = "gameOverUI"
     addChild(finalScoreLabel)
 
-    // Restart Label
-    let restartLabel = SKLabelNode(text: "Tap to Restart")
+    // Restart button
+    let restartButton = SKShapeNode(rectOf: CGSize(width: size.width * 0.4, height: size.height * 0.08), cornerRadius: 10)
+    restartButton.fillColor = UIColor.systemBlue
+    restartButton.position = CGPoint(x: size.width / 2, y: size.height * 0.25)
+    restartButton.zPosition = 12
+    restartButton.name = "restartButton" // For touch detection
+    addChild(restartButton)
+
+    let restartLabel = SKLabelNode(text: "Restart")
     restartLabel.fontSize = 24
-    restartLabel.fontColor = .yellow
-    restartLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
-    restartLabel.name = "restartLabel"
-    restartLabel.zPosition = 1
-    addChild(restartLabel)
+    restartLabel.fontColor = UIColor.white
+    restartLabel.fontName = "HelveticaNeue-Bold"
+    restartLabel.position = CGPoint(x: 0, y: -10)
+    restartLabel.zPosition = 13
+    restartLabel.name = "restartButton" // For touch detection
+    restartButton.addChild(restartLabel)
 }
+
+
+
 
 
 func restartGame() {
@@ -960,7 +1016,7 @@ func restartGame() {
     let nodeTapped = atPoint(location)
 
     if isGameOver {
-        if nodeTapped.name == "restartLabel" {
+        if nodeTapped.name == "restartButton" {
             restartGame()
         }
         return
