@@ -416,7 +416,7 @@ func spawnMultiplierPowerup() {
         let gridOriginX = (size.width - totalGridWidth) / 2
 
         // Position vertically (space above the grid for the score and below for placeholders)
-        let topMargin: CGFloat = size.height * 0.15 // Space for score and icons
+        let topMargin: CGFloat = size.height * 0.10 // Space for score and icons
         let bottomMargin: CGFloat = size.height * 0.25 // Space for placeholders
         let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + bottomMargin
 
