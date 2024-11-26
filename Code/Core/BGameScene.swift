@@ -10,7 +10,10 @@ import AVFoundation
 
 class BGameScene: SKScene {
     let gridSize = 8
-    let tileSize: CGFloat = 40
+    var tileSize: CGFloat {
+        return (size.width - (20 * 2)) / CGFloat(gridSize)
+    }
+
     var score = 0
     var grid: [[SKShapeNode?]] = []
     var boxNodes: [BBoxNode] = []
@@ -406,40 +409,58 @@ func spawnMultiplierPowerup() {
 
 
     func getGridOrigin() -> CGPoint {
-        // Calculate gridOrigin.x as before
-        let gridOriginX = (size.width - CGFloat(gridSize) * tileSize) / 2
+        let totalGridWidth = CGFloat(gridSize) * tileSize
+        let totalGridHeight = CGFloat(gridSize) * tileSize
 
-        // Calculate gridOrigin.y based on placeholders
-        let placeholderSize = CGSize(width: 50, height: 50)
-        let spacing: CGFloat = 20
-        let yPosition = size.height - 160 // From createPowerupPlaceholders()
-        let placeholdersBottomY = yPosition - placeholderSize.height / 2
+        // Center horizontally
+        let gridOriginX = (size.width - totalGridWidth) / 2
 
-        let gridTopSpacing: CGFloat = 20
-        let gridHeightInPixels = CGFloat(gridSize) * tileSize
-        let gridOriginY = placeholdersBottomY - gridTopSpacing - gridHeightInPixels
+        // Position vertically (space above the grid for the score and below for placeholders)
+        let topMargin: CGFloat = size.height * 0.15 // Space for score and icons
+        let bottomMargin: CGFloat = size.height * 0.25 // Space for placeholders
+        let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + bottomMargin
 
         return CGPoint(x: gridOriginX, y: gridOriginY)
     }
+
+
 
 
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         let gridOrigin = getGridOrigin()
 
+        // Create the black outline for the grid
+        let totalGridWidth = CGFloat(gridSize) * tileSize
+        let totalGridHeight = CGFloat(gridSize) * tileSize
+        let outlineNode = SKShapeNode(rect: CGRect(x: gridOrigin.x, y: gridOrigin.y, width: totalGridWidth, height: totalGridHeight))
+        outlineNode.strokeColor = .gray // Outline color for the entire grid
+        outlineNode.lineWidth = 2.0      // Outline thickness
+        outlineNode.zPosition = 2        // Ensure it appears above other background elements
+        addChild(outlineNode)
+
         for row in 0..<gridSize {
             for col in 0..<gridSize {
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize), cornerRadius: 4)
-                cellNode.fillColor = .lightGray
-                cellNode.strokeColor = .darkGray
-                cellNode.lineWidth = 2.0
+                
+                // Set a light gray fill color with transparency for a subtle effect
+                cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1)
+                
+                // Subtle border color for the grid lines
+                cellNode.strokeColor = UIColor.gray.withAlphaComponent(0.5)
+                cellNode.lineWidth = 1.0 // Thin grid lines for a subtle look
 
-                cellNode.position = CGPoint(x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
-                                            y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2)
+                cellNode.position = CGPoint(
+                    x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
+                    y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2
+                )
                 addChild(cellNode)
             }
         }
     }
+
+
+
 
 
     // MARK: - Updated Score Label
