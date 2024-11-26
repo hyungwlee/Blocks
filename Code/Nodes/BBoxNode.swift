@@ -57,10 +57,11 @@ class BBoxNode: SKNode {
             // Create the shadow node
             let shadowNode = SKSpriteNode(imageNamed: assetName)
             shadowNode.size = CGSize(width: tileSize, height: tileSize)
-            shadowNode.alpha = 0.3  // Subtle shadow effect
-            shadowNode.zPosition = -1  // Ensure it is beneath the block
-            shadowNode.color = .black
-            shadowNode.colorBlendFactor = 0.5  // Slightly darkened shadow
+            shadowNode.alpha = 0.05  // Subtle shadow effect (almost invisible)
+            shadowNode.color = .black  // Neutral black shadow
+            shadowNode.colorBlendFactor = 0.0  // No tint
+            shadowNode.zPosition = -1  // Below the block
+
 
             // Slight offset for the shadow to give depth
             let xOffset: CGFloat = 5
@@ -81,6 +82,7 @@ class BBoxNode: SKNode {
             addChild(spriteNode)
         }
     }
+
 
 
 
