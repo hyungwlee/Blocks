@@ -699,7 +699,6 @@ func spawnMultiplierPowerup() {
 func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
     
-    // If the multiplier is active, trigger a custom animation
     if isMultiplierPowerupActive {
         playMultiplierEffect(atLine: row, isRow: true)
     }
@@ -717,23 +716,27 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
-    // Apply the multiplier if it's active
     let points = 8 * (isMultiplierPowerupActive ? 2 : 1)
     score += points
     updateScoreLabel()
+    
+    // Position points closer to the cleared row
+    let cellSize = frame.width / CGFloat(gridSize)
+    let rowPosition = CGPoint(
+        x: frame.minX + frame.width / 2, // Center horizontally in the grid
+        y: frame.minY + CGFloat(row) * cellSize + cellSize / 2 // Align with the cleared row
+    )
+    displayAnimatedPoints(points, at: rowPosition)
+    
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-
-    if isMultiplierPowerupActive {
-        isMultiplierPowerupActive = false
-    }
-
+    isMultiplierPowerupActive = false
+    
     return clearedCells
 }
 
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
     
-    // If the multiplier is active, trigger a custom animation
     if isMultiplierPowerupActive {
         playMultiplierEffect(atLine: col, isRow: false)
     }
@@ -751,18 +754,25 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
-    // Apply the multiplier if it's active
     let points = 8 * (isMultiplierPowerupActive ? 2 : 1)
     score += points
     updateScoreLabel()
+    
+    // Position points closer to the cleared column
+    let cellSize = frame.width / CGFloat(gridSize)
+    let colPosition = CGPoint(
+        x: frame.minX + CGFloat(col) * cellSize + cellSize / 2, // Align with the cleared column
+        y: frame.minY + frame.height / 2 // Center vertically in the grid
+    )
+    displayAnimatedPoints(points, at: colPosition)
+    
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-
-    if isMultiplierPowerupActive {
-        isMultiplierPowerupActive = false
-    }
-
+    isMultiplierPowerupActive = false
+    
     return clearedCells
 }
+
+
 
 // Custom animation for the multiplier effect
 func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
@@ -1011,7 +1021,24 @@ func restartGame() {
         }
     }
     
+    func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
+    let pointsLabel = SKLabelNode(text: "+\(points)")
+    pointsLabel.fontName = "Arial-BoldMT"
+    pointsLabel.fontSize = 24
+    pointsLabel.fontColor = .yellow
+    pointsLabel.position = position
+    pointsLabel.zPosition = 100
+    addChild(pointsLabel)
     
+    // Create animation actions
+    let moveUpAction = SKAction.moveBy(x: 0, y: 50, duration: 1.0)
+    let fadeOutAction = SKAction.fadeOut(withDuration: 1.0)
+    let removeAction = SKAction.run { pointsLabel.removeFromParent() }
+    let animationSequence = SKAction.sequence([SKAction.group([moveUpAction, fadeOutAction]), removeAction])
+    
+    pointsLabel.run(animationSequence)
+}
+
 
     func updateScoreLabel() {
         if let scoreContainer = childNode(withName: "scoreContainer") as? SKShapeNode,
