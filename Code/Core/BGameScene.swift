@@ -11,9 +11,11 @@ import AVFoundation
 class BGameScene: SKScene {
     let gridSize = 8
     var tileSize: CGFloat {
-        return (size.width - (20 * 2)) / CGFloat(gridSize)
-    }
+        
+        return (size.width - 40) / CGFloat(gridSize)
 
+    }
+    
     var score = 0
     var grid: [[SKShapeNode?]] = []
     var boxNodes: [BBoxNode] = []
@@ -430,25 +432,14 @@ func spawnMultiplierPowerup() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         let gridOrigin = getGridOrigin()
 
-        // Create the black outline for the grid
-        let totalGridWidth = CGFloat(gridSize) * tileSize
-        let totalGridHeight = CGFloat(gridSize) * tileSize
-        let outlineNode = SKShapeNode(rect: CGRect(x: gridOrigin.x, y: gridOrigin.y, width: totalGridWidth, height: totalGridHeight))
-        outlineNode.strokeColor = .gray // Outline color for the entire grid
-        outlineNode.lineWidth = 2.0      // Outline thickness
-        outlineNode.zPosition = 2        // Ensure it appears above other background elements
-        addChild(outlineNode)
-
         for row in 0..<gridSize {
             for col in 0..<gridSize {
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize), cornerRadius: 4)
-                
-                // Set a light gray fill color with transparency for a subtle effect
-                cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1)
-                
-                // Subtle border color for the grid lines
-                cellNode.strokeColor = UIColor.gray.withAlphaComponent(0.5)
-                cellNode.lineWidth = 1.0 // Thin grid lines for a subtle look
+
+                // Enhanced styles
+                cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1) // Subtle light gray fill
+                cellNode.strokeColor = UIColor.gray.withAlphaComponent(0.5)   // Subtle border color
+                cellNode.lineWidth = 1.0                                      // Thin grid lines
 
                 cellNode.position = CGPoint(
                     x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
@@ -458,6 +449,7 @@ func spawnMultiplierPowerup() {
             }
         }
     }
+
 
 
 
