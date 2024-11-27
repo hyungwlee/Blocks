@@ -175,6 +175,7 @@ func spawnMultiplierPowerup() {
             }
         }
     }
+  
 
     func spawnSwapPowerup() {
         for i in 0..<4 {
@@ -274,7 +275,7 @@ func spawnMultiplierPowerup() {
 
         // Calculate positions for the lines
         let centerX = size.width / 2
-        let topLineY = size.height * 0.325  // Adjusted Y position for the top line
+        let topLineY = size.height * 0.350  // Adjusted Y position for the top line
         let bottomLineY = topLineY - verticalBlockHeight - spacing  // Spaced below the top line
 
         // Line thickness
@@ -296,6 +297,7 @@ func spawnMultiplierPowerup() {
         bottomLine.zPosition = 1
         addChild(bottomLine)
     }
+
 
 
 
@@ -393,7 +395,7 @@ func spawnMultiplierPowerup() {
         createPowerupPlaceholders()
         spawnNewBlocks()
         setupGridHighlights()
-
+       
         // Add horizontal lines
         addHorizontalLines()
 
@@ -429,26 +431,28 @@ func spawnMultiplierPowerup() {
 
 
     func createGrid() {
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        let gridOrigin = getGridOrigin()
+            grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+            let gridOrigin = getGridOrigin()
+            let spacing: CGFloat = 3 // Spacing size
 
-        for row in 0..<gridSize {
-            for col in 0..<gridSize {
-                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize), cornerRadius: 4)
+            for row in 0..<gridSize {
+                for col in 0..<gridSize {
+                    let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize - spacing, height: tileSize - spacing), cornerRadius: 4)
 
-                // Enhanced styles
-                cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1) // Subtle light gray fill
-                cellNode.strokeColor = UIColor.gray.withAlphaComponent(0.5)   // Subtle border color
-                cellNode.lineWidth = 1.0                                      // Thin grid lines
+                    // Enhanced styles
+                    cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1) // Subtle light gray fill
+                    cellNode.strokeColor = .clear  // Subtle border color
+    //                cellNode.strokeColor = UIColor.gray.withAlphaComponent(0.5)   // Subtle border color
+                    cellNode.lineWidth = 1.0                                      // Thin grid lines
 
-                cellNode.position = CGPoint(
-                    x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
-                    y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2
-                )
-                addChild(cellNode)
+                    cellNode.position = CGPoint(
+                        x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
+                        y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2
+                    )
+                    addChild(cellNode)
+                }
             }
         }
-    }
 
 
 
