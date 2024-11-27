@@ -662,39 +662,124 @@ func spawnMultiplierPowerup() {
     }
 
     // MARK: - Line Clearing Logic
-    func checkForCompletedLines() -> [LineClear] {
-        var lineClears: [LineClear] = []
-
-        for row in 0..<gridSize {
-            if grid[row].allSatisfy({ $0 != nil }) {
-                let clearedCells = clearRow(row)
-                let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-            }
+   func checkForCompletedLines() -> [LineClear] {
+    var lineClears: [LineClear] = []
+    var totalLinesCleared = 0
+    
+    // Check for completed rows
+    for row in 0..<gridSize {
+        if grid[row].allSatisfy({ $0 != nil }) {
+            let clearedCells = clearRow(row)
+            let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+            lineClears.append(lineClear)
+            totalLinesCleared += 1
         }
-
-        for col in 0..<gridSize {
-            var isCompleted = true
-            for row in 0..<gridSize {
-                if grid[row][col] == nil {
-                    isCompleted = false
-                    break
-                }
-            }
-            if isCompleted {
-                let clearedCells = clearColumn(col)
-                let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-            }
-        }
-
-        // If any line was cleared, spawn power-ups
-        if !lineClears.isEmpty {
-            spawnPowerups()
-        }
-
-        return lineClears
     }
+    
+    // Check for completed columns
+    for col in 0..<gridSize {
+        var isCompleted = true
+        for row in 0..<gridSize {
+            if grid[row][col] == nil {
+                isCompleted = false
+                break
+            }
+        }
+        if isCompleted {
+            let clearedCells = clearColumn(col)
+            let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+            lineClears.append(lineClear)
+            totalLinesCleared += 1
+        }
+    }
+    
+    // Apply score multiplier based on the number of cleared lines
+    if totalLinesCleared > 0 {
+        applyComboMultiplier(for: totalLinesCleared)
+    }
+    
+    // If any line was cleared, spawn power-ups
+    if !lineClears.isEmpty {
+        spawnPowerups()
+    }
+    
+    return lineClears
+}
+
+func applyComboMultiplier(for linesCleared: Int) {
+    let basePointsPerLine = pointsForLinesCleared(linesCleared)  // Adjusted points per line based on number of cleared lines
+    let multiplier = calculateMultiplier(for: linesCleared)
+    let totalPoints = basePointsPerLine * linesCleared * multiplier
+    
+    // Update the score and show animated points
+    score += totalPoints
+    updateScoreLabel()
+    
+    // Display Combo Animation
+    displayComboAnimation(for: multiplier)
+    
+    let displayPosition = CGPoint(x: frame.midX, y: frame.midY)
+    displayAnimatedPoints(totalPoints, at: displayPosition)
+    
+    // Play a special sound or animation for combos
+    if linesCleared > 1 {
+        run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
+    }
+}
+
+func displayComboAnimation(for multiplier: Int) {
+    // Create the main combo label
+    let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
+    comboLabel.fontSize = 60  // Larger font size for emphasis
+    comboLabel.fontColor = .white  // White text color for better contrast
+    
+    // Position the combo label above the grid or score
+    comboLabel.position = CGPoint(x: frame.midX, y: frame.midY + 150)  // Adjusting position relative to the grid
+    addChild(comboLabel)  // Add the combo label to the scene
+    
+    // Create an animation sequence (scale, bounce, and fade out)
+    let scaleUp = SKAction.scale(to: 1.5, duration: 0.2)  // Enlarge the label
+    let bounce = SKAction.sequence([ 
+        SKAction.moveBy(x: 0, y: 20, duration: 0.1),  // Move up
+        SKAction.moveBy(x: 0, y: -10, duration: 0.1), // Bounce down
+        SKAction.moveBy(x: 0, y: 10, duration: 0.1)   // Final bounce back
+    ])
+    let fadeIn = SKAction.fadeIn(withDuration: 0.3)
+    let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+    let remove = SKAction.removeFromParent()
+    
+    // Combine the actions for animation
+    let comboAnimation = SKAction.sequence([fadeIn, scaleUp, bounce, fadeOut, remove])
+    
+    // Run the animation on the combo label
+    comboLabel.run(comboAnimation)
+}
+
+
+func calculateMultiplier(for linesCleared: Int) -> Int {
+    // Define multiplier rules based on the number of cleared lines
+    switch linesCleared {
+    case 1: return 1 // No multiplier for a single line
+    case 2: return 2 // Double points for clearing two lines
+    case 3: return 3 // Triple points for clearing three lines
+    default: return 4 // Quadruple points for clearing 4+ lines
+    }
+}
+
+func pointsForLinesCleared(_ lines: Int) -> Int {
+    switch lines {
+    case 1:
+        return 10  // 10 points for 1 cleared line
+    case 2:
+        return 30  // 30 points for 2 cleared lines
+    case 3:
+        return 60  // 60 points for 3 cleared lines
+    default:
+        return 80  // 80 points for 4+ cleared lines
+    }
+}
+
+
 
 func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
@@ -702,6 +787,9 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     if isMultiplierPowerupActive {
         playMultiplierEffect(atLine: row, isRow: true)
     }
+    
+    // Define cell size and the starting Y position for animation
+    let cellSize = frame.width / CGFloat(gridSize)
     
     for col in 0..<gridSize {
         if let cellNode = grid[row][col] {
@@ -716,17 +804,20 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
-    let points = 8 * (isMultiplierPowerupActive ? 2 : 1)
-    score += points
-    updateScoreLabel()
-    
-    // Position points closer to the cleared row
-    let cellSize = frame.width / CGFloat(gridSize)
+    // Calculate the position for points display (slightly to the right of the cleared row)
     let rowPosition = CGPoint(
         x: frame.minX + frame.width / 2, // Center horizontally in the grid
         y: frame.minY + CGFloat(row) * cellSize + cellSize / 2 // Align with the cleared row
     )
-    displayAnimatedPoints(points, at: rowPosition)
+    
+    // Position the points to the right of the row (within grid bounds)
+    let pointsPosition = CGPoint(x: rowPosition.x + 40, y: rowPosition.y)  // Adjust for spacing
+    
+    let points = pointsForLinesCleared(1)
+    score += points
+    updateScoreLabel()
+    
+    displayAnimatedPoints(points, at: pointsPosition)  // Display points within the grid
     
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
     isMultiplierPowerupActive = false
@@ -741,6 +832,9 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         playMultiplierEffect(atLine: col, isRow: false)
     }
 
+    // Define cell size and the starting X position for animation
+    let cellSize = frame.width / CGFloat(gridSize)
+    
     for row in 0..<gridSize {
         if let cellNode = grid[row][col] {
             let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
@@ -754,23 +848,30 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
-    let points = 8 * (isMultiplierPowerupActive ? 2 : 1)
-    score += points
-    updateScoreLabel()
-    
-    // Position points closer to the cleared column
-    let cellSize = frame.width / CGFloat(gridSize)
+    // Calculate the position for points display (slightly to the right of the cleared column)
     let colPosition = CGPoint(
         x: frame.minX + CGFloat(col) * cellSize + cellSize / 2, // Align with the cleared column
         y: frame.minY + frame.height / 2 // Center vertically in the grid
     )
-    displayAnimatedPoints(points, at: colPosition)
+    
+    // Position the points to the right of the column (within grid bounds)
+    let pointsPosition = CGPoint(x: colPosition.x + 40, y: colPosition.y)  // Adjust for spacing
+    
+    let points = pointsForLinesCleared(1)
+    score += points
+    updateScoreLabel()
+    
+    displayAnimatedPoints(points, at: pointsPosition)  // Display points within the grid
     
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
     isMultiplierPowerupActive = false
     
     return clearedCells
 }
+
+
+
+
 
 
 
