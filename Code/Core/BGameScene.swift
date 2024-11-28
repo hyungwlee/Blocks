@@ -839,54 +839,70 @@ class BGameScene: SKScene {
         return 10 * lines
     }
     
-    func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-        
-        for col in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                // Create fade-out and remove animations
-                let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
-                let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
-                let removeAction = SKAction.run { cellNode.removeFromParent() }
-                let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
-                cellNode.run(clearSequence)
-                
-                // Clear the grid cell and add to cleared list
-                grid[row][col] = nil
-                clearedCells.append((row: row, col: col, cellNode: cellNode))
+   func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+    
+    for col in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            // Create the burst explosion effect for the cell
+            let burstAction = SKAction.group([
+                SKAction.scale(to: 1.5, duration: 0.2), // Burst animation
+                SKAction.fadeOut(withDuration: 0.2),   // Fade-out effect
+                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3) // Random movement
+            ])
+            
+            // Combine the burst with the removal action
+            let removeAction = SKAction.run {
+                cellNode.removeFromParent()
             }
+            
+            let sequence = SKAction.sequence([burstAction, removeAction])
+            cellNode.run(sequence)
+            
+            // Clear the grid cell and add to the cleared list
+            grid[row][col] = nil
+            clearedCells.append((row: row, col: col, cellNode: cellNode))
         }
-        
-        // Play clearing sound effect
-        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-        
-        return clearedCells
     }
     
-    func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-        
-        for row in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                // Create fade-out and remove animations
-                let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
-                let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
-                let removeAction = SKAction.run { cellNode.removeFromParent() }
-                let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
-                cellNode.run(clearSequence)
-                
-                // Clear the grid cell and add to cleared list
-                grid[row][col] = nil
-                clearedCells.append((row: row, col: col, cellNode: cellNode))
+    // Play clearing sound effect
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+    
+    return clearedCells
+}
+
+func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+    
+    for row in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            // Create the burst explosion effect for the cell
+            let burstAction = SKAction.group([
+                SKAction.scale(to: 1.5, duration: 0.2), // Burst animation
+                SKAction.fadeOut(withDuration: 0.2),   // Fade-out effect
+                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3) // Random movement
+            ])
+            
+            // Combine the burst with the removal action
+            let removeAction = SKAction.run {
+                cellNode.removeFromParent()
             }
+            
+            let sequence = SKAction.sequence([burstAction, removeAction])
+            cellNode.run(sequence)
+            
+            // Clear the grid cell and add to cleared list
+            grid[row][col] = nil
+            clearedCells.append((row: row, col: col, cellNode: cellNode))
         }
-        
-        // Play clearing sound effect
-        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-        
-        return clearedCells
     }
     
+    // Play clearing sound effect
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+    
+    return clearedCells
+}
+
     func showGameOverScreen() {
         isGameOver = true
         
