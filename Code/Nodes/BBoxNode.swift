@@ -87,6 +87,7 @@ class BBoxNode: SKNode {
 
 
 
+
     
     var gridHeight: Int {
         let rows = shape.map { $0.row }

@@ -51,7 +51,7 @@ class BGameScene: SKScene {
     var dependencies: Dependencies
     var gameMode: GameModeType
 
-    let initialScale: CGFloat = 0.7  // Set the initial scale to 0.9
+    let initialScale: CGFloat = 0.6  // Set the initial scale to 0.6
 
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
         self.gameContext = context
@@ -544,32 +544,46 @@ func spawnMultiplierPowerup() {
     }
 
     func layoutSpawnedBlocks() {
-        let spacing: CGFloat = 50  // Spacing between blocks
-        let scaledTileSize = tileSize * 0.7  // Adjust for scaled blocks
-        var totalWidth: CGFloat = 0
+        let scaledTileSize = tileSize * 0.6  // Adjust scale to make blocks visually smaller
 
-        // Calculate total width of all blocks with spacing
+        // Calculate total width of all blocks without spacing
+        var totalBlockWidth: CGFloat = 0
         for block in boxNodes {
             let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
-            totalWidth += blockWidth
+            totalBlockWidth += blockWidth
         }
-        let totalSpacing = spacing * CGFloat(boxNodes.count - 1)
-        let startXPosition = (size.width - (totalWidth + totalSpacing)) / 2.0
 
-        let blockYPosition = size.height * 0.2  // Adjust Y position for the spawn area
+        // Calculate available width and spacing between blocks
+        let availableWidth = size.width - totalBlockWidth  // Remaining space for spacing
+        let numberOfSpaces = CGFloat(boxNodes.count - 1)
+        let spacing = availableWidth / (numberOfSpaces + 2)  // Include equal spacing on the sides
+
+        // Adjust starting X position to center the blocks horizontally
+        let startXPosition = spacing
+
+        // Keep the same Y position for spawned blocks
+        let blockYPosition = size.height * 0.2  // Y position remains unchanged
         var currentXPosition = startXPosition
 
-        // Position each block
+        // Layout the blocks with consistent spacing
         for block in boxNodes {
             let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
             block.position = CGPoint(x: currentXPosition, y: blockYPosition)
             block.initialPosition = block.position
             block.gameScene = self
-            block.setScale(0.7)  // Ensure block scale matches
+
+            // Set scale and add block to the scene
+            block.setScale(0.6)  // Keep blocks at 70% of their full size
             safeAddBlock(block)
+
+            // Move to the next block position
             currentXPosition += blockWidth + spacing
         }
     }
+
+
+
+
 
 
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
