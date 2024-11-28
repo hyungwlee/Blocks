@@ -11,9 +11,11 @@ import AVFoundation
 class BGameScene: SKScene {
     let gridSize = 8
     var tileSize: CGFloat {
+        
         return (size.width - 40) / CGFloat(gridSize)
+
     }
-    
+    //new
     var score = 0
     var grid: [[SKShapeNode?]] = []
     var boxNodes: [BBoxNode] = []
@@ -25,47 +27,32 @@ class BGameScene: SKScene {
     var lastClearTime: TimeInterval = 0 // Tracks the time of the last line cleared
     var currentCombo: Int = 1 // Multiplier for consecutive clears within the time window
     let comboResetTime: TimeInterval = 5 // Time window in seconds for combo multiplier
+
     
-    var multiplier: Int = 1  // Default multiplier is 1 (no multiplier)
-    
+    var multiplier: Int = 2  // Default multiplier is 1 (no multiplier)
+    var isMultiplierPowerupActive = false  // Track if the multiplier power-up is active
+
+
+
     // Power-up state variables
-    var activePowerup: PowerupType? = nil
-    
+    var isDeletePowerupActive = false
+    var isSwapPowerupActive = false
     var undoStack: [Move] = []  // Updated to store Move objects
-    
+
     var highlightGrid: [[SKNode?]] = []
-    
+
+
     var dropSound: SKAudioNode?
     var backgroundMusic: SKAudioNode?
     var gameOverSound: SKAudioNode?
     var blockSelectionSound: SKAudioNode?
     var audioPlayer: AVAudioPlayer?
-    
+
     var dependencies: Dependencies
     var gameMode: GameModeType
-    
+
     let initialScale: CGFloat = 0.6  // Set the initial scale to 0.6
-    
-    // Power-up related variables
-    enum PowerupType {
-        case delete
-        case swap
-        case undo
-        case multiplier
-    }
-    
-    struct Powerup {
-        let type: PowerupType
-        let imageName: String
-    }
-    
-    let availablePowerups: [Powerup] = [
-        Powerup(type: .delete, imageName: "delete.png"),
-        Powerup(type: .swap, imageName: "swap.png"),
-        Powerup(type: .undo, imageName: "undo.png"),
-        Powerup(type: .multiplier, imageName: "multiplier.webp")
-    ]
-    
+
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
         self.gameContext = context
         self.dependencies = dependencies
@@ -73,7 +60,7 @@ class BGameScene: SKScene {
         self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         super.init(size: size)
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
         let defaultDependencies = Dependencies()
         self.dependencies = defaultDependencies
@@ -82,7 +69,7 @@ class BGameScene: SKScene {
         self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         super.init(coder: aDecoder)
     }
-    
+
     // MARK: - Node Management
     func addBlockNode(_ blockNode: SKShapeNode, to parentNode: SKNode) {
         if blockNode.parent == nil {
@@ -91,35 +78,34 @@ class BGameScene: SKScene {
             print("Block node already has a parent.")
         }
     }
-    
+
     func safeAddBlock(_ block: BBoxNode) {
         if block.parent != nil {
             block.removeFromParent()
         }
         addChild(block)
     }
-    
+
     func createPowerupPlaceholders() {
         let placeholderSize = CGSize(width: 50, height: 50)
         let spacing: CGFloat = 40
         let totalWidth = placeholderSize.width * 4 + spacing * 3
         let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
-        
+
         // Position the placeholders below the spawned blocks
         let yPosition = size.height * 0.1  // Adjusted to place beneath the blocks
-        
+
         for i in 0..<4 {
             let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
             placeholder.strokeColor = .white
             placeholder.lineWidth = 2.0
             placeholder.fillColor = .clear
             placeholder.name = "powerupPlaceholder\(i)"
-            placeholder.userData = ["powerup": NSNull()]
-            
+
             let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
             placeholder.position = CGPoint(x: xPosition, y: yPosition)
             addChild(placeholder)
-            
+
             // Add the question icon initially
             let questionIcon = SKSpriteNode(imageNamed: "question.png")
             questionIcon.size = CGSize(width: 40, height: 40)
@@ -128,120 +114,130 @@ class BGameScene: SKScene {
             placeholder.addChild(questionIcon)
         }
     }
-    
-    // MARK: - Power-up Management
-    
-    func spawnRandomPowerup() {
-        // Find an available placeholder
-        for i in 0..<4 {
-            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
-               placeholder.userData?["powerup"] is NSNull {
-                // Start the shuffling effect
-                startPowerupShuffle(in: placeholder)
+
+
+func spawnMultiplierPowerup() {
+    for i in 0..<4 {
+        if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+            // Check if the placeholder only contains the question icon
+            if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                // Remove the question icon
+                placeholder.children.first?.removeFromParent()
+
+                // Create the multiplier power-up icon
+                let multiplierPowerup = SKSpriteNode(imageNamed: "multiplier.webp")
+                multiplierPowerup.size = CGSize(width: 40, height: 40)
+                multiplierPowerup.position = CGPoint.zero
+                multiplierPowerup.name = "multiplierPowerup"
+
+                // Add a subtle glow or pulse effect
+                let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                multiplierPowerup.run(SKAction.repeatForever(pulseSequence))
+
+                // Add the power-up icon as a child of the placeholder
+                placeholder.addChild(multiplierPowerup)
                 break
             }
         }
     }
-    
-    func startPowerupShuffle(in placeholder: SKShapeNode) {
-        // Remove existing icons (e.g., question mark)
-        placeholder.removeAllChildren()
-        
-        // Create an SKSpriteNode to display the power-up icon
-        let powerupIcon = SKSpriteNode()
-        powerupIcon.size = CGSize(width: 40, height: 40)
-        powerupIcon.position = CGPoint.zero
-        powerupIcon.name = "powerupIcon"
-        placeholder.addChild(powerupIcon)
-        
-        // Create an array of textures for the power-up images
-        let textures = availablePowerups.map { SKTexture(imageNamed: $0.imageName) }
-        
-        // Create a shuffling action
-        let shuffleAction = SKAction.animate(with: textures, timePerFrame: 0.1)
-        let repeatShuffle = SKAction.repeat(shuffleAction, count: 5)
-        
-        // Randomly select a power-up
-        let selectedPowerup = availablePowerups.randomElement()!
-        
-        // After shuffling, set the final texture to the selected power-up
-        let setFinalTexture = SKAction.run {
-            powerupIcon.texture = SKTexture(imageNamed: selectedPowerup.imageName)
-            powerupIcon.userData = ["powerupType": selectedPowerup.type]
-            placeholder.userData?["powerup"] = selectedPowerup.type
-            
-            // Add a subtle glow or pulse effect
-            let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
-            let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
-            let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
-            powerupIcon.run(SKAction.repeatForever(pulseSequence))
-        }
-        
-        // Run the shuffling and then the set final texture action
-        let sequence = SKAction.sequence([repeatShuffle, setFinalTexture])
-        powerupIcon.run(sequence)
-    }
-    
-    func placeholderIndex(for placeholder: SKShapeNode) -> Int? {
+}
+
+   func spawnPowerups() {
+    spawnDeletePowerup()
+    spawnSwapPowerup()
+    spawnUndoPowerup()
+    spawnMultiplierPowerup()
+}
+
+
+    func spawnDeletePowerup() {
         for i in 0..<4 {
-            if childNode(withName: "powerupPlaceholder\(i)") === placeholder {
-                return i
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
+
+                    // Create the delete power-up icon
+                    let deletePowerup = SKSpriteNode(imageNamed: "delete.png")
+                    deletePowerup.size = CGSize(width: 40, height: 40)
+                    deletePowerup.position = CGPoint.zero
+                    deletePowerup.name = "deletePowerup"
+
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    deletePowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(deletePowerup)
+                    break
+                }
             }
         }
-        return nil
     }
-    
-    func resetPlaceholder(at index: Int) {
-        if let placeholder = childNode(withName: "powerupPlaceholder\(index)") as? SKShapeNode {
-            // Remove all children from the placeholder
-            placeholder.removeAllChildren()
-            // Reset the placeholder's userData
-            placeholder.userData?["powerup"] = NSNull()
-            
-            // Add the question mark icon back
-            let questionIcon = SKSpriteNode(imageNamed: "question.png")
-            questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
-            questionIcon.position = CGPoint.zero // Center within the placeholder
-            questionIcon.name = "questionIcon\(index)"
-            placeholder.addChild(questionIcon)
-        }
-    }
-    
-    func highlightPowerupIcon(_ icon: SKSpriteNode) {
-        // Add a visual effect to indicate activation, e.g., a glowing border
-        let glow = SKAction.run {
-            icon.color = .yellow
-            icon.colorBlendFactor = 0.5
-        }
-        icon.run(glow)
-    }
-    
-    func removeHighlightFromPowerupIcon(_ icon: SKSpriteNode) {
-        let removeGlow = SKAction.run {
-            icon.colorBlendFactor = 0.0
-        }
-        icon.run(removeGlow)
-    }
-    
-    func deactivateActivePowerup() {
-        // Find the power-up icon in the placeholder and remove it
+  
+
+    func spawnSwapPowerup() {
         for i in 0..<4 {
-            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
-               let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode,
-               let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType,
-               powerupType == activePowerup {
-                
-                // Remove the power-up icon
-                powerupIcon.removeFromParent()
-                // Reset the placeholder
-                resetPlaceholder(at: i)
-                break
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
+
+                    // Create the swap power-up icon
+                    let swapPowerup = SKSpriteNode(imageNamed: "swap.png")
+                    swapPowerup.size = CGSize(width: 40, height: 40)
+                    swapPowerup.position = CGPoint.zero
+                    swapPowerup.name = "swapPowerup"
+
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    swapPowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(swapPowerup)
+                    break
+                }
             }
         }
-        // Clear the active power-up
-        activePowerup = nil
     }
-    
+
+    func spawnUndoPowerup() {
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode {
+                // Check if the placeholder only contains the question icon
+                if placeholder.children.count == 1, placeholder.children.first?.name?.contains("questionIcon") == true {
+                    // Remove the question icon
+                    placeholder.children.first?.removeFromParent()
+
+                    // Create the undo power-up icon
+                    let undoPowerup = SKSpriteNode(imageNamed: "undo.png")
+                    undoPowerup.size = CGSize(width: 40, height: 40)
+                    undoPowerup.position = CGPoint.zero
+                    undoPowerup.name = "undoPowerup"
+
+                    // Add a subtle glow or pulse effect
+                    let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
+                    let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
+                    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                    undoPowerup.run(SKAction.repeatForever(pulseSequence))
+
+                    // Add the power-up icon as a child of the placeholder
+                    placeholder.addChild(undoPowerup)
+                    break
+                }
+            }
+        }
+    }
+
+
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
         guard row >= 0, row < gridSize, col >= 0, col < gridSize else {
@@ -249,14 +245,14 @@ class BGameScene: SKScene {
         }
         return grid[row][col] != nil
     }
-    
+
     func setCellOccupied(row: Int, col: Int, with cellNode: SKShapeNode) {
         guard row >= 0, row < gridSize, col >= 0, col < gridSize else {
             return
         }
         grid[row][col] = cellNode
     }
-    
+
     private var availableBlockTypes: [BBoxNode.Type] = [
         BSingleBlock.self,
         BSquareBlock2x2.self,
@@ -273,8 +269,8 @@ class BGameScene: SKScene {
         BRotatedLShapeNode5Block.self,
         BTShapedBlock.self,
         BZShapedBlock.self
+        
     ]
-    
     func addHorizontalLines() {
         let scaledTileSize = tileSize * 0.7
         let verticalBlockHeight = 4 * scaledTileSize  // Adjusted height for scaled blocks
@@ -315,9 +311,10 @@ class BGameScene: SKScene {
 
     func setupGridHighlights() {
         highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        
+
         let gridOrigin = getGridOrigin()
-        
+
+
         for row in 0..<gridSize {
             for col in 0..<gridSize {
                 let node = SKNode()
@@ -329,7 +326,9 @@ class BGameScene: SKScene {
             }
         }
     }
-    
+
+
+
     func clearHighlights() {
         for row in highlightGrid {
             for node in row {
@@ -337,13 +336,15 @@ class BGameScene: SKScene {
             }
         }
     }
-    
+
+
+
     func highlightValidCells(for block: BBoxNode) {
         clearHighlights() // Clear previous highlights
-        
+
         let occupiedCellsWithAssets = block.occupiedCellsWithAssets()
         var isValidPlacement = true
-        
+
         // Check if all cells are valid
         for occupiedCell in occupiedCellsWithAssets {
             let cell = occupiedCell.gridCoordinate
@@ -352,16 +353,16 @@ class BGameScene: SKScene {
                 break
             }
         }
-        
+
         if !isValidPlacement {
             return // If any cell is invalid, don't show any highlights
         }
-        
+
         // Highlight cells only if placement is valid
         for occupiedCell in occupiedCellsWithAssets {
             let cell = occupiedCell.gridCoordinate
             let assetName = occupiedCell.assetName
-            
+
             if cell.row >= 0, cell.row < gridSize, cell.col >= 0, cell.col < gridSize, grid[cell.row][cell.col] == nil {
                 if let highlightNode = highlightGrid[cell.row][cell.col] {
                     // Create the shadow node (ensure it sticks below the block)
@@ -369,13 +370,13 @@ class BGameScene: SKScene {
                     shadowNode.size = CGSize(width: tileSize, height: tileSize)
                     shadowNode.alpha = 0.3  // Subtle shadow transparency
                     shadowNode.zPosition = -1  // Always beneath the block
-                    
+
                     // Create the block sprite node
                     let spriteNode = SKSpriteNode(imageNamed: assetName)
                     spriteNode.size = CGSize(width: tileSize, height: tileSize)
                     spriteNode.alpha = 0.8  // Adjust alpha if needed
                     spriteNode.zPosition = 1  // Above the shadow
-                    
+
                     // Add shadow and block to the highlight node
                     highlightNode.addChild(shadowNode)
                     highlightNode.addChild(spriteNode)
@@ -383,20 +384,25 @@ class BGameScene: SKScene {
             }
         }
     }
-    
+
+
+
+
+
+
     override func didMove(to view: SKView) {
         super.didMove(to: view)
-        
+
         // Existing setup
         createGrid()
         addScoreLabel()
         createPowerupPlaceholders()
         spawnNewBlocks()
         setupGridHighlights()
-        
+       
         // Add horizontal lines
         addHorizontalLines()
-        
+
         // Play background music
         if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
             backgroundMusic = SKAudioNode(url: url)
@@ -408,45 +414,55 @@ class BGameScene: SKScene {
             print("Error: Background music file not found.")
         }
     }
-    
+
+
     func getGridOrigin() -> CGPoint {
         let totalGridWidth = CGFloat(gridSize) * tileSize
         let totalGridHeight = CGFloat(gridSize) * tileSize
-        
+
         // Center horizontally
         let gridOriginX = (size.width - totalGridWidth) / 2
-        
+
         // Position vertically (space above the grid for the score and below for placeholders)
         let topMargin: CGFloat = size.height * 0.10 // Space for score and icons
         let bottomMargin: CGFloat = size.height * 0.25 // Space for placeholders
         let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + bottomMargin
-        
+
         return CGPoint(x: gridOriginX, y: gridOriginY)
     }
-    
+
+
+
+
     func createGrid() {
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        let gridOrigin = getGridOrigin()
-        let spacing: CGFloat = 3 // Spacing size
-        
-        for row in 0..<gridSize {
-            for col in 0..<gridSize {
-                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize - spacing, height: tileSize - spacing), cornerRadius: 4)
-                
-                // Enhanced styles
-                cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1) // Subtle light gray fill
-                cellNode.strokeColor = .clear  // Subtle border color
-                cellNode.lineWidth = 1.0                                      // Thin grid lines
-                
-                cellNode.position = CGPoint(
-                    x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
-                    y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2
-                )
-                addChild(cellNode)
+            grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+            let gridOrigin = getGridOrigin()
+            let spacing: CGFloat = 3 // Spacing size
+
+            for row in 0..<gridSize {
+                for col in 0..<gridSize {
+                    let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize - spacing, height: tileSize - spacing), cornerRadius: 4)
+
+                    // Enhanced styles
+                    cellNode.fillColor = UIColor.lightGray.withAlphaComponent(0.1) // Subtle light gray fill
+                    cellNode.strokeColor = .clear  // Subtle border color
+    //                cellNode.strokeColor = UIColor.gray.withAlphaComponent(0.5)   // Subtle border color
+                    cellNode.lineWidth = 1.0                                      // Thin grid lines
+
+                    cellNode.position = CGPoint(
+                        x: gridOrigin.x + CGFloat(col) * tileSize + tileSize / 2,
+                        y: gridOrigin.y + CGFloat(row) * tileSize + tileSize / 2
+                    )
+                    addChild(cellNode)
+                }
             }
         }
-    }
-    
+
+
+
+
+
+
     // MARK: - Updated Score Label
     func addScoreLabel() {
         // Create a smaller and modern container node for the score
@@ -455,7 +471,7 @@ class BGameScene: SKScene {
         scoreContainer.strokeColor = .clear
         scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100) // Adjusted Y position slightly lower for balance
         scoreContainer.name = "scoreContainer"
-        
+
         // Add a subtle shadow effect to the container for a modern look
         let shadowNode = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25)
         shadowNode.fillColor = UIColor.black.withAlphaComponent(0.15)
@@ -463,7 +479,7 @@ class BGameScene: SKScene {
         shadowNode.position = CGPoint(x: scoreContainer.position.x + 2, y: scoreContainer.position.y - 2)
         shadowNode.zPosition = -1
         addChild(shadowNode)
-        
+
         // Add the score label inside the container
         let scoreLabel = SKLabelNode(text: "\(score)")
         scoreLabel.fontSize = 24 // Reduced font size to match smaller container
@@ -472,14 +488,17 @@ class BGameScene: SKScene {
         scoreLabel.verticalAlignmentMode = .center
         scoreLabel.position = CGPoint.zero // Centered within the container
         scoreLabel.name = "scoreLabel"
-        
+
         // Add the label to the container
         scoreContainer.addChild(scoreLabel)
-        
+
         // Add the container to the scene
         addChild(scoreContainer)
     }
-    
+
+
+
+
     func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
         for block in blocks {
             for row in 0..<gridSize {
@@ -492,7 +511,7 @@ class BGameScene: SKScene {
         }
         return false
     }
-    
+
     func spawnNewBlocks() {
         guard !isGameOver else {
             showGameOverScreen()
@@ -561,23 +580,28 @@ class BGameScene: SKScene {
             currentXPosition += blockWidth + spacing
         }
     }
-    
+
+
+
+
+
+
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
         for cell in block.shape {
             let gridRow = row + cell.row
             let gridCol = col + cell.col
-            
+
             if gridRow < 0 || gridRow >= gridSize || gridCol < 0 || gridCol >= gridSize {
                 return false
             }
-            
+
             if grid[gridRow][gridCol] != nil {
                 return false
             }
         }
         return true
     }
-    
+
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         let row = gridPosition.row
         let col = gridPosition.col
@@ -585,18 +609,18 @@ class BGameScene: SKScene {
         if isPlacementValid(for: block, at: row, col: col) {
             let previousScore = score  // Save the score before placing the block
             var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-            
+
             var occupiedCells = 0
             var cellNodes: [SKShapeNode] = []
             var gridPositions: [GridCoordinate] = []
-            
+
             for (index, cell) in block.shape.enumerated() {
                 let gridRow = row + cell.row
                 let gridCol = col + cell.col
-                
+
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
                 cellNode.fillColor = block.color
-                
+
                 let asset = block.assets[index].name
                 let assetTexture = SKTexture(imageNamed: asset)
                 let spriteNode = SKSpriteNode(texture: assetTexture)
@@ -604,604 +628,771 @@ class BGameScene: SKScene {
                 cellNode.addChild(spriteNode)
                 cellNode.strokeColor = .darkGray
                 cellNode.lineWidth = 2.0
-                
+
+                let gridOrigin = getGridOrigin()
+
                 let cellPosition = CGPoint(
                     x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
                     y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
                 )
                 cellNode.position = cellPosition
-                
+
                 addChild(cellNode)
                 setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
                 occupiedCells += 1
-                
+
                 cellNodes.append(cellNode)
                 gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
-                
+
                 // Collect added cells for undo
                 addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
             }
-            
+
             let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
-            
+
             for cellNode in cellNodes {
                 cellNode.userData = ["placedBlock": placedBlock]
             }
-            
+
             placedBlocks.append(placedBlock)
             score += occupiedCells
             updateScoreLabel()
-            
+
             if let index = boxNodes.firstIndex(of: block) {
                 boxNodes.remove(at: index)
             }
             block.removeFromParent()
-            
+
             // Check for completed lines and collect cleared lines
             let clearedLines = checkForCompletedLines()
-            
+
             // Create a Move object and push it onto the undo stack
             let move = Move(placedBlock: placedBlock, blockNode: block, previousScore: previousScore, addedCells: addedCells, clearedLines: clearedLines)
             undoStack.append(move)
-            
+
             if boxNodes.isEmpty {
-                spawnNewBlocks()
+                spawnNewBlocks()  // This will call layoutSpawnedBlocks
             } else if !checkForPossibleMoves(for: boxNodes) {
                 showGameOverScreen()
             }
-            
+
             run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
         } else {
             block.position = block.initialPosition
             block.run(SKAction.scale(to: initialScale, duration: 0.1))
         }
     }
-    
+
     // MARK: - Line Clearing Logic
-    func checkForCompletedLines() -> [LineClear] {
-        var lineClears: [LineClear] = []
-        var totalLinesCleared = 0
-        var totalPoints = 0  // Accumulate total points for all cleared lines
-        
-        // Check for completed rows
+  func checkForCompletedLines() -> [LineClear] {
+    var lineClears: [LineClear] = []
+    var totalLinesCleared = 0
+    var totalPoints = 0  // Accumulate total points for all cleared lines
+
+    // Check for completed rows
+    for row in 0..<gridSize {
+        if grid[row].allSatisfy({ $0 != nil }) {
+            let clearedCells = clearRow(row)
+            let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+            lineClears.append(lineClear)
+            totalLinesCleared += 1
+            totalPoints += 10  // Add points for this row clear
+        }
+    }
+
+    // Check for completed columns
+    for col in 0..<gridSize {
+        var isCompleted = true
         for row in 0..<gridSize {
-            if grid[row].allSatisfy({ $0 != nil }) {
-                let clearedCells = clearRow(row)
-                let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-                totalLinesCleared += 1
-                totalPoints += 10  // Add points for this row clear
+            if grid[row][col] == nil {
+                isCompleted = false
+                break
             }
         }
-        
-        // Check for completed columns
-        for col in 0..<gridSize {
-            var isCompleted = true
-            for row in 0..<gridSize {
-                if grid[row][col] == nil {
-                    isCompleted = false
-                    break
-                }
-            }
-            if isCompleted {
-                let clearedCells = clearColumn(col)
-                let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-                totalLinesCleared += 1
-                totalPoints += 10  // Add points for this column clear
-            }
-        }
-        
-        // Apply combo multiplier and display the total points only once
-        if totalLinesCleared > 0 {
-            applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
-            
-            // Spawn a random power-up
-            spawnRandomPowerup()
-        } else {
-            // Reset combo if no lines are cleared within the reset time
-            let currentTime = Date().timeIntervalSinceReferenceDate
-            if currentTime - lastClearTime > comboResetTime {
-                currentCombo = 1
-            }
-        }
-        
-        // Update last clear time if lines were cleared
-        if totalLinesCleared > 0 {
-            lastClearTime = Date().timeIntervalSinceReferenceDate
-        }
-        
-        return lineClears
-    }
-    
-    func applyComboMultiplier(for linesCleared: Int, totalPoints: Int) {
-        // Calculate points based on the number of lines cleared and combo multiplier
-        var points = totalPoints * currentCombo
-        
-        // Apply multiplier power-up if active
-        if activePowerup == .multiplier {
-            points *= 2  // Apply 2x multiplier
-            deactivateActivePowerup()
-        }
-        
-        score += points
-        updateScoreLabel()
-        
-        // Display combo animation if combo multiplier is greater than 1
-        if currentCombo > 1 {
-            displayComboAnimation(for: currentCombo)
-        }
-        
-        // Display the total points once after combo multiplier is applied
-        let pointsPosition = CGPoint(x: frame.midX, y: frame.midY - 100)  // Position for the points label
-        displayAnimatedPoints(points, at: pointsPosition)  // Display total points here
-        
-        // Increment combo multiplier for consecutive clears
-        currentCombo += 1
-        
-        // Reset combo multiplier if 5 seconds pass without clearing a line
-        resetComboAfterDelay()
-        
-        // Play a combo sound effect for multi-line clears
-        if linesCleared > 1 {
-            run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
+        if isCompleted {
+            let clearedCells = clearColumn(col)
+            let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+            lineClears.append(lineClear)
+            totalLinesCleared += 1
+            totalPoints += 10  // Add points for this column clear
         }
     }
-    
-    func createShadowedLabel(text: String, position: CGPoint, fontSize: CGFloat) -> SKLabelNode {
-        let shadowLabel = SKLabelNode(text: text)
-        shadowLabel.fontSize = fontSize
-        shadowLabel.fontColor = .black  // Dark color for shadow
-        shadowLabel.position = CGPoint(x: position.x + 2, y: position.y - 2) // Slight offset
-        shadowLabel.fontName = "Arial-BoldMT"
-        return shadowLabel
-    }
-    
-    func displayComboAnimation(for multiplier: Int) {
-        // Define maximum position for the combo label based on screen size
-        let maxComboYPosition = frame.midY + 150
-        
-        // Position combo label within screen bounds
-        let comboLabelYPosition = min(frame.midY + 200, maxComboYPosition) // Clamps Y position to prevent going off-screen
-        
-        let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
-        comboLabel.fontSize = min(70, frame.width * 0.1)  // Adjust font size based on screen width
-        comboLabel.fontColor = .yellow
-        comboLabel.fontName = "Arial-BoldMT"
-        comboLabel.position = CGPoint(x: frame.midX, y: comboLabelYPosition)
-        
-        // Create shadow by adding another label
-        let shadowComboLabel = createShadowedLabel(text: "COMBO x\(multiplier)", position: comboLabel.position, fontSize: comboLabel.fontSize)
-        addChild(shadowComboLabel)
-        
-        addChild(comboLabel)  // Add combo label to the scene
-        
-        // Animation sequence (scale up, bounce, fade out)
-        let scaleUp = SKAction.scale(to: 1.5, duration: 0.2)
-        let bounce = SKAction.sequence([
-            SKAction.moveBy(x: 0, y: 20, duration: 0.1),
-            SKAction.moveBy(x: 0, y: -10, duration: 0.1),
-            SKAction.moveBy(x: 0, y: 10, duration: 0.1)
-        ])
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
-        let remove = SKAction.removeFromParent()
-        
-        let comboAnimation = SKAction.sequence([scaleUp, bounce, fadeOut, remove])
-        
-        comboLabel.run(comboAnimation)
-        shadowComboLabel.run(comboAnimation)  // Make shadow move as well
-    }
-    
-    func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
-        let pointsLabel = SKLabelNode(text: "+\(points)")
-        pointsLabel.fontName = "Arial-BoldMT"
-        pointsLabel.fontSize = 40  // Slightly smaller than combo text
-        pointsLabel.fontColor = .yellow
-        pointsLabel.position = position
-        pointsLabel.zPosition = 100
-        
-        // Add glow effect using blending mode
-        pointsLabel.blendMode = .add // This gives a glowing effect
-        
-        addChild(pointsLabel)
-        
-        // Animation sequence (scale up, move upwards, fade out)
-        let scaleUp = SKAction.scale(to: 1.5, duration: 0.3)
-        let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 1.0)
-        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
-        let remove = SKAction.run { pointsLabel.removeFromParent() }
-        
-        // Optional: Add a sparkle effect (or rotation)
-        let sparkle = SKAction.sequence([
-            SKAction.scale(to: 1.2, duration: 0.2),
-            SKAction.scale(to: 1.0, duration: 0.2)
-        ])
-        
-        let animationSequence = SKAction.sequence([scaleUp, moveUp, sparkle, fadeOut, remove])
-        
-        pointsLabel.run(animationSequence)
-    }
-    
-    func resetComboAfterDelay() {
-        let currentTime = CACurrentMediaTime()
-        let elapsedTime = currentTime - lastClearTime
-        
-        if elapsedTime > comboResetTime {
+
+    // Apply combo multiplier and display the total points only once
+    if totalLinesCleared > 0 {
+        applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
+    } else {
+        // Reset combo if no lines are cleared within the reset time
+        let currentTime = Date().timeIntervalSinceReferenceDate
+        if currentTime - lastClearTime > comboResetTime {
             currentCombo = 1
         }
-        
-        // Update the last clear time
-        lastClearTime = currentTime
     }
-    
-    func pointsForLinesCleared(_ lines: Int) -> Int {
-        // Points are determined by the combo multiplier (handled in `applyComboMultiplier`)
-        return 10 * lines
+
+    // Update last clear time if lines were cleared
+    if totalLinesCleared > 0 {
+        lastClearTime = Date().timeIntervalSinceReferenceDate
     }
-    
-   func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-    
-    for col in 0..<gridSize {
-        if let cellNode = grid[row][col] {
-            // Create the burst explosion effect for the cell
-            let burstAction = SKAction.group([
-                SKAction.scale(to: 1.5, duration: 0.2), // Burst animation
-                SKAction.fadeOut(withDuration: 0.2),   // Fade-out effect
-                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3) // Random movement
-            ])
-            
-            // Combine the burst with the removal action
-            let removeAction = SKAction.run {
-                cellNode.removeFromParent()
-            }
-            
-            let sequence = SKAction.sequence([burstAction, removeAction])
-            cellNode.run(sequence)
-            
-            // Clear the grid cell and add to the cleared list
-            grid[row][col] = nil
-            clearedCells.append((row: row, col: col, cellNode: cellNode))
-        }
+
+    // If any line was cleared, spawn power-ups
+    if !lineClears.isEmpty {
+        spawnPowerups()
     }
-    
-    // Play clearing sound effect
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-    
-    return clearedCells
+
+    return lineClears
 }
 
-func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+func applyComboMultiplier(for linesCleared: Int, totalPoints: Int) {
+    // Calculate points based on the number of lines cleared and combo multiplier
+    let points = totalPoints * currentCombo
+    score += points
+    updateScoreLabel()
+
+    // Display combo animation if combo multiplier is greater than 1
+    if currentCombo > 1 {
+        displayComboAnimation(for: currentCombo)
+    }
+
+    // Display the total points once after combo multiplier is applied
+    let pointsPosition = CGPoint(x: frame.midX, y: frame.midY - 100)  // Position for the points label
+    displayAnimatedPoints(points, at: pointsPosition)  // Display total points here
+
+    // Increment combo multiplier for consecutive clears
+    currentCombo += 1
+
+    // Reset combo multiplier if 5 seconds pass without clearing a line
+    resetComboAfterDelay()
+
+    // Play a combo sound effect for multi-line clears
+    if linesCleared > 1 {
+        run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
+    }
+}
+
+func createShadowedLabel(text: String, position: CGPoint, fontSize: CGFloat) -> SKLabelNode {
+    let shadowLabel = SKLabelNode(text: text)
+    shadowLabel.fontSize = fontSize
+    shadowLabel.fontColor = .black  // Dark color for shadow
+    shadowLabel.position = CGPoint(x: position.x + 2, y: position.y - 2) // Slight offset
+    shadowLabel.fontName = "Arial-BoldMT"
+    return shadowLabel
+}
+
+func displayComboAnimation(for multiplier: Int) {
+    // Define maximum position for the combo label based on screen size
+    let maxComboYPosition = frame.midY + 150
     
-    for row in 0..<gridSize {
+    // Position combo label within screen bounds
+    let comboLabelYPosition = min(frame.midY + 200, maxComboYPosition) // Clamps Y position to prevent going off-screen
+    
+    let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
+    comboLabel.fontSize = min(70, frame.width * 0.1)  // Adjust font size based on screen width
+    comboLabel.fontColor = .yellow
+    comboLabel.fontName = "Arial-BoldMT"
+    comboLabel.position = CGPoint(x: frame.midX, y: comboLabelYPosition)
+    
+    // Create shadow by adding another label
+    let shadowComboLabel = createShadowedLabel(text: "COMBO x\(multiplier)", position: comboLabel.position, fontSize: comboLabel.fontSize)
+    addChild(shadowComboLabel)
+    
+    addChild(comboLabel)  // Add combo label to the scene
+    
+    // Animation sequence (scale up, bounce, fade out)
+    let scaleUp = SKAction.scale(to: 1.5, duration: 0.2)
+    let bounce = SKAction.sequence([
+        SKAction.moveBy(x: 0, y: 20, duration: 0.1),
+        SKAction.moveBy(x: 0, y: -10, duration: 0.1),
+        SKAction.moveBy(x: 0, y: 10, duration: 0.1)
+    ])
+    let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+    let remove = SKAction.removeFromParent()
+    
+    let comboAnimation = SKAction.sequence([scaleUp, bounce, fadeOut, remove])
+    
+    comboLabel.run(comboAnimation)
+    shadowComboLabel.run(comboAnimation)  // Make shadow move as well
+
+    // Now calculate the total points for the combo multiplier (after row is cleared)
+    let totalPoints = pointsForLinesCleared(1) * multiplier  // Total points considering the combo multiplier
+    
+    // Display the total points once
+    let pointsPosition = CGPoint(x: frame.midX, y: frame.midY - 100)  // Set the position for the points label
+    displayAnimatedPoints(totalPoints, at: pointsPosition)  // Pass the total points to the animated display
+}
+
+func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
+    let pointsLabel = SKLabelNode(text: "+\(points)")
+    pointsLabel.fontName = "Arial-BoldMT"
+    pointsLabel.fontSize = 40  // Slightly smaller than combo text
+    pointsLabel.fontColor = .yellow
+    pointsLabel.position = position
+    pointsLabel.zPosition = 100
+    
+    // Add glow effect using blending mode
+    pointsLabel.blendMode = .add // This gives a glowing effect
+    
+    addChild(pointsLabel)
+    
+    // Animation sequence (scale up, move upwards, fade out)
+    let scaleUp = SKAction.scale(to: 1.5, duration: 0.3)
+    let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 1.0)
+    let fadeOut = SKAction.fadeOut(withDuration: 1.0)
+    let remove = SKAction.run { pointsLabel.removeFromParent() }
+    
+    // Optional: Add a sparkle effect (or rotation)
+    let sparkle = SKAction.sequence([
+        SKAction.scale(to: 1.2, duration: 0.2),
+        SKAction.scale(to: 1.0, duration: 0.2)
+    ])
+    
+    let animationSequence = SKAction.sequence([scaleUp, moveUp, sparkle, fadeOut, remove])
+    
+    pointsLabel.run(animationSequence)
+}
+
+func resetComboAfterDelay() {
+    let currentTime = CACurrentMediaTime()
+    let elapsedTime = currentTime - lastClearTime
+    
+    if elapsedTime > comboResetTime {
+        currentCombo = 1
+    }
+    
+    // Update the last clear time
+    lastClearTime = currentTime
+}
+
+
+func pointsForLinesCleared(_ lines: Int) -> Int {
+    // Points are determined by the combo multiplier (handled in `applyComboMultiplier`)
+    return 10 * lines
+}
+
+
+func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+
+    for col in 0..<gridSize {
         if let cellNode = grid[row][col] {
-            // Create the burst explosion effect for the cell
-            let burstAction = SKAction.group([
-                SKAction.scale(to: 1.5, duration: 0.2), // Burst animation
-                SKAction.fadeOut(withDuration: 0.2),   // Fade-out effect
-                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3) // Random movement
-            ])
-            
-            // Combine the burst with the removal action
-            let removeAction = SKAction.run {
-                cellNode.removeFromParent()
-            }
-            
-            let sequence = SKAction.sequence([burstAction, removeAction])
-            cellNode.run(sequence)
-            
+            // Create fade-out and remove animations
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+            let removeAction = SKAction.run { cellNode.removeFromParent() }
+            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+            cellNode.run(clearSequence)
+
             // Clear the grid cell and add to cleared list
             grid[row][col] = nil
             clearedCells.append((row: row, col: col, cellNode: cellNode))
         }
     }
-    
+
     // Play clearing sound effect
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-    
+
     return clearedCells
 }
 
-    func showGameOverScreen() {
-        isGameOver = true
-        
-        // Play Game Over Sound
-        if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
-            do {
-                gameOverAudioPlayer = try AVAudioPlayer(contentsOf: url)
-                gameOverAudioPlayer?.play()
-            } catch {
-                print("Error: Unable to play Game Over sound. \(error.localizedDescription)")
-            }
-        }
-        
-        // Stop background music
-        backgroundMusic?.removeFromParent()
-        backgroundMusic = nil
-        
-        // Semi-transparent background overlay
-        let overlay = SKShapeNode(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-        overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
-        overlay.strokeColor = UIColor.clear // Ensure no border is drawn
-        overlay.zPosition = 10
-        overlay.name = "gameOverUI"
-        overlay.position = CGPoint(x: 0, y: 0) // Align to screen's bottom-left corner
-        addChild(overlay)
-        
-        // Create the red Game Over banner
-        let banner = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
-        banner.fillColor = UIColor.systemRed
-        banner.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        banner.zPosition = 11
-        banner.name = "gameOverUI" // For cleanup
-        addChild(banner)
-        
-        // Custom Smiley Face
-        let faceRadius: CGFloat = 50
-        let faceCenter = CGPoint(x: size.width / 2, y: size.height / 2)
-        
-        // Face circle
-        let face = SKShapeNode(circleOfRadius: faceRadius)
-        face.fillColor = UIColor.white
-        face.strokeColor = UIColor.clear
-        face.position = faceCenter
-        face.zPosition = 12
-        face.name = "gameOverUI"
-        addChild(face)
-        
-        // Left eye
-        let leftEye = SKShapeNode(circleOfRadius: 8)
-        leftEye.fillColor = UIColor.systemRed // Matches the banner
-        leftEye.strokeColor = UIColor.clear
-        leftEye.position = CGPoint(x: faceCenter.x - 20, y: faceCenter.y + 15)
-        leftEye.zPosition = 13
-        leftEye.name = "gameOverUI"
-        addChild(leftEye)
-        
-        // Right eye
-        let rightEye = SKShapeNode(circleOfRadius: 8)
-        rightEye.fillColor = UIColor.systemRed // Matches the banner
-        rightEye.strokeColor = UIColor.clear
-        rightEye.position = CGPoint(x: faceCenter.x + 20, y: faceCenter.y + 15)
-        rightEye.zPosition = 13
-        rightEye.name = "gameOverUI"
-        addChild(rightEye)
-        
-        // Sad mouth
-        let mouthPath = CGMutablePath()
-        mouthPath.addArc(center: CGPoint.zero, radius: 20, startAngle: CGFloat.pi, endAngle: CGFloat(2 * Double.pi), clockwise: true)
-        let mouth = SKShapeNode(path: mouthPath)
-        mouth.strokeColor = UIColor.systemRed // Matches the banner
-        mouth.lineWidth = 3
-        mouth.position = CGPoint(x: faceCenter.x, y: faceCenter.y - 20)
-        mouth.zPosition = 13
-        mouth.name = "gameOverUI"
-        addChild(mouth)
-        
-        // Final score label
-        let finalScoreLabel = SKLabelNode(text: "Score: \(score)")
-        finalScoreLabel.fontSize = 36
-        finalScoreLabel.fontColor = UIColor.white
-        finalScoreLabel.fontName = "HelveticaNeue-Bold"
-        finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.75)
-        finalScoreLabel.zPosition = 12
-        finalScoreLabel.name = "gameOverUI"
-        addChild(finalScoreLabel)
-        
-        // Restart button
-        let restartButton = SKShapeNode(rectOf: CGSize(width: size.width * 0.4, height: size.height * 0.08), cornerRadius: 10)
-        restartButton.fillColor = UIColor.systemBlue
-        restartButton.position = CGPoint(x: size.width / 2, y: size.height * 0.25)
-        restartButton.zPosition = 12
-        restartButton.name = "restartButton" // For touch detection
-        addChild(restartButton)
-        
-        let restartLabel = SKLabelNode(text: "Restart")
-        restartLabel.fontSize = 24
-        restartLabel.fontColor = UIColor.white
-        restartLabel.fontName = "HelveticaNeue-Bold"
-        restartLabel.position = CGPoint(x: 0, y: -10)
-        restartLabel.zPosition = 13
-        restartLabel.name = "restartButton" // For touch detection
-        restartButton.addChild(restartLabel)
-    }
-    
-    func restartGame() {
-        print("Restarting game...")
-        
-        // Stop the Game Over sound
-        if let gameOverAudioPlayer = gameOverAudioPlayer {
-            gameOverAudioPlayer.stop()
-            self.gameOverAudioPlayer = nil
-        }
-        
-        score = 0
-        updateScoreLabel()
-        
-        // Reset the grid and remove all children from the scene
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        removeAllChildren()
-        
-        isGameOver = false
-        placedBlocks.removeAll() // Clear the placed blocks
-        undoStack.removeAll()    // Clear the undo stack
-        
-        // Set the background color to black
-        backgroundColor = .black
-        
-        // Re-add other game elements
-        createGrid()
-        addScoreLabel()
-        spawnNewBlocks()
-        createPowerupPlaceholders()
-        setupGridHighlights()
-        addHorizontalLines()
-        
-        // Remove existing background music if it exists
-        backgroundMusic?.removeFromParent()
-        backgroundMusic = nil
-        
-        // Restart background music
-        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-            backgroundMusic = SKAudioNode(url: url)
-            if let backgroundMusic = backgroundMusic {
-                print("Background music found and will play.")
-                backgroundMusic.autoplayLooped = true
-                addChild(backgroundMusic)
-            }
-        } else {
-            print("Error: Background music file not found.")
+func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+
+    for row in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            // Create fade-out and remove animations
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.3)
+            let scaleDownAction = SKAction.scale(to: 0.0, duration: 0.3)
+            let removeAction = SKAction.run { cellNode.removeFromParent() }
+            let clearSequence = SKAction.sequence([fadeOutAction, scaleDownAction, removeAction])
+            cellNode.run(clearSequence)
+
+            // Clear the grid cell and add to cleared list
+            grid[row][col] = nil
+            clearedCells.append((row: row, col: col, cellNode: cellNode))
         }
     }
+
+    // Play clearing sound effect
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+
+    return clearedCells
+}
+
+
+
+// Custom animation for the multiplier effect
+func playMultiplierEffect(atLine lineIndex: Int, isRow: Bool) {
+    // Dynamically calculate the grid's origin based on scene size and grid size
+    let gridOrigin = getGridOrigin()
+
     
+    // Dimensions of the effect based on whether it's a row or column
+    let effectWidth = isRow ? CGFloat(gridSize) * tileSize : tileSize
+    let effectHeight = isRow ? tileSize : CGFloat(gridSize) * tileSize
+
+    // Create the effect node
+    let lineEffectNode = SKShapeNode(rectOf: CGSize(width: effectWidth, height: effectHeight))
+    lineEffectNode.fillColor = .yellow
+    lineEffectNode.alpha = 0.5  // Softer highlight to avoid overwhelming the display
+
+    // Create the multiplier label
+    let multiplierLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+    multiplierLabel.text = "2x"
+    multiplierLabel.fontSize = 40
+    multiplierLabel.fontColor = .red
+    multiplierLabel.zPosition = 5  // Ensure it's above other nodes
+    multiplierLabel.alpha = 0.0  // Start invisible for a fade-in effect
+    
+    // Calculate the position of the effect node and label
+    let xPosition: CGFloat
+    let yPosition: CGFloat
+    
+    if isRow {
+        // For a row, center the effect horizontally across the grid
+        xPosition = gridOrigin.x + (tileSize * CGFloat(gridSize)) / 2
+        yPosition = gridOrigin.y + tileSize * CGFloat(lineIndex) + tileSize / 2
+    } else {
+        // For a column, center the effect vertically across the grid
+        xPosition = gridOrigin.x + tileSize * CGFloat(lineIndex) + tileSize / 2
+        yPosition = gridOrigin.y + (tileSize * CGFloat(gridSize)) / 2
+    }
+
+    // Set positions
+    lineEffectNode.position = CGPoint(x: xPosition, y: yPosition)
+    multiplierLabel.position = CGPoint(x: xPosition, y: yPosition)
+    
+    // Add nodes to the scene
+    addChild(lineEffectNode)
+    addChild(multiplierLabel)
+    
+    // Animation for the effect node
+    let scaleUpAction = SKAction.scale(by: 1.2, duration: 0.2)
+    let scaleDownAction = SKAction.scale(to: 1.0, duration: 0.2)
+    let fadeOutEffect = SKAction.fadeOut(withDuration: 0.3)
+    let removeEffect = SKAction.run { lineEffectNode.removeFromParent() }
+    let effectSequence = SKAction.sequence([scaleUpAction, scaleDownAction, fadeOutEffect, removeEffect])
+    
+    // Animation for the multiplier label
+    let fadeInLabel = SKAction.fadeIn(withDuration: 0.2)
+    let scaleLabel = SKAction.scale(to: 1.5, duration: 0.2)
+    let waitLabel = SKAction.wait(forDuration: 0.3)
+    let fadeOutLabel = SKAction.fadeOut(withDuration: 0.3)
+    let removeLabel = SKAction.run { multiplierLabel.removeFromParent() }
+    let labelSequence = SKAction.sequence([fadeInLabel, scaleLabel, waitLabel, fadeOutLabel, removeLabel])
+    
+    // Run animations
+    lineEffectNode.run(effectSequence)
+    multiplierLabel.run(labelSequence)
+}
+
+
+func showGameOverScreen() {
+    isGameOver = true
+
+    // Play Game Over Sound
+    if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
+        do {
+            gameOverAudioPlayer = try AVAudioPlayer(contentsOf: url)
+            gameOverAudioPlayer?.play()
+        } catch {
+            print("Error: Unable to play Game Over sound. \(error.localizedDescription)")
+        }
+    }
+
+    // Stop background music
+    backgroundMusic?.removeFromParent()
+    backgroundMusic = nil
+
+    // Semi-transparent background overlay
+  let overlay = SKShapeNode(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
+overlay.strokeColor = UIColor.clear // Ensure no border is drawn
+overlay.zPosition = 10
+overlay.name = "gameOverUI"
+overlay.position = CGPoint(x: 0, y: 0) // Align to screen's bottom-left corner
+addChild(overlay)
+
+    // Create the red Game Over banner
+    let banner = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
+    banner.fillColor = UIColor.systemRed
+    banner.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    banner.zPosition = 11
+    banner.name = "gameOverUI" // For cleanup
+    addChild(banner)
+
+    // Custom Smiley Face
+    let faceRadius: CGFloat = 50
+    let faceCenter = CGPoint(x: size.width / 2, y: size.height / 2)
+
+    // Face circle
+    let face = SKShapeNode(circleOfRadius: faceRadius)
+    face.fillColor = UIColor.white
+    face.strokeColor = UIColor.clear
+    face.position = faceCenter
+    face.zPosition = 12
+    face.name = "gameOverUI"
+    addChild(face)
+
+    // Left eye
+    let leftEye = SKShapeNode(circleOfRadius: 8)
+    leftEye.fillColor = UIColor.systemRed // Matches the banner
+    leftEye.strokeColor = UIColor.clear
+    leftEye.position = CGPoint(x: faceCenter.x - 20, y: faceCenter.y + 15)
+    leftEye.zPosition = 13
+    leftEye.name = "gameOverUI"
+    addChild(leftEye)
+
+    // Right eye
+    let rightEye = SKShapeNode(circleOfRadius: 8)
+    rightEye.fillColor = UIColor.systemRed // Matches the banner
+    rightEye.strokeColor = UIColor.clear
+    rightEye.position = CGPoint(x: faceCenter.x + 20, y: faceCenter.y + 15)
+    rightEye.zPosition = 13
+    rightEye.name = "gameOverUI"
+    addChild(rightEye)
+
+   // Sad mouth
+let mouthPath = CGMutablePath()
+mouthPath.addArc(center: CGPoint.zero, radius: 20, startAngle: CGFloat.pi, endAngle: CGFloat(2 * Double.pi), clockwise: true)
+let mouth = SKShapeNode(path: mouthPath)
+mouth.strokeColor = UIColor.systemRed // Matches the banner
+mouth.lineWidth = 3
+mouth.position = CGPoint(x: faceCenter.x, y: faceCenter.y - 20)
+mouth.zPosition = 13
+mouth.name = "gameOverUI"
+addChild(mouth)
+    
+    // Final score label
+    let finalScoreLabel = SKLabelNode(text: "Score: \(score)")
+    finalScoreLabel.fontSize = 36
+    finalScoreLabel.fontColor = UIColor.white
+    finalScoreLabel.fontName = "HelveticaNeue-Bold"
+    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.75)
+    finalScoreLabel.zPosition = 12
+    finalScoreLabel.name = "gameOverUI"
+    addChild(finalScoreLabel)
+
+    // Restart button
+    let restartButton = SKShapeNode(rectOf: CGSize(width: size.width * 0.4, height: size.height * 0.08), cornerRadius: 10)
+    restartButton.fillColor = UIColor.systemBlue
+    restartButton.position = CGPoint(x: size.width / 2, y: size.height * 0.25)
+    restartButton.zPosition = 12
+    restartButton.name = "restartButton" // For touch detection
+    addChild(restartButton)
+
+    let restartLabel = SKLabelNode(text: "Restart")
+    restartLabel.fontSize = 24
+    restartLabel.fontColor = UIColor.white
+    restartLabel.fontName = "HelveticaNeue-Bold"
+    restartLabel.position = CGPoint(x: 0, y: -10)
+    restartLabel.zPosition = 13
+    restartLabel.name = "restartButton" // For touch detection
+    restartButton.addChild(restartLabel)
+}
+
+
+
+
+
+func restartGame() {
+    print("Restarting game...")
+
+    // Stop the Game Over sound
+    if let gameOverAudioPlayer = gameOverAudioPlayer {
+        gameOverAudioPlayer.stop()
+        self.gameOverAudioPlayer = nil
+    }
+
+    score = 0
+    updateScoreLabel()
+
+    // Reset the grid and remove all children from the scene
+    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+    removeAllChildren()
+
+    isGameOver = false
+    placedBlocks.removeAll() // Clear the placed blocks
+    undoStack.removeAll()    // Clear the undo stack
+
+    // Set the background color to black
+    backgroundColor = .black
+
+    // Re-add other game elements
+    createGrid()
+    addScoreLabel()
+    spawnNewBlocks()
+    createPowerupPlaceholders()
+    setupGridHighlights()
+    addHorizontalLines()
+
+    // Remove existing background music if it exists
+    backgroundMusic?.removeFromParent()
+    backgroundMusic = nil
+
+    // Restart background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url)
+        if let backgroundMusic = backgroundMusic {
+            print("Background music found and will play.")
+            backgroundMusic.autoplayLooped = true
+            addChild(backgroundMusic)
+        }
+    } else {
+        print("Error: Background music file not found.")
+    }
+}
+
+
+
+    func placeholderIndex(for placeholder: SKShapeNode) -> Int? {
+        for i in 0..<4 {
+            if childNode(withName: "powerupPlaceholder\(i)") === placeholder {
+                return i
+            }
+        }
+        return nil
+    }
+
+    func resetPlaceholder(at index: Int) {
+        if let placeholder = childNode(withName: "powerupPlaceholder\(index)") as? SKShapeNode {
+            // Remove all children from the placeholder
+            placeholder.removeAllChildren()
+
+            // Add the question mark icon back
+            let questionIcon = SKSpriteNode(imageNamed: "question.png")
+            questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
+            questionIcon.position = CGPoint.zero // Center within the placeholder
+            questionIcon.name = "questionIcon\(index)"
+            placeholder.addChild(questionIcon)
+        }
+    }
+    
+
+
+
+
     func updateScoreLabel() {
         if let scoreContainer = childNode(withName: "scoreContainer") as? SKShapeNode,
            let scoreLabel = scoreContainer.childNode(withName: "scoreLabel") as? SKLabelNode {
             scoreLabel.text = "\(score)"
         }
     }
-    
+
+
     // MARK: - Touch Handling
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let nodeTapped = atPoint(location)
-        
-        if isGameOver {
-            if nodeTapped.name == "restartButton" {
-                restartGame()
+
+   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+    let location = touch.location(in: self)
+    let nodeTapped = atPoint(location)
+
+    if isGameOver {
+        if nodeTapped.name == "restartButton" {
+            restartGame()
+        }
+        return
+    }
+
+    // Check if the delete power-up icon is tapped
+    if nodeTapped.name == "deletePowerup" {
+        isDeletePowerupActive = true
+        if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+            if let index = placeholderIndex(for: parentPlaceholder) {
+                resetPlaceholder(at: index)
             }
+        }
+        nodeTapped.removeFromParent()  // Remove the power-up icon after activation
+
+        // Visual indication of activation: flash background
+        let flashBackground = SKShapeNode(rectOf: size)
+        flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
+        flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flashBackground.zPosition = -1
+        addChild(flashBackground)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+        return
+    }
+
+    // Check if the swap power-up icon is tapped
+    if nodeTapped.name == "swapPowerup" {
+        isSwapPowerupActive = true
+        if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+            if let index = placeholderIndex(for: parentPlaceholder) {
+                resetPlaceholder(at: index)
+            }
+        }
+        nodeTapped.removeFromParent()  // Remove the power-up icon after activation
+
+        // Visual indication of activation: flash background
+        let flashBackground = SKShapeNode(rectOf: size)
+        flashBackground.fillColor = UIColor.white.withAlphaComponent(0.3)
+        flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flashBackground.zPosition = -1
+        addChild(flashBackground)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+        return
+    }
+
+    // Check if the undo power-up icon is tapped
+    if nodeTapped.name == "undoPowerup" {
+        // Activate undo functionality
+        undoLastMove()
+
+        // Remove the undo power-up from the placeholder
+        if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+            if let index = placeholderIndex(for: parentPlaceholder) {
+                resetPlaceholder(at: index)
+            }
+        }
+        nodeTapped.removeFromParent() // Remove the undo power-up icon after activation
+
+        // Optional: Visual indication of undo
+        let flashBackground = SKShapeNode(rectOf: size)
+        flashBackground.fillColor = UIColor.yellow.withAlphaComponent(0.3)
+        flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flashBackground.zPosition = -1
+        addChild(flashBackground)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+        return
+    }
+
+    // Check if the multiplier power-up icon is tapped
+    if nodeTapped.name == "multiplierPowerup" {
+    isMultiplierPowerupActive = true
+    multiplier = 2  // Set the multiplier value (e.g., 2x)
+    
+    if let parentPlaceholder = nodeTapped.parent as? SKShapeNode {
+        if let index = placeholderIndex(for: parentPlaceholder) {
+            resetPlaceholder(at: index)
+        }
+    }
+    nodeTapped.removeFromParent()  // Remove the power-up icon after activation
+
+    // Visual indication of activation: flash background
+    let flashBackground = SKShapeNode(rectOf: size)
+    flashBackground.fillColor = UIColor.green.withAlphaComponent(0.3)
+    flashBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    flashBackground.zPosition = -1
+    addChild(flashBackground)
+
+    let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+    let remove = SKAction.removeFromParent()
+    flashBackground.run(SKAction.sequence([fadeOut, remove]))
+
+    return
+}
+
+
+    // If delete power-up is active, delete the selected block (entire PlacedBlock)
+    if isDeletePowerupActive {
+        // Check if the tapped node is a cell node in the grid
+        if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+            deletePlacedBlock(placedBlock, updateScore: false) // Pass false to prevent score increment
+            isDeletePowerupActive = false
+            performPowerupDeactivationEffect()
+            return
+        } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+            deletePlacedBlock(placedBlock, updateScore: false)
+            isDeletePowerupActive = false
+            performPowerupDeactivationEffect()
             return
         }
-        
-        // Check if a power-up icon is tapped
-        if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
-           let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
-            
-            if activePowerup == nil {
-                // Activate the power-up
-                activePowerup = powerupType
-                highlightPowerupIcon(powerupIcon)
-            } else if activePowerup == powerupType {
-                // Deactivate the power-up
-                activePowerup = nil
-                removeHighlightFromPowerupIcon(powerupIcon)
-            } else {
-                // Another power-up is already active; optionally handle this case
-            }
+    }
+
+    // If swap power-up is active
+    if isSwapPowerupActive {
+        // Check if the tapped node is a block in the spawning area (BBoxNode)
+        if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
+            deleteBlock(blockNode)
+            isSwapPowerupActive = false  // Deactivate the power-up after use
+            performPowerupDeactivationEffect()
+            return
+        } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
+            deleteBlock(blockNode)
+            isSwapPowerupActive = false
+            performPowerupDeactivationEffect()
             return
         }
-        
-        // If delete power-up is active
-        if activePowerup == .delete {
-            // Check if the tapped node is a cell node in the grid
-            if let cellNode = nodeTapped as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock, updateScore: false) // Pass false to prevent score increment
-                deactivateActivePowerup()
-                return
-            } else if let cellNode = nodeTapped.parent as? SKShapeNode, let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                deletePlacedBlock(placedBlock, updateScore: false)
-                deactivateActivePowerup()
-                return
+    }
+
+    // Existing code for handling block dragging or other actions
+    if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
+        currentlyDraggedNode = boxNode
+    } else {
+        currentlyDraggedNode = nil
+    }
+
+    // Play block selection sound when a block is selected, only once
+    if let node = currentlyDraggedNode {
+        // Cancel rotate power-up if it was active
+        // isRotatePowerupActive = false
+
+        // Reset rotate power-up icon appearance
+        if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
+            rotatePowerupIcon.colorBlendFactor = 0.0
+        }
+
+        if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
+            do {
+                // Initialize the audio player with the sound file URL
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play() // Play the sound
+            } catch {
+                print("Error: Unable to play sound - \(error)")
             }
-        }
-        
-        // If swap power-up is active
-        if activePowerup == .swap {
-            // Check if the tapped node is a block in the spawning area (BBoxNode)
-            if let blockNode = nodeTapped as? BBoxNode, boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
-                deactivateActivePowerup()
-                return
-            } else if let blockNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
-                deactivateActivePowerup()
-                return
-            }
-        }
-        
-        // If undo power-up is active
-        if activePowerup == .undo {
-            // Activate undo functionality
-            undoLastMove()
-            deactivateActivePowerup()
-            return
-        }
-        
-        // Existing code for handling block dragging or other actions
-        if let boxNode = nodeTapped as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
-        } else if let boxNode = nodeTapped.parent?.parent as? BBoxNode, boxNodes.contains(boxNode) {
-            currentlyDraggedNode = boxNode
         } else {
-            currentlyDraggedNode = nil
+            print("Error: Audio file not found.")
         }
-        
-        // Play block selection sound when a block is selected, only once
-        if let node = currentlyDraggedNode {
-            // Reset rotate power-up icon appearance
-            if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
-                rotatePowerupIcon.colorBlendFactor = 0.0
-            }
-            
-            if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
-                do {
-                    // Initialize the audio player with the sound file URL
-                    audioPlayer = try AVAudioPlayer(contentsOf: url)
-                    audioPlayer?.prepareToPlay()
-                    audioPlayer?.play() // Play the sound
-                } catch {
-                    print("Error: Unable to play sound - \(error)")
-                }
-            } else {
-                print("Error: Audio file not found.")
-            }
-            
-            // Increase the size of the block when it's selected for dragging
-            node.run(SKAction.scale(to: 1.0, duration: 0.1))
-            
-            // Add an offset between the touch point and the block's position when dragging or just touched
-            let touchLocation = touch.location(in: self)
-            
-            // Calculate offset to move the block away from the finger
-            let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
-            let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
-            
-            node.userData = ["offsetX": offsetX, "offsetY": offsetY]
-        }
+
+        // Increase the size of the block when it's selected for dragging
+        node.run(SKAction.scale(to: 1.0, duration: 0.1))
+
+        // Add an offset between the touch point and the block's position when dragging or just touched
+        let touchLocation = touch.location(in: self)
+
+        // Calculate offset to move the block away from the finger
+        let offsetX = node.position.x - touchLocation.x + 50  // Adjust 50 as needed for distance
+        let offsetY = node.position.y - touchLocation.y + 50  // Adjust 50 as needed for distance
+
+        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
     }
-    
-    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) {
-        // Remove all the cell nodes from the scene and grid
-        for cellNode in placedBlock.cellNodes {
-            cellNode.removeFromParent()
-            // Clear userData
-            cellNode.userData = nil
-        }
-        for gridPos in placedBlock.gridPositions {
-            grid[gridPos.row][gridPos.col] = nil
-        }
-        
-        // Remove the placedBlock from the placedBlocks array
-        if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
-            placedBlocks.remove(at: index)
-        }
-        
-        // Update score only if this deletion should impact the score (i.e., it's not from a delete power-up)
-        if updateScore {
-            score += placedBlock.cellNodes.count
-            updateScoreLabel()
-        }
-        
-        // Check for game-over condition after deletion
-        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
-            showGameOverScreen()
-        }
+}
+
+
+    func performPowerupDeactivationEffect() {
+        // Deactivation effect
+        let deactivateFlash = SKShapeNode(rectOf: size)
+        deactivateFlash.fillColor = UIColor.red.withAlphaComponent(0.3)
+        deactivateFlash.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        deactivateFlash.zPosition = -1
+        addChild(deactivateFlash)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        deactivateFlash.run(SKAction.sequence([fadeOut, remove]))
     }
-    
+
+    func performRotateEffect(on blockNode: BBoxNode) {
+        let rotateAction = SKAction.rotate(byAngle: CGFloat.pi / 2, duration: 0.2)
+        blockNode.run(rotateAction)
+    }
+
     func isDeletePowerupAvailable() -> Bool {
         // Check if any delete power-up is still available in the placeholders
         for i in 0..<4 {
@@ -1213,102 +1404,131 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
         return false
     }
-    
+
+    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) {
+        // Remove all the cell nodes from the scene and grid
+        for cellNode in placedBlock.cellNodes {
+            cellNode.removeFromParent()
+            // Clear userData
+            cellNode.userData = nil
+        }
+        for gridPos in placedBlock.gridPositions {
+            grid[gridPos.row][gridPos.col] = nil
+        }
+
+        // Remove the placedBlock from the placedBlocks array
+        if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
+            placedBlocks.remove(at: index)
+        }
+
+        // Update score only if this deletion should impact the score (i.e., it's not from a delete power-up)
+        if updateScore {
+            score += placedBlock.cellNodes.count
+            updateScoreLabel()
+        }
+
+        // Check for game-over condition after deletion if there are no available moves and no delete power-ups left
+        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
+            showGameOverScreen()
+        }
+    }
+
     func deleteBlock(_ blockNode: BBoxNode) {
         // Remove the block node from the scene
         blockNode.removeFromParent()
-        
+
         // Remove from boxNodes array if present
         if let index = boxNodes.firstIndex(of: blockNode) {
             boxNodes.remove(at: index)
         }
-        
+
         // Generate a new block to replace the deleted one
         let newBlock = generateRandomShapes(count: 1).first!
         newBlock.gameScene = self
         newBlock.setScale(initialScale)
         boxNodes.append(newBlock)
         safeAddBlock(newBlock)
-        
+
         // Update the positions of the spawning blocks
         layoutSpawnedBlocks()
-        
+
         // Check for game-over condition after deletion
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
         }
     }
-    
+
     // Update the position of the dragged block as it follows the touch, with offset
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let node = currentlyDraggedNode else { return }
-        
-        let touchLocation = touch.location(in: self)
-        // Set the block to fully opaque while dragging
-        node.alpha = 1.0
-        
-        // Update block position to follow the touch
-        node.position = touchLocation
-        // Scale up the block smoothly if not already scaled
-        if node.xScale < 1.0 {
-            let scaleAction = SKAction.scale(to: 1.0, duration: 0.1)
-            scaleAction.timingMode = .easeOut
-            node.run(scaleAction, withKey: "scaling")
-        }
-        
-        // Retrieve the offset stored in userData and apply it
-        if let offsetX = node.userData?["offsetX"] as? CGFloat,
-           let offsetY = node.userData?["offsetY"] as? CGFloat {
-            
-            let targetPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
-            
-            // Interpolate for smoother movement
-            let currentPosition = node.position
-            let easedPosition = interpolate(from: currentPosition, to: targetPosition, fraction: 0.3)
-            
-            // Update the position
-            node.position = easedPosition
-        }
-        
-        // Highlight valid cells based on the updated position
-        highlightValidCells(for: node)
+  override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+
+    let touchLocation = touch.location(in: self)
+      // Set the block to fully opaque while dragging
+       node.alpha = 1.0
+
+       // Update block position to follow the touch
+       node.position = touchLocation
+    // Scale up the block smoothly if not already scaled
+    if node.xScale < 1.0 {
+        let scaleAction = SKAction.scale(to: 1.0, duration: 0.1)
+        scaleAction.timingMode = .easeOut
+        node.run(scaleAction, withKey: "scaling")
     }
-    
-    func interpolate(from start: CGPoint, to end: CGPoint, fraction: CGFloat) -> CGPoint {
-        let x = start.x + (end.x - start.x) * fraction
-        let y = start.y + (end.y - start.y) * fraction
-        return CGPoint(x: x, y: y)
+
+    // Retrieve the offset stored in userData and apply it
+    if let offsetX = node.userData?["offsetX"] as? CGFloat,
+       let offsetY = node.userData?["offsetY"] as? CGFloat {
+
+        let targetPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
+
+        // Interpolate for smoother movement
+        let currentPosition = node.position
+        let easedPosition = interpolate(from: currentPosition, to: targetPosition, fraction: 0.3)
+
+        // Update the position
+        node.position = easedPosition
     }
-    
+
+    // Highlight valid cells based on the updated position
+    highlightValidCells(for: node)
+}
+
+func interpolate(from start: CGPoint, to end: CGPoint, fraction: CGFloat) -> CGPoint {
+    let x = start.x + (end.x - start.x) * fraction
+    let y = start.y + (end.y - start.y) * fraction
+    return CGPoint(x: x, y: y)
+}
+
+
     func undoLastMove() {
         guard let move = undoStack.popLast() else { return }
-        
+
         // Remove the added cells
         for (row, col, cellNode) in move.addedCells {
             grid[row][col] = nil
             cellNode.removeFromParent()
         }
-        
+
         // Restore the cleared cells
         for lineClear in move.clearedLines {
             for (row, col, cellNode) in lineClear.clearedCells {
                 grid[row][col] = cellNode
-                
+
                 // Add the cellNode back to the scene if needed
                 if cellNode.parent == nil {
                     addChild(cellNode)
                 }
-                
+
                 // Restore the cellNode's properties
                 cellNode.alpha = 1.0
                 cellNode.setScale(1.0)
-                
+
                 // Ensure the cellNode's placedBlock is in placedBlocks
                 if let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
                     if !placedBlocks.contains(where: { $0 === placedBlock }) {
                         placedBlocks.append(placedBlock)
                     }
-                    
+
                     // Ensure the cellNode is in placedBlock.cellNodes
                     if !placedBlock.cellNodes.contains(cellNode) {
                         placedBlock.cellNodes.append(cellNode)
@@ -1317,36 +1537,37 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
                 }
             }
         }
-        
+
         // Remove the placedBlock from placedBlocks
         if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
             placedBlocks.remove(at: index)
         }
-        
+
         // Restore the blockNode to boxNodes and scene
         boxNodes.append(move.blockNode)
         addChild(move.blockNode)
         move.blockNode.position = move.blockNode.initialPosition
         move.blockNode.setScale(initialScale)
-        
+
         // Re-layout the spawned blocks
         layoutSpawnedBlocks()
-        
+
         // Restore the score
         score = move.previousScore
         updateScoreLabel()
-        
+
         // Clear highlights
         clearHighlights()
     }
-    
+
+
     // Handle the block placement and reset its size when placed on the grid
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let node = currentlyDraggedNode else { return }
-        
+
         // Determine the grid position for placement
         let gridPos = node.gridPosition()
-        
+
         // Attempt to place the block at the calculated grid position
         if let gameScene = node.gameScene {
             if gameScene.isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
@@ -1358,14 +1579,14 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
                 node.run(SKAction.scale(to: initialScale, duration: 0.1))  // Scale back to initial scale
             }
         }
-        
+
         // Remove the offset data
         node.userData = nil
-        
+
         currentlyDraggedNode = nil
         clearHighlights()
     }
-    
+
     // Check if the dragged block is colliding with any placed blocks
     func isCollisionWithPlacedBlocks(at position: CGPoint) -> Bool {
         for placedBlock in placedBlocks {
@@ -1383,7 +1604,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 class PlacedBlock {
     var cellNodes: [SKShapeNode]
     var gridPositions: [GridCoordinate]
-    
+
     init(cellNodes: [SKShapeNode], gridPositions: [GridCoordinate]) {
         self.cellNodes = cellNodes
         self.gridPositions = gridPositions
@@ -1397,7 +1618,7 @@ class Move {
     let previousScore: Int
     let addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)]
     let clearedLines: [LineClear]
-    
+
     init(placedBlock: PlacedBlock, blockNode: BBoxNode, previousScore: Int, addedCells: [(Int, Int, SKShapeNode)], clearedLines: [LineClear]) {
         self.placedBlock = placedBlock
         self.blockNode = blockNode
@@ -1412,7 +1633,7 @@ class LineClear {
     let isRow: Bool
     let index: Int
     let clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)]
-    
+
     init(isRow: Bool, index: Int, clearedCells: [(Int, Int, SKShapeNode)]) {
         self.isRow = isRow
         self.index = index
