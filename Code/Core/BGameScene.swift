@@ -1094,7 +1094,15 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
            let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
             
-            if activePowerup == nil {
+            if powerupType == .undo {
+                // Execute the undo power-up immediately
+                if let placeholder = powerupIcon.parent as? SKShapeNode,
+                   let index = placeholderIndex(for: placeholder) {
+                    undoLastMove()
+                    resetPlaceholder(at: index) // Reset the placeholder after undo
+                }
+                return
+            } else if activePowerup == nil {
                 // Activate the power-up
                 activePowerup = powerupType
                 highlightPowerupIcon(powerupIcon)
@@ -1102,8 +1110,6 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
                 // Deactivate the power-up
                 activePowerup = nil
                 removeHighlightFromPowerupIcon(powerupIcon)
-            } else {
-                // Another power-up is already active; optionally handle this case
             }
             return
         }
@@ -1188,6 +1194,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
             node.userData = ["offsetX": offsetX, "offsetY": offsetY]
         }
     }
+
     
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) {
         // Remove all the cell nodes from the scene and grid
