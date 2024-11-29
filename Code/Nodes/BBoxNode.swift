@@ -155,3 +155,4 @@ class BBoxNode: SKNode {
         return occupied
     }
 }
+
