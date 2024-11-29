@@ -1301,89 +1301,63 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     return CGPoint(x: x, y: y)
 }
 
-func undoLastMove() {
-    // Check if there is a move to undo
-    guard let move = undoStack.popLast() else { return }
-    
-    // Step 1: Hide the first 3 spawned blocks if there are more than 3
-    var hiddenBlocks: [BBoxNode] = []
-    if boxNodes.count >= 3 {
-        hiddenBlocks = Array(boxNodes.prefix(3))  // Get the first 3 blocks to hide
-        // Hide the first 3 blocks
-        for block in hiddenBlocks {
-            for child in block.children {
-                if let spriteNode = child as? SKSpriteNode {
-                    spriteNode.isHidden = true
+    func undoLastMove() {
+        // Check if there is a move to undo
+        guard let move = undoStack.popLast() else { return }
+        
+        // Step 1: Remove the placed block from the grid and scene
+        for gridPos in move.placedBlock.gridPositions {
+            if let cellNode = grid[gridPos.row][gridPos.col] {
+                cellNode.removeFromParent()
+                grid[gridPos.row][gridPos.col] = nil
+            }
+        }
+        
+        // Remove the placed block from the placedBlocks array
+        if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
+            placedBlocks.remove(at: index)
+        }
+        
+        // Step 2: Restore the cleared lines
+        for lineClear in move.clearedLines {
+            for (row, col, cellNode) in lineClear.clearedCells {
+                grid[row][col] = cellNode
+                if cellNode.parent == nil {
+                    addChild(cellNode)
+                }
+                cellNode.alpha = 1.0
+                cellNode.setScale(1.0)
+                
+                // Restore the original position
+                if let originalPosition = cellNode.userData?["originalPosition"] as? CGPoint {
+                    cellNode.position = originalPosition
+                } else {
+                    cellNode.position = positionForGridCoordinate(GridCoordinate(row: row, col: col))
                 }
             }
         }
-    }
-    
-    // Step 2: Remove added cells from the grid and scene
-    for (row, col, cellNode) in move.addedCells {
-        grid[row][col] = nil
-        cellNode.removeFromParent()
-    }
-    
-    // Step 3: Restore cleared lines
-    for lineClear in move.clearedLines {
-        for (row, col, cellNode) in lineClear.clearedCells {
-            grid[row][col] = cellNode
-            if cellNode.parent == nil {
-                addChild(cellNode)
-            }
-            cellNode.alpha = 1.0
-            cellNode.setScale(1.0)
-            
-            if let originalPosition = cellNode.userData?["originalPosition"] as? CGPoint {
-                cellNode.position = originalPosition
-            } else {
-                cellNode.position = positionForGridCoordinate(GridCoordinate(row: row, col: col))
-            }
-            
-            if let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                if !placedBlocks.contains(where: { $0 === placedBlock }) {
-                    placedBlocks.append(placedBlock)
-                }
-                if !placedBlock.cellNodes.contains(cellNode) {
-                    placedBlock.cellNodes.append(cellNode)
-                    placedBlock.gridPositions.append(GridCoordinate(row: row, col: col))
-                }
-            }
+        
+        // Step 3: Remove any remnants of the placed block from the grid
+        for (row, col, cellNode) in move.addedCells {
+            grid[row][col] = nil
+            cellNode.removeFromParent()
         }
+        
+        // Step 4: Restore the block node to its original position and add it back to the spawning area
+        move.blockNode.position = move.blockNode.initialPosition
+        move.blockNode.setScale(initialScale)
+        boxNodes.append(move.blockNode)
+        safeAddBlock(move.blockNode)
+        
+        // Step 5: Restore the score
+        score = move.previousScore
+        updateScoreLabel()
+        
+        // Step 6: Clear any visual highlights
+        clearHighlights()
     }
-    
-    // Step 4: Remove the placed block associated with this move from placedBlocks
-    if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
-        placedBlocks.remove(at: index)
-    }
-    
-    // Step 5: Restore the block node associated with the move
-    boxNodes.append(move.blockNode)
-    addChild(move.blockNode)
-    move.blockNode.position = move.blockNode.initialPosition
-    move.blockNode.setScale(initialScale)
-    
-    // Step 6: Ensure that the new block is placed correctly
-    // Call layoutSpawnedBlocks() to ensure that new blocks are spawned correctly
-    layoutSpawnedBlocks()
-    
-    // Step 7: Unhide the hidden blocks after placing the undo block
-    for block in hiddenBlocks {
-        for child in block.children {
-            if let spriteNode = child as? SKSpriteNode {
-                spriteNode.isHidden = false
-            }
-        }
-    }
-    
-    // Step 8: Restore the score
-    score = move.previousScore
-    updateScoreLabel()
-    
-    // Step 9: Clear any visual highlights
-    clearHighlights()
-}
+
+
 
 
 
