@@ -1362,87 +1362,91 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     return CGPoint(x: x, y: y)
 }
 
-    func undoLastMove() {
-        // Check if there is a move to undo
-        guard let move = undoStack.popLast() else { return }
-        
-        // Step 1: Remove the placed block from the grid and scene
-        for gridPos in move.placedBlock.gridPositions {
-            if let cellNode = grid[gridPos.row][gridPos.col] {
-                cellNode.removeFromParent()
-                grid[gridPos.row][gridPos.col] = nil
-            }
-        }
-        
-        // Remove the placed block from the placedBlocks array
-        if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
-            placedBlocks.remove(at: index)
-        }
-        
-        // Step 2: Restore the cleared lines
-        for lineClear in move.clearedLines {
-            for (row, col, cellNode) in lineClear.clearedCells {
-                grid[row][col] = cellNode
-                if cellNode.parent == nil {
-                    addChild(cellNode)
-                }
-                cellNode.alpha = 1.0
-                cellNode.setScale(1.0)
-                
-                // Restore the original position
-                if let originalPosition = cellNode.userData?["originalPosition"] as? CGPoint {
-                    cellNode.position = originalPosition
-                } else {
-                    cellNode.position = positionForGridCoordinate(GridCoordinate(row: row, col: col))
-                }
-            }
-        }
-        
-        // Step 3: Remove any remnants of the placed block from the grid
-        for (row, col, cellNode) in move.addedCells {
-            grid[row][col] = nil
+func undoLastMove() {
+    // Check if there is a move to undo
+    guard let move = undoStack.popLast() else { return }
+    
+    // Step 1: Remove the placed block from the grid and scene
+    for gridPos in move.placedBlock.gridPositions {
+        if let cellNode = grid[gridPos.row][gridPos.col] {
             cellNode.removeFromParent()
+            grid[gridPos.row][gridPos.col] = nil
         }
-        
-        // Step 4: Restore the block node to a temporary "undo" position
-        move.blockNode.position = getUndoBlockCenterPosition()
-        move.blockNode.setScale(initialScale)
-        
-        // Add the undo block directly to the scene but not to `boxNodes`
-        safeAddBlock(move.blockNode)
-        
-        // Step 5: Restore the score
-        score = move.previousScore
-        updateScoreLabel()
-        
-        // Step 6: Clear any visual highlights
-        clearHighlights()
-        
-        // Step 7: Hide current spawned blocks and store them
-          tempSpawnedBlocks = boxNodes
-          for block in boxNodes {
-              block.removeFromParent()
-          }
-          boxNodes.removeAll()
-
-          // Step 8: Add the undo block to boxNodes and the scene
-          boxNodes.append(move.blockNode)
-          safeAddBlock(move.blockNode)
-          move.blockNode.position = getUndoBlockCenterPosition()
-          move.blockNode.setScale(initialScale)
-          move.blockNode.gameScene = self
-
-          // Set the undo in progress flag
-          isUndoInProgress = true
-      
     }
-
-    // Helper function to calculate the center position for the undo block
-    func getUndoBlockCenterPosition() -> CGPoint {
-        let centerX = size.width / 2
-        let centerY = size.height * 0.2  // Match the Y position of the spawn area
-        return CGPoint(x: centerX, y: centerY)
+    
+    // Remove the placed block from the placedBlocks array
+    if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
+        placedBlocks.remove(at: index)
     }
+    
+    // Step 2: Restore the cleared lines
+    for lineClear in move.clearedLines {
+        for (row, col, cellNode) in lineClear.clearedCells {
+            grid[row][col] = cellNode
+            if cellNode.parent == nil {
+                addChild(cellNode)
+            }
+            cellNode.alpha = 1.0
+            cellNode.setScale(1.0)
+            
+            // Restore the original position
+            if let originalPosition = cellNode.userData?["originalPosition"] as? CGPoint {
+                cellNode.position = originalPosition
+            } else {
+                cellNode.position = positionForGridCoordinate(GridCoordinate(row: row, col: col))
+            }
+        }
+    }
+    
+    // Step 3: Remove any remnants of the placed block from the grid
+    for (row, col, cellNode) in move.addedCells {
+        grid[row][col] = nil
+        cellNode.removeFromParent()
+    }
+    
+    // Step 4: Restore the block node to a temporary "undo" position
+    move.blockNode.position = getUndoBlockCenterPosition()
+    move.blockNode.setScale(initialScale)
+    
+    // Add the undo block directly to the scene but not to `boxNodes`
+    safeAddBlock(move.blockNode)
+    
+    // Step 5: Restore the score
+    score = move.previousScore
+    updateScoreLabel()
+    
+    // Step 6: Reset the current combo multiplier to its base value
+    currentCombo = 1
+    displayComboAnimation(for: currentCombo) // Trigger the animation for combo reset
+    
+    // Step 7: Clear any visual highlights
+    clearHighlights()
+    
+    // Step 8: Hide current spawned blocks and store them
+    tempSpawnedBlocks = boxNodes
+    for block in boxNodes {
+        block.removeFromParent()
+    }
+    boxNodes.removeAll()
+    
+    // Step 9: Add the undo block to boxNodes and the scene
+    boxNodes.append(move.blockNode)
+    safeAddBlock(move.blockNode)
+    move.blockNode.position = getUndoBlockCenterPosition()
+    move.blockNode.setScale(initialScale)
+    move.blockNode.gameScene = self
+
+    // Set the undo in progress flag
+    isUndoInProgress = true
+}
+
+// Helper function to calculate the center position for the undo block
+func getUndoBlockCenterPosition() -> CGPoint {
+    let centerX = size.width / 2
+    let centerY = size.height * 0.2  // Match the Y position of the spawn area
+    return CGPoint(x: centerX, y: centerY)
+}
+
 
 
 
