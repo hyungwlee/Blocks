@@ -110,7 +110,7 @@ class BGameScene: SKScene {
         let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
         
         // Position the placeholders below the spawned blocks
-        let yPosition = size.height * 0.1  // Adjusted to place beneath the blocks
+        let yPosition = size.height * 0.13  // Adjusted to place beneath the blocks
         
         for i in 0..<4 {
             let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
@@ -132,6 +132,37 @@ class BGameScene: SKScene {
             placeholder.addChild(questionIcon)
         }
     }
+    // MARK: - Variables for Progress Bar
+     let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
+     var linesCleared = 0 // Tracks the total lines cleared for the progress bar
+     var progressBar: SKShapeNode? // The progress bar node
+     var progressBarBackground: SKShapeNode? // Background for the progress bar
+    func createProgressBar() {
+        // Define progress bar dimensions
+        let barWidth: CGFloat = size.width * 0.8 // Same width as before
+        let barHeight: CGFloat = 10 // Make the bar skinny
+        let placeholderYPosition = size.height * 0.1 // Y-position of your power-up placeholders
+        let barY = placeholderYPosition - 50 // Position it closer to the placeholders
+
+        // Create the background for the progress bar
+        progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
+        progressBarBackground?.fillColor = .darkGray
+        progressBarBackground?.strokeColor = .clear
+        progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
+        addChild(progressBarBackground!)
+
+        // Create the progress bar itself
+        progressBar = SKShapeNode(rectOf: CGSize(width: 0, height: barHeight), cornerRadius: barHeight / 2)
+        progressBar?.fillColor = .green
+        progressBar?.strokeColor = .clear
+        progressBar?.position = CGPoint(x: size.width / 2 - barWidth / 2, y: barY) // Start position
+        /*progressBar?.anchorPoint = CGPoint(x: 0, y: 0.5)*/ // Anchor on the left
+        addChild(progressBar!)
+    }
+
+
+
+    
     
     // MARK: - Power-up Management
     
@@ -395,6 +426,7 @@ class BGameScene: SKScene {
         createGrid()
         addScoreLabel()
         createPowerupPlaceholders()
+        createProgressBar()
         spawnNewBlocks()
         setupGridHighlights()
         
@@ -673,6 +705,7 @@ class BGameScene: SKScene {
     
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() -> [LineClear] {
+     
         var lineClears: [LineClear] = []
         var totalLinesCleared = 0
         var totalPoints = 0  // Accumulate total points for all cleared lines
