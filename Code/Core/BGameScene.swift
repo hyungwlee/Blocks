@@ -32,7 +32,9 @@ class BGameScene: SKScene {
     
     // Power-up state variables
     var activePowerup: PowerupType? = nil
-    
+    var tempSpawnedBlocks: [BBoxNode] = []
+    var isUndoInProgress: Bool = false
+
     var undoStack: [Move] = []  // Updated to store Move objects
     
     var highlightGrid: [[SKNode?]] = []
@@ -587,18 +589,18 @@ class BGameScene: SKScene {
         if isPlacementValid(for: block, at: row, col: col) {
             let previousScore = score  // Save the score before placing the block
             var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-            
+
             var occupiedCells = 0
             var cellNodes: [SKShapeNode] = []
             var gridPositions: [GridCoordinate] = []
-            
+
             for (index, cell) in block.shape.enumerated() {
                 let gridRow = row + cell.row
                 let gridCol = col + cell.col
-                
+
                 let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
                 cellNode.fillColor = block.color
-                
+
                 let asset = block.assets[index].name
                 let assetTexture = SKTexture(imageNamed: asset)
                 let spriteNode = SKSpriteNode(texture: assetTexture)
@@ -606,24 +608,24 @@ class BGameScene: SKScene {
                 cellNode.addChild(spriteNode)
                 cellNode.strokeColor = .darkGray
                 cellNode.lineWidth = 2.0
-                
+
                 let cellPosition = CGPoint(
                     x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
                     y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
                 )
                 cellNode.position = cellPosition
-                
+
                 addChild(cellNode)
                 setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
                 occupiedCells += 1
-                
+
                 cellNodes.append(cellNode)
                 gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
-                
+
                 // Collect added cells for undo
                 addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
             }
-            
+
             let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
             
             for cellNode in cellNodes {
@@ -633,31 +635,41 @@ class BGameScene: SKScene {
             placedBlocks.append(placedBlock)
             score += occupiedCells
             updateScoreLabel()
-            
+
             if let index = boxNodes.firstIndex(of: block) {
                 boxNodes.remove(at: index)
             }
             block.removeFromParent()
-            
+
             // Check for completed lines and collect cleared lines
             let clearedLines = checkForCompletedLines()
-            
+
             // Create a Move object and push it onto the undo stack
             let move = Move(placedBlock: placedBlock, blockNode: block, previousScore: previousScore, addedCells: addedCells, clearedLines: clearedLines)
             undoStack.append(move)
-            
-            if boxNodes.isEmpty {
+
+            if isUndoInProgress {
+                // Restore the original spawned blocks
+                boxNodes = tempSpawnedBlocks
+                tempSpawnedBlocks.removeAll()
+                for spawnedBlock in boxNodes {
+                    safeAddBlock(spawnedBlock)
+                }
+                layoutSpawnedBlocks()
+                isUndoInProgress = false
+            } else if boxNodes.isEmpty {
                 spawnNewBlocks()
             } else if !checkForPossibleMoves(for: boxNodes) {
                 showGameOverScreen()
             }
-            
+
             run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
         } else {
             block.position = block.initialPosition
             block.run(SKAction.scale(to: initialScale, duration: 0.1))
         }
     }
+
     
     // MARK: - Line Clearing Logic
     func checkForCompletedLines() -> [LineClear] {
@@ -1077,6 +1089,9 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
+
+
+
     // MARK: - Touch Handling
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
@@ -1218,11 +1233,17 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
             updateScoreLabel()
         }
         
+        // **Add this line to check for completed lines after deletion**
+        let clearedLines = checkForCompletedLines()
+        
+        // If you need to handle `clearedLines` for undo or other purposes, you can do so here
+        
         // Check for game-over condition after deletion
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
         }
     }
+
     
     func isDeletePowerupAvailable() -> Bool {
         // Check if any delete power-up is still available in the placeholders
@@ -1350,10 +1371,11 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
             cellNode.removeFromParent()
         }
         
-        // Step 4: Restore the block node to its original position and add it back to the spawning area
-        move.blockNode.position = move.blockNode.initialPosition
+        // Step 4: Restore the block node to a temporary "undo" position
+        move.blockNode.position = getUndoBlockCenterPosition()
         move.blockNode.setScale(initialScale)
-        boxNodes.append(move.blockNode)
+        
+        // Add the undo block directly to the scene but not to `boxNodes`
         safeAddBlock(move.blockNode)
         
         // Step 5: Restore the score
@@ -1362,7 +1384,33 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         
         // Step 6: Clear any visual highlights
         clearHighlights()
+        
+        // Step 7: Hide current spawned blocks and store them
+          tempSpawnedBlocks = boxNodes
+          for block in boxNodes {
+              block.removeFromParent()
+          }
+          boxNodes.removeAll()
+
+          // Step 8: Add the undo block to boxNodes and the scene
+          boxNodes.append(move.blockNode)
+          safeAddBlock(move.blockNode)
+          move.blockNode.position = getUndoBlockCenterPosition()
+          move.blockNode.setScale(initialScale)
+          move.blockNode.gameScene = self
+
+          // Set the undo in progress flag
+          isUndoInProgress = true
+      
     }
+
+    // Helper function to calculate the center position for the undo block
+    func getUndoBlockCenterPosition() -> CGPoint {
+        let centerX = size.width / 2
+        let centerY = size.height * 0.2  // Match the Y position of the spawn area
+        return CGPoint(x: centerX, y: centerY)
+    }
+
 
 
 
