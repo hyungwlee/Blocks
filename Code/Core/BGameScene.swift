@@ -1416,8 +1416,8 @@ func undoLastMove() {
     updateScoreLabel()
     
     // Step 6: Reset the current combo multiplier to its base value
-    currentCombo = 1
-    displayComboAnimation(for: currentCombo) // Trigger the animation for combo reset
+    currentCombo = 1 // Reset combo multiplier
+    // Optionally, update any UI elements tracking the combo multiplier here (if needed)
     
     // Step 7: Clear any visual highlights
     clearHighlights()
@@ -1439,6 +1439,7 @@ func undoLastMove() {
     // Set the undo in progress flag
     isUndoInProgress = true
 }
+
 
 // Helper function to calculate the center position for the undo block
 func getUndoBlockCenterPosition() -> CGPoint {
