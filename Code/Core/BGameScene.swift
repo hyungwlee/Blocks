@@ -13,7 +13,10 @@ class BGameScene: SKScene {
     var tileSize: CGFloat {
         return (size.width - 40) / CGFloat(gridSize)
     }
-    
+    // Power-up state variables
+    var activePowerup: PowerupType? = nil
+    var activePowerupIcon: SKSpriteNode? = nil // New variable to track the active power-up icon
+
     var score = 0
     var grid: [[SKShapeNode?]] = []
     var boxNodes: [BBoxNode] = []
@@ -31,7 +34,7 @@ class BGameScene: SKScene {
     var multiplier: Int = 1  // Default multiplier is 1 (no multiplier)
     
     // Power-up state variables
-    var activePowerup: PowerupType? = nil
+//    var activePowerup: PowerupType? = nil
     var tempSpawnedBlocks: [BBoxNode] = []
     var isUndoInProgress: Bool = false
 
@@ -285,24 +288,24 @@ class BGameScene: SKScene {
         icon.run(removeGlow)
     }
     
-    func deactivateActivePowerup() {
-        // Find the power-up icon in the placeholder and remove it
-        for i in 0..<4 {
-            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
-               let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode,
-               let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType,
-               powerupType == activePowerup {
-                
-                // Remove the power-up icon
-                powerupIcon.removeFromParent()
-                // Reset the placeholder
-                resetPlaceholder(at: i)
-                break
-            }
-        }
-        // Clear the active power-up
-        activePowerup = nil
-    }
+//    func deactivateActivePowerup() {
+//        // Find the power-up icon in the placeholder and remove it
+//        for i in 0..<4 {
+//            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
+//               let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode,
+//               let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType,
+//               powerupType == activePowerup {
+//                
+//                // Remove the power-up icon
+//                powerupIcon.removeFromParent()
+//                // Reset the placeholder
+//                resetPlaceholder(at: i)
+//                break
+//            }
+//        }
+//        // Clear the active power-up
+//        activePowerup = nil
+//    }
     
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
@@ -640,7 +643,15 @@ class BGameScene: SKScene {
         }
         return true
     }
-    
+    func deactivateActivePowerup() {
+        if let activeIcon = activePowerupIcon {
+            removeHighlightFromPowerupIcon(activeIcon)
+            activePowerupIcon = nil
+        }
+        activePowerup = nil
+    }
+
+
     func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         let row = gridPosition.row
         let col = gridPosition.col
@@ -797,6 +808,12 @@ class BGameScene: SKScene {
         // Apply multiplier power-up if active
         if activePowerup == .multiplier {
             points *= 2  // Apply 2x multiplier
+            
+            // Find the placeholder index of the active power-up
+            if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+               let index = placeholderIndex(for: placeholder) {
+                resetPlaceholder(at: index)
+            }
             deactivateActivePowerup()
         }
         
@@ -823,6 +840,7 @@ class BGameScene: SKScene {
             run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
         }
     }
+
     
     func createShadowedLabel(text: String, position: CGPoint, fontSize: CGFloat) -> SKLabelNode {
         let shadowLabel = SKLabelNode(text: text)
@@ -1117,7 +1135,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         undoStack.removeAll()    // Clear the undo stack
         
         // Set the background color to black
-        backgroundColor = .black
+//        backgroundColor = .black
         
         // Re-add other game elements
         createGrid()
@@ -1126,7 +1144,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         createPowerupPlaceholders()
         setupGridHighlights()
         addHorizontalLines()
-        
+        createProgressBar()
         // Remove existing background music if it exists
         backgroundMusic?.removeFromParent()
         backgroundMusic = nil
@@ -1154,108 +1172,130 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 
 
-    // MARK: - Touch Handling
-override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-    guard let touch = touches.first else { return }
-    let location = touch.location(in: self)
-    let nodeTapped = atPoint(location)
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let nodeTapped = atPoint(location)
 
-    if isGameOver {
-        if nodeTapped.name == "restartButton" {
-            restartGame()
-        }
-        return
-    }
-
-    // Check if a power-up icon is tapped
-    if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
-       let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
-        
-        if powerupType == .undo {
-            // Execute the undo power-up immediately
-            if let placeholder = powerupIcon.parent as? SKShapeNode,
-               let index = placeholderIndex(for: placeholder) {
-                undoLastMove()
-                resetPlaceholder(at: index) // Reset the placeholder after undo
+        if isGameOver {
+            if nodeTapped.name == "restartButton" {
+                restartGame()
             }
             return
-        } else if activePowerup == nil {
-            // Activate the power-up
-            activePowerup = powerupType
-            highlightPowerupIcon(powerupIcon)
-        } else if activePowerup == powerupType {
-            // Deactivate the power-up
-            activePowerup = nil
-            removeHighlightFromPowerupIcon(powerupIcon)
-        }
-        return
-    }
-
-    // If delete power-up is active
-    if activePowerup == .delete {
-        if let cellNode = nodeTapped.closestParent(ofType: SKShapeNode.self),
-           let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-            deletePlacedBlock(placedBlock, updateScore: false) // Prevent score increment
-            deactivateActivePowerup()
-            return
-        }
-    }
-
-    // If swap power-up is active
-    if activePowerup == .swap {
-        if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
-           boxNodes.contains(blockNode) {
-            deleteBlock(blockNode)
-            deactivateActivePowerup()
-            return
-        }
-    }
-
-    // If undo power-up is active
-    if activePowerup == .undo {
-        undoLastMove()
-        deactivateActivePowerup()
-        return
-    }
-
-    // Handle block selection and dragging
-    if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self), boxNodes.contains(blockNode) {
-        currentlyDraggedNode = blockNode
-    } else {
-        currentlyDraggedNode = nil
-    }
-
-    // Play block selection sound when a block is selected
-    if let node = currentlyDraggedNode {
-        // Reset rotate power-up icon appearance
-        if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
-            rotatePowerupIcon.colorBlendFactor = 0.0
         }
 
-        // Play the selection sound
-        if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
-            do {
-                audioPlayer = try AVAudioPlayer(contentsOf: url)
-                audioPlayer?.prepareToPlay()
-                audioPlayer?.play()
-            } catch {
-                print("Error: Unable to play sound - \(error)")
+        // Check if a power-up icon is tapped
+        if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
+           let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
+            
+            if let currentActivePowerupIcon = activePowerupIcon {
+                if currentActivePowerupIcon == powerupIcon {
+                    // Tapped on the active power-up icon, so deactivate it
+                    deactivateActivePowerup()
+                } else {
+                    // Another power-up is already active, cannot activate a new one
+                    print("Another power-up is already active.")
+                    return
+                }
+            } else {
+                // No power-up is active, so activate the tapped one
+                activePowerup = powerupType
+                activePowerupIcon = powerupIcon
+                highlightPowerupIcon(powerupIcon)
+                
+                if powerupType == .undo {
+                    if let placeholder = powerupIcon.parent as? SKShapeNode,
+                       let index = placeholderIndex(for: placeholder) {
+                        undoLastMove()
+                        resetPlaceholder(at: index)
+                    }
+                    deactivateActivePowerup()
+                }
             }
+            return
+        }
+
+        // If a power-up is active, handle its specific action
+        if let activePowerup = activePowerup {
+            switch activePowerup {
+            case .delete:
+                if let cellNode = nodeTapped.closestParent(ofType: SKShapeNode.self),
+                   let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+                    // Delete the placed block
+                    deletePlacedBlock(placedBlock, updateScore: false)
+                    // Find the placeholder index of the active power-up
+                    if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+                       let index = placeholderIndex(for: placeholder) {
+                        resetPlaceholder(at: index)
+                    }
+                    deactivateActivePowerup()
+                }
+                return
+            case .swap:
+                if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
+                   boxNodes.contains(blockNode) {
+                    // Swap the block
+                    deleteBlock(blockNode)
+                    // Find the placeholder index of the active power-up
+                    if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+                       let index = placeholderIndex(for: placeholder) {
+                        resetPlaceholder(at: index)
+                    }
+                    deactivateActivePowerup()
+                }
+                return
+            case .undo:
+                // Undo is executed immediately when tapped, so no action here
+                return
+            case .multiplier:
+                // Multiplier is applied during line clears, no immediate action
+                // Do not return here; allow block interaction
+                break // Continue to allow block interaction
+            }
+        }
+
+        // Handle block selection and dragging
+        if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self), boxNodes.contains(blockNode) {
+            currentlyDraggedNode = blockNode
         } else {
-            print("Error: Audio file not found.")
+            currentlyDraggedNode = nil
         }
 
-        // Increase the size of the block when it's selected
-        node.run(SKAction.scale(to: 1.0, duration: 0.1))
+        // Play block selection sound when a block is selected
+        if let node = currentlyDraggedNode {
+            // Reset rotate power-up icon appearance
+            if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
+                rotatePowerupIcon.colorBlendFactor = 0.0
+            }
 
-        // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
-        let touchLocation = touch.location(in: self)
-        let offsetX = node.position.x - touchLocation.x
-        let offsetY = node.position.y - touchLocation.y
+            // Play the selection sound
+            if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
+                do {
+                    audioPlayer = try AVAudioPlayer(contentsOf: url)
+                    audioPlayer?.prepareToPlay()
+                    audioPlayer?.play()
+                } catch {
+                    print("Error: Unable to play sound - \(error)")
+                }
+            } else {
+                print("Error: Audio file not found.")
+            }
 
-        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+            // Increase the size of the block when it's selected
+            node.run(SKAction.scale(to: 1.0, duration: 0.1))
+
+            // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
+            let touchLocation = touch.location(in: self)
+            let offsetX = node.position.x - touchLocation.x
+            let offsetY = node.position.y - touchLocation.y
+
+            node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+        }
     }
-}
+
+
+
+
 
     
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) {
