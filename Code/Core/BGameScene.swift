@@ -133,33 +133,60 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-     let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
-     var linesCleared = 0 // Tracks the total lines cleared for the progress bar
-     var progressBar: SKShapeNode? // The progress bar node
-     var progressBarBackground: SKShapeNode? // Background for the progress bar
-    func createProgressBar() {
-        // Define progress bar dimensions
-        let barWidth: CGFloat = size.width * 0.8 // Same width as before
-        let barHeight: CGFloat = 10 // Make the bar skinny
-        let placeholderYPosition = size.height * 0.1 // Y-position of your power-up placeholders
-        let barY = placeholderYPosition - 50 // Position it closer to the placeholders
+         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
+         var linesCleared = 0 // Tracks the total lines cleared for the progress bar
+        var progressBar: SKSpriteNode? // Updated to SKSpriteNode
+        var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
 
-        // Create the background for the progress bar
-        progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
-        progressBarBackground?.fillColor = .darkGray
-        progressBarBackground?.strokeColor = .clear
-        progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
-        addChild(progressBarBackground!)
+        func createProgressBar() {
+            // Define progress bar dimensions
+            let barWidth: CGFloat = size.width * 0.8
+            let barHeight: CGFloat = 10
+            let placeholderYPosition = size.height * 0.1
+            let barY = placeholderYPosition - 50
 
-        // Create the progress bar itself
-        progressBar = SKShapeNode(rectOf: CGSize(width: 0, height: barHeight), cornerRadius: barHeight / 2)
-        progressBar?.fillColor = .green
-        progressBar?.strokeColor = .clear
-        progressBar?.position = CGPoint(x: size.width / 2 - barWidth / 2, y: barY) // Start position
-        /*progressBar?.anchorPoint = CGPoint(x: 0, y: 0.5)*/ // Anchor on the left
-        addChild(progressBar!)
-    }
+            // Create the background for the progress bar
+            progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
+            progressBarBackground?.fillColor = .darkGray
+            progressBarBackground?.strokeColor = .clear
+            progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
+            addChild(progressBarBackground!)
 
+            // Create the progress bar using SKSpriteNode
+            let texture = SKTexture(image: UIImage(color: UIColor.green, size: CGSize(width: 1, height: 1)))
+    // 1x1 green texture
+            progressBar = SKSpriteNode(texture: texture, size: CGSize(width: barWidth, height: barHeight))
+            progressBar?.anchorPoint = CGPoint(x: 0, y: 0.5)  // Anchor to the left edge
+            progressBar?.position = CGPoint(x: progressBarBackground!.frame.minX, y: barY) // Align with the left edge of the background
+            progressBar?.xScale = 0.0  // Start with zero width
+            addChild(progressBar!)
+        }
+
+
+
+        func updateProgressBar() {
+            guard let progressBar = progressBar else {
+                print("Progress bar node is missing!")
+                return
+            }
+            
+            let maxScale: CGFloat = 1.0  // Maximum xScale
+            let progress = CGFloat(linesCleared) / CGFloat(requiredLinesForPowerup)
+            let newScale = min(progress, maxScale)
+            
+            let scaleAction = SKAction.scaleX(to: newScale, duration: 0.2)
+            progressBar.run(scaleAction)
+            
+            if newScale >= maxScale {
+                print("Power-up triggered!")
+                // Reset the progress bar
+                progressBar.run(SKAction.scaleX(to: 0.0, duration: 0.2))
+                // Reset the linesCleared counter
+                self.linesCleared = 0
+                // Spawn power-up
+                spawnRandomPowerup()
+            }
+        }
 
 
     
@@ -704,62 +731,64 @@ class BGameScene: SKScene {
 
     
     // MARK: - Line Clearing Logic
-    func checkForCompletedLines() -> [LineClear] {
-     
-        var lineClears: [LineClear] = []
-        var totalLinesCleared = 0
-        var totalPoints = 0  // Accumulate total points for all cleared lines
-        
-        // Check for completed rows
-        for row in 0..<gridSize {
-            if grid[row].allSatisfy({ $0 != nil }) {
-                let clearedCells = clearRow(row)
-                let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-                totalLinesCleared += 1
-                totalPoints += 10  // Add points for this row clear
-            }
-        }
-        
-        // Check for completed columns
-        for col in 0..<gridSize {
-            var isCompleted = true
+        func checkForCompletedLines() -> [LineClear] {
+         
+            var lineClears: [LineClear] = []
+            var totalLinesCleared = 0
+            var totalPoints = 0  // Accumulate total points for all cleared lines
+            
+            // Check for completed rows
             for row in 0..<gridSize {
-                if grid[row][col] == nil {
-                    isCompleted = false
-                    break
+                if grid[row].allSatisfy({ $0 != nil }) {
+                    let clearedCells = clearRow(row)
+                    let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+                    lineClears.append(lineClear)
+                    totalLinesCleared += 1
+                    totalPoints += 10  // Add points for this row clear
                 }
             }
-            if isCompleted {
-                let clearedCells = clearColumn(col)
-                let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-                totalLinesCleared += 1
-                totalPoints += 10  // Add points for this column clear
-            }
-        }
-        
-        // Apply combo multiplier and display the total points only once
-        if totalLinesCleared > 0 {
-            applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
             
-            // Spawn a random power-up
-            spawnRandomPowerup()
-        } else {
-            // Reset combo if no lines are cleared within the reset time
-            let currentTime = Date().timeIntervalSinceReferenceDate
-            if currentTime - lastClearTime > comboResetTime {
-                currentCombo = 1
+            // Check for completed columns
+            for col in 0..<gridSize {
+                var isCompleted = true
+                for row in 0..<gridSize {
+                    if grid[row][col] == nil {
+                        isCompleted = false
+                        break
+                    }
+                }
+                if isCompleted {
+                    let clearedCells = clearColumn(col)
+                    let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+                    lineClears.append(lineClear)
+                    totalLinesCleared += 1
+                    totalPoints += 10  // Add points for this column clear
+                }
             }
+            
+            // Apply combo multiplier and display the total points only once
+            if totalLinesCleared > 0 {
+                applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
+                self.linesCleared += totalLinesCleared
+                // Spawn a random power-up
+    //            spawnRandomPowerup()
+                updateProgressBar()
+            } else {
+                // Reset combo if no lines are cleared within the reset time
+                let currentTime = Date().timeIntervalSinceReferenceDate
+                if currentTime - lastClearTime > comboResetTime {
+                    currentCombo = 1
+                }
+            }
+            
+            // Update last clear time if lines were cleared
+            if totalLinesCleared > 0 {
+                lastClearTime = Date().timeIntervalSinceReferenceDate
+                
+            }
+            
+            return lineClears
         }
-        
-        // Update last clear time if lines were cleared
-        if totalLinesCleared > 0 {
-            lastClearTime = Date().timeIntervalSinceReferenceDate
-        }
-        
-        return lineClears
-    }
     
     func applyComboMultiplier(for linesCleared: Int, totalPoints: Int) {
         // Calculate points based on the number of lines cleared and combo multiplier
@@ -1529,6 +1558,17 @@ extension SKNode {
             currentNode = node.parent
         }
         return nil
+    }
+}
+extension UIImage {
+    convenience init(color: UIColor, size: CGSize) {
+        let rect = CGRect(origin: .zero, size: size)
+        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+        color.setFill()
+        UIRectFill(rect)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        self.init(cgImage: image!.cgImage!)
     }
 }
 
