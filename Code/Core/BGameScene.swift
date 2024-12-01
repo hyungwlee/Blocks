@@ -1155,7 +1155,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 
     // MARK: - Touch Handling
- override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first else { return }
     let location = touch.location(in: self)
     let nodeTapped = atPoint(location)
@@ -1248,10 +1248,10 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         // Increase the size of the block when it's selected
         node.run(SKAction.scale(to: 1.0, duration: 0.1))
 
-        // Calculate touch offset for smooth dragging
+        // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
         let touchLocation = touch.location(in: self)
-        let offsetX = node.position.x - touchLocation.x + 50
-        let offsetY = node.position.y - touchLocation.y + 50
+        let offsetX = node.position.x - touchLocation.x
+        let offsetY = node.position.y - touchLocation.y
 
         node.userData = ["offsetX": offsetX, "offsetY": offsetY]
     }
@@ -1330,39 +1330,32 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     }
     
     // Update the position of the dragged block as it follows the touch, with offset
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+ override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first, let node = currentlyDraggedNode else { return }
+    
+    let touchLocation = touch.location(in: self)
+    
+    // If the block is being dragged, ensure it is fully opaque
+    node.alpha = 1.0
+    
+    // Retrieve the stored offset if it exists, otherwise calculate it
+    if let offsetX = node.userData?["offsetX"] as? CGFloat,
+       let offsetY = node.userData?["offsetY"] as? CGFloat {
         
-        let touchLocation = touch.location(in: self)
-        // Set the block to fully opaque while dragging
-        node.alpha = 1.0
+        // Calculate the target position while considering the initial offset
+        let targetPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
         
-        // Update block position to follow the touch
-        node.position = touchLocation
-        // Scale up the block smoothly if not already scaled
-        if node.xScale < 1.0 {
-            let scaleAction = SKAction.scale(to: 1.0, duration: 0.1)
-            scaleAction.timingMode = .easeOut
-            node.run(scaleAction, withKey: "scaling")
-        }
+        // Smooth movement via interpolation
+        let currentPosition = node.position
+        let easedPosition = interpolate(from: currentPosition, to: targetPosition, fraction: 0.3)
         
-        // Retrieve the offset stored in userData and apply it
-        if let offsetX = node.userData?["offsetX"] as? CGFloat,
-           let offsetY = node.userData?["offsetY"] as? CGFloat {
-            
-            let targetPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
-            
-            // Interpolate for smoother movement
-            let currentPosition = node.position
-            let easedPosition = interpolate(from: currentPosition, to: targetPosition, fraction: 0.3)
-            
-            // Update the position
-            node.position = easedPosition
-        }
-        
-        // Highlight valid cells based on the updated position
-        highlightValidCells(for: node)
+        // Update the node’s position
+        node.position = easedPosition
     }
+    
+    // Highlight valid cells based on the updated position
+    highlightValidCells(for: node)
+}
     
     func interpolate(from start: CGPoint, to end: CGPoint, fraction: CGFloat) -> CGPoint {
         let x = start.x + (end.x - start.x) * fraction
