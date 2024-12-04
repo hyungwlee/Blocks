@@ -742,65 +742,82 @@ class BGameScene: SKScene {
 
 
     
-    // MARK: - Line Clearing Logic
-        func checkForCompletedLines() -> [LineClear] {
-         
-            var lineClears: [LineClear] = []
-            var totalLinesCleared = 0
-            var totalPoints = 0  // Accumulate total points for all cleared lines
-            
-            // Check for completed rows
-            for row in 0..<gridSize {
-                if grid[row].allSatisfy({ $0 != nil }) {
-                    let clearedCells = clearRow(row)
-                    let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-                    lineClears.append(lineClear)
-                    totalLinesCleared += 1
-                    totalPoints += 10  // Add points for this row clear
-                }
+    struct GridPosition: Hashable {
+        let row: Int
+        let col: Int
+    }
+
+    func checkForCompletedLines() -> [LineClear] {
+        var lineClears: [LineClear] = []
+        var clearedCells: Set<GridPosition> = [] // Use a set to track all cleared cells
+        var totalLinesCleared = 0
+        var totalPoints = 0 // Accumulate total points for all cleared lines
+
+        // Step 1: Mark rows for clearing
+        for row in 0..<gridSize {
+            if grid[row].allSatisfy({ $0 != nil }) {
+                let rowCells = clearRow(row, markOnly: true)
+                clearedCells.formUnion(rowCells.map { GridPosition(row: $0.row, col: $0.col) })
+                let lineClear = LineClear(isRow: true, index: row, clearedCells: rowCells)
+                lineClears.append(lineClear)
+                totalLinesCleared += 1
+                totalPoints += 10 // Add points for this row clear
             }
-            
-            // Check for completed columns
-            for col in 0..<gridSize {
-                var isCompleted = true
-                for row in 0..<gridSize {
-                    if grid[row][col] == nil {
-                        isCompleted = false
-                        break
-                    }
-                }
-                if isCompleted {
-                    let clearedCells = clearColumn(col)
-                    let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-                    lineClears.append(lineClear)
-                    totalLinesCleared += 1
-                    totalPoints += 10  // Add points for this column clear
-                }
-            }
-            
-            // Apply combo multiplier and display the total points only once
-            if totalLinesCleared > 0 {
-                applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
-                self.linesCleared += totalLinesCleared
-                // Spawn a random power-up
-    //            spawnRandomPowerup()
-                updateProgressBar()
-            } else {
-                // Reset combo if no lines are cleared within the reset time
-                let currentTime = Date().timeIntervalSinceReferenceDate
-                if currentTime - lastClearTime > comboResetTime {
-                    currentCombo = 1
-                }
-            }
-            
-            // Update last clear time if lines were cleared
-            if totalLinesCleared > 0 {
-                lastClearTime = Date().timeIntervalSinceReferenceDate
-                
-            }
-            
-            return lineClears
         }
+
+        // Step 2: Mark columns for clearing
+        for col in 0..<gridSize {
+            var isCompleted = true
+            for row in 0..<gridSize {
+                if grid[row][col] == nil {
+                    isCompleted = false
+                    break
+                }
+            }
+            if isCompleted {
+                let colCells = clearColumn(col, markOnly: true)
+                clearedCells.formUnion(colCells.map { GridPosition(row: $0.row, col: $0.col) })
+                let lineClear = LineClear(isRow: false, index: col, clearedCells: colCells)
+                lineClears.append(lineClear)
+                totalLinesCleared += 1
+                totalPoints += 10 // Add points for this column clear
+            }
+        }
+
+        // Step 3: Clear all marked cells
+        for position in clearedCells {
+            if let cellNode = grid[position.row][position.col] {
+                // Clear the cell visually with animation
+                cellNode.run(SKAction.sequence([
+                    SKAction.fadeOut(withDuration: 0.2),
+                    SKAction.removeFromParent()
+                ]))
+                grid[position.row][position.col] = nil
+            }
+        }
+
+        // Step 4: Update score and handle combo
+        if totalLinesCleared > 0 {
+            applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
+            self.linesCleared += totalLinesCleared
+            updateProgressBar()
+        } else {
+            // Reset combo if no lines are cleared within the reset time
+            let currentTime = Date().timeIntervalSinceReferenceDate
+            if currentTime - lastClearTime > comboResetTime {
+                currentCombo = 1
+            }
+        }
+
+        // Update the last clear time if lines were cleared
+        if totalLinesCleared > 0 {
+            lastClearTime = Date().timeIntervalSinceReferenceDate
+        }
+
+        return lineClears
+    }
+
+
     
     func applyComboMultiplier(for linesCleared: Int, totalPoints: Int) {
         // Calculate points based on the number of lines cleared and combo multiplier
@@ -934,81 +951,51 @@ class BGameScene: SKScene {
         return 10 * lines
     }
     
-  func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-    
-    for col in 0..<gridSize {
-        if let cellNode = grid[row][col] {
-            // Record the original position
-            let originalPosition = cellNode.position
-            
-            // Create the burst explosion effect for the cell
-            let burstAction = SKAction.group([
-                SKAction.scale(to: 1.5, duration: 0.2), // Burst animation
-                SKAction.fadeOut(withDuration: 0.2),   // Fade-out effect
-                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3) // Random movement
-            ])
-            
-            // Combine the burst with the removal action
-            let removeAction = SKAction.run {
-                cellNode.removeFromParent()
-            }
-            
-            let sequence = SKAction.sequence([burstAction, removeAction])
-            cellNode.run(sequence)
-            
-            // Clear the grid cell and add to the cleared list
-            grid[row][col] = nil
-            clearedCells.append((row: row, col: col, cellNode: cellNode))
-            
-            // Save the original position for undo logic
-            cellNode.userData?["originalPosition"] = originalPosition
-        }
-    }
-    
-    // Play clearing sound effect
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-    
-    return clearedCells
-}
+    func clearRow(_ row: Int, markOnly: Bool = false) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
-func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-    
-    for row in 0..<gridSize {
-        if let cellNode = grid[row][col] {
-            // Record the original position
-            let originalPosition = cellNode.position
-            
-            // Create the burst explosion effect for the cell
-            let burstAction = SKAction.group([
-                SKAction.scale(to: 1.5, duration: 0.2), // Burst animation
-                SKAction.fadeOut(withDuration: 0.2),   // Fade-out effect
-                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3) // Random movement
-            ])
-            
-            // Combine the burst with the removal action
-            let removeAction = SKAction.run {
-                cellNode.removeFromParent()
+        for col in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                if !markOnly {
+                    // Clear the cell visually with animation
+                    let burstAction = SKAction.sequence([
+                        SKAction.scale(to: 1.5, duration: 0.2),
+                        SKAction.fadeOut(withDuration: 0.2),
+                        SKAction.removeFromParent()
+                    ])
+                    cellNode.run(burstAction)
+                    grid[row][col] = nil
+                }
+                clearedCells.append((row: row, col: col, cellNode: cellNode))
             }
-            
-            let sequence = SKAction.sequence([burstAction, removeAction])
-            cellNode.run(sequence)
-            
-            // Clear the grid cell and add to the cleared list
-            grid[row][col] = nil
-            clearedCells.append((row: row, col: col, cellNode: cellNode))
-            
-            // Save the original position for undo logic
-            cellNode.userData?["originalPosition"] = originalPosition
         }
+        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+        return clearedCells
     }
-    
-    // Play clearing sound effect
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-    
-    return clearedCells
-}
+
+    func clearColumn(_ col: Int, markOnly: Bool = false) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+
+        for row in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                if !markOnly {
+                    // Clear the cell visually with animation
+                    let burstAction = SKAction.sequence([
+                        SKAction.scale(to: 1.5, duration: 0.2),
+                        SKAction.fadeOut(withDuration: 0.2),
+                        SKAction.removeFromParent()
+                    ])
+                    cellNode.run(burstAction)
+                    grid[row][col] = nil
+                }
+                clearedCells.append((row: row, col: col, cellNode: cellNode))
+            }
+        }
+        run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+
+        return clearedCells
+    }
+
 
 
     func showGameOverScreen() {
