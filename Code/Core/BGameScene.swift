@@ -1369,8 +1369,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
-    // Update the position of the dragged block as it follows the touch, with offset
- override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first, let node = currentlyDraggedNode else { return }
     
     let touchLocation = touch.location(in: self)
@@ -1382,8 +1381,12 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     if let offsetX = node.userData?["offsetX"] as? CGFloat,
        let offsetY = node.userData?["offsetY"] as? CGFloat {
         
-        // Calculate the target position while considering the initial offset
-        let targetPosition = CGPoint(x: touchLocation.x + offsetX, y: touchLocation.y + offsetY)
+        // Adjust the offset to move the block upwards (increase the Y-offset)
+        let distanceFactor: CGFloat = 100 // Increase this factor to move the block further upwards
+        
+        // Calculate the new target position based on the touch location and adjusted offset
+        let targetPosition = CGPoint(x: touchLocation.x + offsetX, 
+                                     y: touchLocation.y + offsetY + distanceFactor) // Move the block upwards
         
         // Smooth movement via interpolation
         let currentPosition = node.position
@@ -1396,6 +1399,8 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     // Highlight valid cells based on the updated position
     highlightValidCells(for: node)
 }
+
+
     
     func interpolate(from start: CGPoint, to end: CGPoint, fraction: CGFloat) -> CGPoint {
         let x = start.x + (end.x - start.x) * fraction

@@ -11,22 +11,7 @@ class BZShapedBlock: BBoxNode {
         "Group 16313", "Group 16314-1", "Group 16316", "Group 16363-1", "Group 16316-1","Group 16316-1 "
     ]
     
-    // Dictionary mapping asset names to colors
-    private let assetColors: [String: UIColor] = [
-        "Z-Block-1": .red,
-        "Z-Block-2": .green,
-        "Z-Block": .blue,
-        "Group 16309-1": .yellow,
-        "Group 16309": .orange,
-        "Group 16310": .purple,
-        "Group 16312-1": .cyan,
-        "Group 16313": .magenta,
-        "Group 16314-1": .brown,
-        "Group 16316": .blue,
-        "Group 16363-1": .yellow,
-        "Group 16316-1 ":.red,
-    ]
-    
+   
     // Selected asset for the block
     private let selectedAsset = "Group 16316-1 "
     
@@ -41,16 +26,11 @@ class BZShapedBlock: BBoxNode {
             (row: 1, col: 0)   // Bottom-right block
         ]
         
-        // Assign the selected asset and its color
-        let blockColor = assetColors[selectedAsset] ?? .blue
-        
         // Define assets for each part of the Z-shaped block
         let assets = shapeCells.map { position in
             (name: selectedAsset, position: position)
         }
         
-        // Set the color of the block to match the selected asset
-        self.color = blockColor
         
         // Initialize the Z-shape with assets
         setupShape(shapeCells, assets: assets)

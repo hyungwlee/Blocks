@@ -23,7 +23,7 @@ class BBoxNode: SKNode {
     var shape: [(row: Int, col: Int)] = []
     var assets: [(name: String, position: (row: Int, col: Int))] = [] // Assets associated with the block
     
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .red) {
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .clear) {
         self.layoutInfo = layoutInfo
         self.tileSize = tileSize
         self.color = color

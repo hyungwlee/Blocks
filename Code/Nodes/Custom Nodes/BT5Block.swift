@@ -11,21 +11,6 @@ class BTShapedBlock: BBoxNode {
         "Group 16313", "Group 16314-1", "Group 16316", "Group 16363-1", "Dead"
     ]
     
-    // Dictionary mapping asset names to colors
-    private let assetColors: [String: UIColor] = [
-        "T-Block-1": .red,
-        "T-Block-2": .green,
-        "T-Block": .blue,
-        "Group 16309-1": .yellow,
-        "Group 16309": .orange,
-        "Group 16310": .purple,
-        "Group 16312-1": .cyan,
-        "Group 16313": .magenta,
-        "Group 16314-1": .brown,
-        "Group 16316": .blue,
-        "Group 16363-1": .yellow,
-        "Dead": .green
-    ]
     
     // Selected asset for the block
     private let selectedAsset = "Dead"
@@ -41,16 +26,14 @@ class BTShapedBlock: BBoxNode {
             (row: 1, col: 2)   // Right block
         ]
         
-        // Assign the selected asset and its color
-        let blockColor = assetColors[selectedAsset] ?? .blue
+     
         
         // Define assets for each part of the T-shaped block
         let assets = shapeCells.map { position in
             (name: selectedAsset, position: position)
         }
         
-        // Set the color of the block to match the selected asset
-        self.color = blockColor
+      
         
         // Initialize the T-shape with assets
         setupShape(shapeCells, assets: assets)
