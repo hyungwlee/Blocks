@@ -652,93 +652,94 @@ class BGameScene: SKScene {
     }
 
 
-    func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-        let row = gridPosition.row
-        let col = gridPosition.col
-        let gridOrigin = getGridOrigin()
-        if isPlacementValid(for: block, at: row, col: col) {
-            let previousScore = score  // Save the score before placing the block
-            var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+   func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+    let row = gridPosition.row
+    let col = gridPosition.col
+    let gridOrigin = getGridOrigin()
+    if isPlacementValid(for: block, at: row, col: col) {
+        let previousScore = score  // Save the score before placing the block
+        var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
-            var occupiedCells = 0
-            var cellNodes: [SKShapeNode] = []
-            var gridPositions: [GridCoordinate] = []
+        var occupiedCells = 0
+        var cellNodes: [SKShapeNode] = []
+        var gridPositions: [GridCoordinate] = []
 
-            for (index, cell) in block.shape.enumerated() {
-                let gridRow = row + cell.row
-                let gridCol = col + cell.col
+        for (index, cell) in block.shape.enumerated() {
+            let gridRow = row + cell.row
+            let gridCol = col + cell.col
 
-                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-                cellNode.fillColor = block.color
+            let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+            cellNode.fillColor = .clear  // Ensure no background color
+            cellNode.strokeColor = .clear  // Remove border outline
+            cellNode.lineWidth = 0.0  // Disable border thickness
 
-                let asset = block.assets[index].name
-                let assetTexture = SKTexture(imageNamed: asset)
-                let spriteNode = SKSpriteNode(texture: assetTexture)
-                spriteNode.size = CGSize(width: tileSize, height: tileSize)
-                cellNode.addChild(spriteNode)
-                cellNode.strokeColor = .darkGray
-                cellNode.lineWidth = 2.0
+            let asset = block.assets[index].name
+            let assetTexture = SKTexture(imageNamed: asset)
+            let spriteNode = SKSpriteNode(texture: assetTexture)
+            spriteNode.size = CGSize(width: tileSize, height: tileSize)
+            cellNode.addChild(spriteNode)  // Add the asset texture to the cell
 
-                let cellPosition = CGPoint(
-                    x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
-                    y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
-                )
-                cellNode.position = cellPosition
+            let cellPosition = CGPoint(
+                x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+            )
+            cellNode.position = cellPosition
 
-                addChild(cellNode)
-                setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-                occupiedCells += 1
+            addChild(cellNode)
+            setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
+            occupiedCells += 1
 
-                cellNodes.append(cellNode)
-                gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
+            cellNodes.append(cellNode)
+            gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
 
-                // Collect added cells for undo
-                addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
-            }
-
-            let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
-            
-            for cellNode in cellNodes {
-                cellNode.userData = ["placedBlock": placedBlock]
-            }
-            
-            placedBlocks.append(placedBlock)
-            score += occupiedCells
-            updateScoreLabel()
-
-            if let index = boxNodes.firstIndex(of: block) {
-                boxNodes.remove(at: index)
-            }
-            block.removeFromParent()
-
-            // Check for completed lines and collect cleared lines
-            let clearedLines = checkForCompletedLines()
-
-            // Create a Move object and push it onto the undo stack
-            let move = Move(placedBlock: placedBlock, blockNode: block, previousScore: previousScore, addedCells: addedCells, clearedLines: clearedLines)
-            undoStack.append(move)
-
-            if isUndoInProgress {
-                // Restore the original spawned blocks
-                boxNodes = tempSpawnedBlocks
-                tempSpawnedBlocks.removeAll()
-                for spawnedBlock in boxNodes {
-                    safeAddBlock(spawnedBlock)
-                }
-                layoutSpawnedBlocks()
-                isUndoInProgress = false
-            } else if boxNodes.isEmpty {
-                spawnNewBlocks()
-            } else if !checkForPossibleMoves(for: boxNodes) {
-                showGameOverScreen()
-            }
-
-            run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
-        } else {
-            block.position = block.initialPosition
-            block.run(SKAction.scale(to: initialScale, duration: 0.1))
+            // Collect added cells for undo
+            addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
         }
+
+        let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
+        
+        for cellNode in cellNodes {
+            cellNode.userData = ["placedBlock": placedBlock]
+        }
+        
+        placedBlocks.append(placedBlock)
+        score += occupiedCells
+        updateScoreLabel()
+
+        if let index = boxNodes.firstIndex(of: block) {
+            boxNodes.remove(at: index)
+        }
+        block.removeFromParent()
+
+        // Check for completed lines and collect cleared lines
+        let clearedLines = checkForCompletedLines()
+
+        // Create a Move object and push it onto the undo stack
+        let move = Move(placedBlock: placedBlock, blockNode: block, previousScore: previousScore, addedCells: addedCells, clearedLines: clearedLines)
+        undoStack.append(move)
+
+        if isUndoInProgress {
+            // Restore the original spawned blocks
+            boxNodes = tempSpawnedBlocks
+            tempSpawnedBlocks.removeAll()
+            for spawnedBlock in boxNodes {
+                safeAddBlock(spawnedBlock)
+            }
+            layoutSpawnedBlocks()
+            isUndoInProgress = false
+        } else if boxNodes.isEmpty {
+            spawnNewBlocks()
+        } else if !checkForPossibleMoves(for: boxNodes) {
+            showGameOverScreen()
+        }
+
+        run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
+    } else {
+        block.position = block.initialPosition
+        block.run(SKAction.scale(to: initialScale, duration: 0.1))
     }
+}
+
 
     
     // MARK: - Line Clearing Logic
@@ -1172,126 +1173,146 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let nodeTapped = atPoint(location)
+override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+    let location = touch.location(in: self)
+    let nodeTapped = atPoint(location)
 
-        if isGameOver {
-            if nodeTapped.name == "restartButton" {
-                restartGame()
-            }
-            return
+    if isGameOver {
+        if nodeTapped.name == "restartButton" {
+            restartGame()
         }
+        return
+    }
 
-        // Check if a power-up icon is tapped
-        if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
-           let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
-            
-            if let currentActivePowerupIcon = activePowerupIcon {
-                if currentActivePowerupIcon == powerupIcon {
-                    // Tapped on the active power-up icon, so deactivate it
-                    deactivateActivePowerup()
-                } else {
-                    // Another power-up is already active, cannot activate a new one
-                    print("Another power-up is already active.")
-                    return
-                }
+    // Check if a power-up icon is tapped
+    if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
+       let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
+        
+        if let currentActivePowerupIcon = activePowerupIcon {
+            if currentActivePowerupIcon == powerupIcon {
+                // Tapped on the active power-up icon, so deactivate it
+                deactivateActivePowerup()
             } else {
-                // No power-up is active, so activate the tapped one
-                activePowerup = powerupType
-                activePowerupIcon = powerupIcon
-                highlightPowerupIcon(powerupIcon)
-                
-                if powerupType == .undo {
-                    if let placeholder = powerupIcon.parent as? SKShapeNode,
-                       let index = placeholderIndex(for: placeholder) {
-                        undoLastMove()
-                        resetPlaceholder(at: index)
-                    }
-                    deactivateActivePowerup()
-                }
+                // Another power-up is already active, cannot activate a new one
+                print("Another power-up is already active.")
+                return
             }
-            return
-        }
-
-        // If a power-up is active, handle its specific action
-        if let activePowerup = activePowerup {
-            switch activePowerup {
-            case .delete:
-                if let cellNode = nodeTapped.closestParent(ofType: SKShapeNode.self),
-                   let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                    // Delete the placed block
-                    deletePlacedBlock(placedBlock, updateScore: false)
-                    // Find the placeholder index of the active power-up
-                    if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-                       let index = placeholderIndex(for: placeholder) {
-                        resetPlaceholder(at: index)
-                    }
-                    deactivateActivePowerup()
-                }
-                return
-            case .swap:
-                if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
-                   boxNodes.contains(blockNode) {
-                    // Swap the block
-                    deleteBlock(blockNode)
-                    // Find the placeholder index of the active power-up
-                    if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-                       let index = placeholderIndex(for: placeholder) {
-                        resetPlaceholder(at: index)
-                    }
-                    deactivateActivePowerup()
-                }
-                return
-            case .undo:
-                // Undo is executed immediately when tapped, so no action here
-                return
-            case .multiplier:
-                // Multiplier is applied during line clears, no immediate action
-                // Do not return here; allow block interaction
-                break // Continue to allow block interaction
-            }
-        }
-
-        // Handle block selection and dragging
-        if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self), boxNodes.contains(blockNode) {
-            currentlyDraggedNode = blockNode
         } else {
-            currentlyDraggedNode = nil
-        }
-
-        // Play block selection sound when a block is selected
-        if let node = currentlyDraggedNode {
-            // Reset rotate power-up icon appearance
-            if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
-                rotatePowerupIcon.colorBlendFactor = 0.0
-            }
-
-            // Play the selection sound
-            if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
-                do {
-                    audioPlayer = try AVAudioPlayer(contentsOf: url)
-                    audioPlayer?.prepareToPlay()
-                    audioPlayer?.play()
-                } catch {
-                    print("Error: Unable to play sound - \(error)")
+            // No power-up is active, so activate the tapped one
+            activePowerup = powerupType
+            activePowerupIcon = powerupIcon
+            highlightPowerupIcon(powerupIcon)
+            
+            if powerupType == .undo {
+                if let placeholder = powerupIcon.parent as? SKShapeNode,
+                   let index = placeholderIndex(for: placeholder) {
+                    undoLastMove()
+                    resetPlaceholder(at: index)
                 }
-            } else {
-                print("Error: Audio file not found.")
+                deactivateActivePowerup()
             }
+        }
+        return
+    }
 
-            // Increase the size of the block when it's selected
-            node.run(SKAction.scale(to: 1.0, duration: 0.1))
-
-            // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
-            let touchLocation = touch.location(in: self)
-            let offsetX = node.position.x - touchLocation.x
-            let offsetY = node.position.y - touchLocation.y
-
-            node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+    // If a power-up is active, handle its specific action
+    if let activePowerup = activePowerup {
+        switch activePowerup {
+        case .delete:
+            if let cellNode = nodeTapped.closestParent(ofType: SKShapeNode.self),
+               let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
+                // Delete the placed block
+                deletePlacedBlock(placedBlock, updateScore: false)
+                // Find the placeholder index of the active power-up
+                if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+                   let index = placeholderIndex(for: placeholder) {
+                    resetPlaceholder(at: index)
+                }
+                deactivateActivePowerup()
+            }
+            return
+        case .swap:
+            if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
+               boxNodes.contains(blockNode) {
+                // Swap the block
+                deleteBlock(blockNode)
+                // Find the placeholder index of the active power-up
+                if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+                   let index = placeholderIndex(for: placeholder) {
+                    resetPlaceholder(at: index)
+                }
+                deactivateActivePowerup()
+            }
+            return
+        case .undo:
+            // Undo is executed immediately when tapped, so no action here
+            return
+        case .multiplier:
+            // Multiplier is applied during line clears, no immediate action
+            // Do not return here; allow block interaction
+            break // Continue to allow block interaction
         }
     }
+
+    // Handle block selection and dragging based on proximity
+    if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self), boxNodes.contains(blockNode) {
+        currentlyDraggedNode = blockNode
+    } else {
+        // If tapped outside, check proximity to all blocks
+        for blockNode in boxNodes {
+            let distance = distanceBetweenPoints(location, blockNode.position)
+            let selectionRadius: CGFloat = 100 // Increase this radius as needed
+            
+            // Debug print to check the distance
+            print("Distance from touch to block: \(distance), Selection radius: \(selectionRadius)")
+
+            if distance < selectionRadius {
+                // Debug print to confirm the block selected
+                print("Block selected: \(blockNode)")
+                currentlyDraggedNode = blockNode
+                break
+            }
+        }
+    }
+
+    // Play block selection sound when a block is selected
+    if let node = currentlyDraggedNode {
+        // Reset rotate power-up icon appearance
+        if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
+            rotatePowerupIcon.colorBlendFactor = 0.0
+        }
+
+        // Play the selection sound
+        if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
+            do {
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play()
+            } catch {
+                print("Error: Unable to play sound - \(error)")
+            }
+        } else {
+            print("Error: Audio file not found.")
+        }
+
+        // Increase the size of the block when it's selected
+        node.run(SKAction.scale(to: 1.0, duration: 0.1))
+
+        // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
+        let touchLocation = touch.location(in: self)
+        let offsetX = node.position.x - touchLocation.x
+        let offsetY = node.position.y - touchLocation.y
+
+        node.userData = ["offsetX": offsetX, "offsetY": offsetY]
+    }
+}
+
+// Helper function to calculate the distance between two points
+func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
+    return sqrt(pow(point2.x - point1.x, 2) + pow(point2.y - point1.y, 2))
+}
+
 
 
 

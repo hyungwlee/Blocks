@@ -46,42 +46,39 @@ class BBoxNode: SKNode {
     }
 
     
-    func createVisualRepresentation() {
-        // Remove any existing child nodes
-        removeAllChildren()
+   func createVisualRepresentation() {
+    // Remove any existing child nodes
+    removeAllChildren()
 
-        for (index, cell) in shape.enumerated() {
-            let assetInfo = assets[index]
-            let assetName = assetInfo.name
+    for (index, cell) in shape.enumerated() {
+        let assetInfo = assets[index]
+        let assetName = assetInfo.name
 
-            // Create the shadow node
-            let shadowNode = SKSpriteNode(imageNamed: assetName)
-            shadowNode.size = CGSize(width: tileSize, height: tileSize)
-            shadowNode.alpha = 0.05  // Subtle shadow effect (almost invisible)
-            shadowNode.color = .black  // Neutral black shadow
-            shadowNode.colorBlendFactor = 0.0  // No tint
-            shadowNode.zPosition = -1  // Below the block
+        // Create the shadow node (fully transparent)
+        let shadowNode = SKSpriteNode(imageNamed: assetName)
+        shadowNode.size = CGSize(width: tileSize, height: tileSize)
+        shadowNode.alpha = 0.0  // Make the shadow invisible
+        shadowNode.zPosition = -1  // Below the block
 
+        // Slight offset for the shadow to give depth
+        let xOffset: CGFloat = 5
+        let yOffset: CGFloat = -5
+        let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
+        let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
+        shadowNode.position = CGPoint(x: xPos + xOffset, y: yPos + yOffset)
 
-            // Slight offset for the shadow to give depth
-            let xOffset: CGFloat = 5
-            let yOffset: CGFloat = -5
-            let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
-            let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
-            shadowNode.position = CGPoint(x: xPos + xOffset, y: yPos + yOffset)
+        // Create the block sprite node
+        let spriteNode = SKSpriteNode(imageNamed: assetName)
+        spriteNode.size = CGSize(width: tileSize, height: tileSize)
+        spriteNode.zPosition = 1  // Ensure it is above the shadow
+        spriteNode.alpha = 1.0  // Fully opaque block
+        spriteNode.position = CGPoint(x: xPos, y: yPos)
 
-            // Create the block sprite node
-            let spriteNode = SKSpriteNode(imageNamed: assetName)
-            spriteNode.size = CGSize(width: tileSize, height: tileSize)
-            spriteNode.zPosition = 1  // Ensure it is above the shadow
-            spriteNode.alpha = 1.0  // Fully opaque block
-            spriteNode.position = CGPoint(x: xPos, y: yPos)
-
-            // Add nodes to the block
-            addChild(shadowNode)
-            addChild(spriteNode)
-        }
+        // Add nodes to the block
+        addChild(shadowNode)
+        addChild(spriteNode)
     }
+}
 
 
 
