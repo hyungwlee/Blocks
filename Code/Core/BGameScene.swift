@@ -41,7 +41,8 @@ class BGameScene: SKScene {
     var undoStack: [Move] = []  // Updated to store Move objects
     
     var highlightGrid: [[SKNode?]] = []
-    
+    var gridBlocks: [BBoxNode] = [] // Track blocks placed on the grid
+
     var dropSound: SKAudioNode?
     var backgroundMusic: SKAudioNode?
     var gameOverSound: SKAudioNode?
@@ -571,18 +572,51 @@ class BGameScene: SKScene {
         addChild(scoreContainer)
     }
     
-    func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
-        for block in blocks {
-            for row in 0..<gridSize {
-                for col in 0..<gridSize {
-                    if isPlacementValid(for: block, at: row, col: col) {
-                        return true
-                    }
+ func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
+    for block in blocks {
+        for row in 0..<gridSize {
+            for col in 0..<gridSize {
+                if isPlacementValid(for: block, at: row, col: col) {
+                    return true
                 }
             }
         }
-        return false
     }
+    return false
+}
+
+
+func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) {
+    let fadeActions = nodes.map { node -> SKAction in
+        if let spriteNode = node.children.first as? SKSpriteNode {
+            return SKAction.sequence([
+                SKAction.group([
+                    SKAction.fadeAlpha(to: 0.5, duration: 0.5), // Fade effect
+                    SKAction.colorize(with: UIColor(white: 0.2, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.5) // Fully replace with dark gray
+                ])
+            ])
+        }
+        return SKAction() // No-op for nodes without children
+    }
+    
+    let animationGroup = SKAction.group(fadeActions)
+    let sequence = SKAction.sequence([animationGroup, SKAction.run(completion)])
+    
+    for node in nodes {
+        node.run(sequence)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
     
     func spawnNewBlocks() {
         guard !isGameOver else {
@@ -676,11 +710,11 @@ class BGameScene: SKScene {
         activePowerup = nil
     }
 
-
-   func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
     let row = gridPosition.row
     let col = gridPosition.col
     let gridOrigin = getGridOrigin()
+
     if isPlacementValid(for: block, at: row, col: col) {
         let previousScore = score  // Save the score before placing the block
         var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
@@ -722,15 +756,17 @@ class BGameScene: SKScene {
         }
 
         let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
-        
+
+        // Associate cell nodes with placedBlock
         for cellNode in cellNodes {
             cellNode.userData = ["placedBlock": placedBlock]
         }
-        
+
         placedBlocks.append(placedBlock)
         score += occupiedCells
         updateScoreLabel()
 
+        // Remove the block from the spawn queue
         if let index = boxNodes.firstIndex(of: block) {
             boxNodes.remove(at: index)
         }
@@ -755,8 +791,16 @@ class BGameScene: SKScene {
         } else if boxNodes.isEmpty {
             spawnNewBlocks()
         } else if !checkForPossibleMoves(for: boxNodes) {
-            showGameOverScreen()
-        }
+    // Collect all cell nodes in the grid
+    let gridNodes = placedBlocks.flatMap { $0.cellNodes }
+    
+    fadeBlocksToGrey(gridNodes) { 
+        // Transition to the game-over screen after the fade animation
+        self.showGameOverScreen()
+    }
+}
+
+
 
         run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
     } else {
