@@ -141,55 +141,80 @@ class BGameScene: SKScene {
         var progressBar: SKSpriteNode? // Updated to SKSpriteNode
         var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
 
-        func createProgressBar() {
-            // Define progress bar dimensions
-            let barWidth: CGFloat = size.width * 0.8
-            let barHeight: CGFloat = 10
-            let placeholderYPosition = size.height * 0.1
-            let barY = placeholderYPosition - 50
+    func createProgressBar() {
+        // Define progress bar dimensions
+        let barWidth: CGFloat = size.width * 0.8
+        let barHeight: CGFloat = 10
+        let placeholderYPosition = size.height * 0.1
+        let barY = placeholderYPosition - 50
 
-            // Create the background for the progress bar
-            progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
-            progressBarBackground?.fillColor = .darkGray
-            progressBarBackground?.strokeColor = .clear
-            progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
-            addChild(progressBarBackground!)
+        // Create the background for the progress bar
+        progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
+        progressBarBackground?.fillColor = .darkGray
+        progressBarBackground?.strokeColor = .clear
+        progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
+        addChild(progressBarBackground!)
 
-            // Create the progress bar using SKSpriteNode
-            let texture = SKTexture(image: UIImage(color: UIColor.green, size: CGSize(width: 1, height: 1)))
-    // 1x1 green texture
-            progressBar = SKSpriteNode(texture: texture, size: CGSize(width: barWidth, height: barHeight))
-            progressBar?.anchorPoint = CGPoint(x: 0, y: 0.5)  // Anchor to the left edge
-            progressBar?.position = CGPoint(x: progressBarBackground!.frame.minX, y: barY) // Align with the left edge of the background
-            progressBar?.xScale = 0.0  // Start with zero width
-            addChild(progressBar!)
+        // Create the progress bar with a fire-like gradient texture
+        let gradientImage = createFireGradient(size: CGSize(width: 1, height: 10))
+        let texture = SKTexture(image: gradientImage)
+        progressBar = SKSpriteNode(texture: texture, size: CGSize(width: 0, height: barHeight)) // Start with zero width
+        progressBar?.anchorPoint = CGPoint(x: 0, y: 0.5) // Anchor to the left edge
+        progressBar?.position = CGPoint(x: progressBarBackground!.frame.minX, y: barY)
+        addChild(progressBar!)
+    }
+
+    // Helper function to create a fire-like gradient
+    func createFireGradient(size: CGSize) -> UIImage {
+        let colors: [CGColor] = [
+            UIColor.red.cgColor,
+            UIColor.orange.cgColor,
+            UIColor.yellow.cgColor
+        ]
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = colors
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5) // Horizontal gradient
+        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+        gradientLayer.frame = CGRect(origin: .zero, size: size)
+
+        UIGraphicsBeginImageContext(size)
+        gradientLayer.render(in: UIGraphicsGetCurrentContext()!)
+        let image = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+
+        return image
+    }
+
+
+
+
+
+    func updateProgressBar() {
+        guard let progressBar = progressBar else { return }
+
+        // Calculate the progress percentage
+        let progress = CGFloat(linesCleared) / CGFloat(requiredLinesForPowerup)
+
+        // Cap the progress value at 1.0
+        let clampedProgress = min(progress, 1.0)
+
+        // Update the progress bar width using the progress percentage
+        let maxBarWidth = progressBarBackground!.frame.width
+        let newWidth = clampedProgress * maxBarWidth
+
+        // Animate the width change for smooth transition
+        let resizeAction = SKAction.resize(toWidth: newWidth, duration: 0.2)
+        progressBar.run(resizeAction)
+
+        // Trigger a power-up if the bar is full
+        if progress >= 1.0 {
+            print("Power-up triggered!")
+            progressBar.size.width = 0 // Reset the bar width
+            linesCleared = 0          // Reset the lines cleared count
+            spawnRandomPowerup()      // Spawn a random power-up
         }
+    }
 
-
-
-        func updateProgressBar() {
-            guard let progressBar = progressBar else {
-                print("Progress bar node is missing!")
-                return
-            }
-            
-            let maxScale: CGFloat = 1.0  // Maximum xScale
-            let progress = CGFloat(linesCleared) / CGFloat(requiredLinesForPowerup)
-            let newScale = min(progress, maxScale)
-            
-            let scaleAction = SKAction.scaleX(to: newScale, duration: 0.2)
-            progressBar.run(scaleAction)
-            
-            if newScale >= maxScale {
-                print("Power-up triggered!")
-                // Reset the progress bar
-                progressBar.run(SKAction.scaleX(to: 0.0, duration: 0.2))
-                // Reset the linesCleared counter
-                self.linesCleared = 0
-                // Spawn power-up
-                spawnRandomPowerup()
-            }
-        }
 
 
     

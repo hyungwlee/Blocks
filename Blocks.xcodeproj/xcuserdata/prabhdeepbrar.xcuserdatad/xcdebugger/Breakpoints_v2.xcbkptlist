@@ -30,8 +30,8 @@
             filePath = "Code/Core/BGameScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "727"
-            endingLineNumber = "727"
+            startingLineNumber = "752"
+            endingLineNumber = "752"
             landmarkName = "placeBlock(_:at:)"
             landmarkType = "7">
          </BreakpointContent>
