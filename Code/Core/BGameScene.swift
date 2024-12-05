@@ -607,16 +607,6 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     }
 }
 
-
-
-
-
-
-
-
-
-
-
     
     func spawnNewBlocks() {
         guard !isGameOver else {
@@ -766,6 +756,9 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         score += occupiedCells
         updateScoreLabel()
 
+        // Add sparkle effect around the block
+        addSparkleEffect(around: cellNodes)
+
         // Remove the block from the spawn queue
         if let index = boxNodes.firstIndex(of: block) {
             boxNodes.remove(at: index)
@@ -791,16 +784,14 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         } else if boxNodes.isEmpty {
             spawnNewBlocks()
         } else if !checkForPossibleMoves(for: boxNodes) {
-    // Collect all cell nodes in the grid
-    let gridNodes = placedBlocks.flatMap { $0.cellNodes }
-    
-    fadeBlocksToGrey(gridNodes) { 
-        // Transition to the game-over screen after the fade animation
-        self.showGameOverScreen()
-    }
-}
+            // Collect all cell nodes in the grid
+            let gridNodes = placedBlocks.flatMap { $0.cellNodes }
 
-
+            fadeBlocksToGrey(gridNodes) {
+                // Transition to the game-over screen after the fade animation
+                self.showGameOverScreen()
+            }
+        }
 
         run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
     } else {
@@ -808,6 +799,45 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         block.run(SKAction.scale(to: initialScale, duration: 0.1))
     }
 }
+
+// Creates sparkle effect around the placed block
+func addSparkleEffect(around cellNodes: [SKShapeNode]) {
+    // Create multiple sparkles around the block
+    for cellNode in cellNodes {
+        // Create a new sparkle effect for each cell
+        let sparkleCount = 5 // Adjust the number of sparkles per cell
+        for _ in 0..<sparkleCount {
+            // Create a small circle for the sparkle
+            let sparkle = SKShapeNode(circleOfRadius: 5)
+            sparkle.fillColor = .white  // Color of the sparkle
+            sparkle.alpha = 0.7  // Start with partial opacity
+
+            // Randomize the position around the cell node
+            let randomXOffset = CGFloat.random(in: -tileSize...tileSize)
+            let randomYOffset = CGFloat.random(in: -tileSize...tileSize)
+            sparkle.position = CGPoint(x: cellNode.position.x + randomXOffset, y: cellNode.position.y + randomYOffset)
+
+            addChild(sparkle)
+
+            // Animate the sparkle (scale up, fade out, and move)
+            let scaleUpAction = SKAction.scale(to: 1.5, duration: 0.2)
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.5)
+            let moveAction = SKAction.moveBy(x: randomXOffset * 0.5, y: randomYOffset * 0.5, duration: 0.5)
+
+            // Combine the actions (scale up, fade out, move)
+            let sparkleAnimation = SKAction.group([scaleUpAction, fadeOutAction, moveAction])
+
+            // Run the animation on the sparkle node
+            sparkle.run(sparkleAnimation) {
+                sparkle.removeFromParent() // Remove the sparkle after animation completes
+            }
+        }
+    }
+}
+
+
+
+
 
 
     
