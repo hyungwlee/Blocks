@@ -802,27 +802,32 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
 
 // Creates sparkle effect around the placed block
 func addSparkleEffect(around cellNodes: [SKShapeNode]) {
-    // Create multiple sparkles around the block
+    // Create multiple sparkles around the edges of each block
     for cellNode in cellNodes {
-        // Create a new sparkle effect for each cell
-        let sparkleCount = 5 // Adjust the number of sparkles per cell
+        // Create a small number of sparkles for each cell to make it cleaner
+        let sparkleCount = 8 // Adjust the number of sparkles around each cell
+        let edgeOffset: CGFloat = tileSize / 2.5  // Adjust how far from the edges the sparkles appear
+
         for _ in 0..<sparkleCount {
             // Create a small circle for the sparkle
-            let sparkle = SKShapeNode(circleOfRadius: 5)
+            let sparkle = SKShapeNode(circleOfRadius: 3)  // Smaller sparkles
             sparkle.fillColor = .white  // Color of the sparkle
-            sparkle.alpha = 0.7  // Start with partial opacity
+            sparkle.alpha = 0.6  // Slightly transparent for subtle effect
 
-            // Randomize the position around the cell node
-            let randomXOffset = CGFloat.random(in: -tileSize...tileSize)
-            let randomYOffset = CGFloat.random(in: -tileSize...tileSize)
+            // Randomize the position around the edges of the cell node
+            let randomAngle = CGFloat.random(in: 0..<2 * .pi)
+            let randomRadius = CGFloat.random(in: edgeOffset...tileSize / 2)
+            let randomXOffset = randomRadius * cos(randomAngle)
+            let randomYOffset = randomRadius * sin(randomAngle)
+            
             sparkle.position = CGPoint(x: cellNode.position.x + randomXOffset, y: cellNode.position.y + randomYOffset)
 
             addChild(sparkle)
 
             // Animate the sparkle (scale up, fade out, and move)
-            let scaleUpAction = SKAction.scale(to: 1.5, duration: 0.2)
-            let fadeOutAction = SKAction.fadeOut(withDuration: 0.5)
-            let moveAction = SKAction.moveBy(x: randomXOffset * 0.5, y: randomYOffset * 0.5, duration: 0.5)
+            let scaleUpAction = SKAction.scale(to: 1.2, duration: 0.2)
+            let fadeOutAction = SKAction.fadeOut(withDuration: 0.4)
+            let moveAction = SKAction.moveBy(x: randomXOffset * 0.3, y: randomYOffset * 0.3, duration: 0.4)
 
             // Combine the actions (scale up, fade out, move)
             let sparkleAnimation = SKAction.group([scaleUpAction, fadeOutAction, moveAction])
@@ -834,6 +839,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         }
     }
 }
+
 
 
 
@@ -1007,7 +1013,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         let pointsLabel = SKLabelNode(text: "+\(points)")
         pointsLabel.fontName = "Arial-BoldMT"
         pointsLabel.fontSize = 40  // Slightly smaller than combo text
-        pointsLabel.fontColor = .yellow
+        pointsLabel.fontColor = .white
         pointsLabel.position = position
         pointsLabel.zPosition = 100
         
