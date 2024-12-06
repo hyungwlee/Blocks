@@ -875,7 +875,8 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
 
         // Step 4: Update score and handle combo
         if totalLinesCleared > 0 {
-            applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
+            applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints, clearedCells: clearedCells)
+
             self.linesCleared += totalLinesCleared
             updateProgressBar()
         } else {
@@ -895,45 +896,73 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
     }
 
     
-    func applyComboMultiplier(for linesCleared: Int, totalPoints: Int) {
-        // Calculate points based on the number of lines cleared and combo multiplier
-        var points = totalPoints * currentCombo
+func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, clearedCells: Set<GridPosition>) {
+    // Calculate points based on the number of lines cleared and combo multiplier
+    var points = totalPoints * currentCombo
+    
+    // Apply multiplier power-up if active
+    if activePowerup == .multiplier {
+        points *= 2  // Apply 2x multiplier
         
-        // Apply multiplier power-up if active
-        if activePowerup == .multiplier {
-            points *= 2  // Apply 2x multiplier
-            
-            // Find the placeholder index of the active power-up
-            if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-               let index = placeholderIndex(for: placeholder) {
-                resetPlaceholder(at: index)
-            }
-            deactivateActivePowerup()
+        // Find the placeholder index of the active power-up
+        if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+           let index = placeholderIndex(for: placeholder) {
+            resetPlaceholder(at: index)
         }
-        
-        score += points
-        updateScoreLabel()
-        
-        // Display combo animation if combo multiplier is greater than 1
-        if currentCombo > 1 {
-            displayComboAnimation(for: currentCombo)
-        }
-        
-        // Display the total points once after combo multiplier is applied
-        let pointsPosition = CGPoint(x: frame.midX, y: frame.midY - 100)  // Position for the points label
-        displayAnimatedPoints(points, at: pointsPosition)  // Display total points here
-        
-        // Increment combo multiplier for consecutive clears
-        currentCombo += 1
-        
-        // Reset combo multiplier if 5 seconds pass without clearing a line
-        resetComboAfterDelay()
-        
-        // Play a combo sound effect for multi-line clears
-        if linesCleared > 1 {
-            run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
-        }
+        deactivateActivePowerup()
     }
+    
+    score += points
+    updateScoreLabel()
+    
+    // Display combo animation if combo multiplier is greater than 1
+    if currentCombo > 1 {
+        displayComboAnimation(for: currentCombo)
+    }
+    
+    // Calculate the center position for the points animation
+    if !clearedCells.isEmpty {
+        // Convert clearedCells to an array and get the last element
+        let clearedCellsArray = Array(clearedCells)
+        let lastClearedCell = clearedCellsArray.last! // Get the last cleared cell
+        
+        // Convert grid position to screen coordinates
+        let pointsPosition = gridToScreenPosition(row: lastClearedCell.row, col: lastClearedCell.col)
+        
+        // Display animated points at the last cleared position
+        displayAnimatedPoints(points, at: pointsPosition)
+    }
+    
+    // Increment combo multiplier for consecutive clears
+    currentCombo += 1
+    
+    // Reset combo multiplier if 5 seconds pass without clearing a line
+    resetComboAfterDelay()
+    
+    // Play a combo sound effect for multi-line clears
+    if linesCleared > 1 {
+        run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
+    }
+}
+
+
+
+  func gridToScreenPosition(row: Int, col: Int) -> CGPoint {
+    // Get the grid origin (assuming it's calculated somewhere else, like in createGrid())
+    let gridOrigin = getGridOrigin() // You can use your existing grid origin calculation
+    
+    // Calculate cell size (using tileSize from your grid layout)
+    let cellSize = tileSize
+    
+    // Calculate the center of the cell
+    let xPosition = gridOrigin.x + CGFloat(col) * cellSize + cellSize / 2
+    let yPosition = gridOrigin.y + CGFloat(row) * cellSize + cellSize / 2
+    
+    return CGPoint(x: xPosition, y: yPosition)
+}
+
+
+
 
     
     func createShadowedLabel(text: String, position: CGPoint, fontSize: CGFloat) -> SKLabelNode {
@@ -980,35 +1009,36 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         shadowComboLabel.run(comboAnimation)  // Make shadow move as well
     }
     
-    func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
-        let pointsLabel = SKLabelNode(text: "+\(points)")
-        pointsLabel.fontName = "Arial-BoldMT"
-        pointsLabel.fontSize = 40  // Slightly smaller than combo text
-        pointsLabel.fontColor = .white
-        pointsLabel.position = position
-        pointsLabel.zPosition = 100
-        
-        // Add glow effect using blending mode
-        pointsLabel.blendMode = .add // This gives a glowing effect
-        
-        addChild(pointsLabel)
-        
-        // Animation sequence (scale up, move upwards, fade out)
-        let scaleUp = SKAction.scale(to: 1.5, duration: 0.3)
-        let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 1.0)
-        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
-        let remove = SKAction.run { pointsLabel.removeFromParent() }
-        
-        // Optional: Add a sparkle effect (or rotation)
-        let sparkle = SKAction.sequence([
-            SKAction.scale(to: 1.2, duration: 0.2),
-            SKAction.scale(to: 1.0, duration: 0.2)
-        ])
-        
-        let animationSequence = SKAction.sequence([scaleUp, moveUp, sparkle, fadeOut, remove])
-        
-        pointsLabel.run(animationSequence)
-    }
+   func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
+    let pointsLabel = SKLabelNode(text: "+\(points)")
+    pointsLabel.fontName = "Arial-BoldMT"
+    pointsLabel.fontSize = 24  // Smaller font size for less distraction
+    pointsLabel.fontColor = .white
+    pointsLabel.position = position
+    pointsLabel.zPosition = 100
+    
+    // Add glow effect using blending mode
+    pointsLabel.blendMode = .add // This gives a glowing effect
+    
+    addChild(pointsLabel)
+    
+    // Animation sequence (scale up slightly, move upwards, fade out)
+    let scaleUp = SKAction.scale(to: 1.2, duration: 0.2)  // Slight scale up
+    let moveUp = SKAction.moveBy(x: 0, y: 30, duration: 0.5)  // Shorter upward movement
+    let fadeOut = SKAction.fadeOut(withDuration: 0.5)  // Fade out more quickly
+    let remove = SKAction.run { pointsLabel.removeFromParent() }
+    
+    // Optional: Add a subtle sparkle effect (or rotation)
+    let sparkle = SKAction.sequence([
+        SKAction.scale(to: 1.1, duration: 0.1),  // Small scale effect
+        SKAction.scale(to: 1.0, duration: 0.1)   // Return to original size
+    ])
+    
+    let animationSequence = SKAction.sequence([scaleUp, moveUp, sparkle, fadeOut, remove])
+    
+    pointsLabel.run(animationSequence)
+}
+
     func resetComboAfterDelay() {
         let currentTime = CACurrentMediaTime()
         let elapsedTime = currentTime - lastClearTime
