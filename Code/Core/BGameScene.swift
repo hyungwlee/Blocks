@@ -674,105 +674,132 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     }
 
 
- func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
-    let row = gridPosition.row
-    let col = gridPosition.col
-    let gridOrigin = getGridOrigin()
+    func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+        let row = gridPosition.row
+        let col = gridPosition.col
+        let gridOrigin = getGridOrigin()
+        
+        if isPlacementValid(for: block, at: row, col: col) {
+            let previousScore = score
+            var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+            
+            var occupiedCells = 0
+            var cellNodes: [SKShapeNode] = []
+            var gridPositions: [GridCoordinate] = []
+            
+            // Place each cell of the block onto the grid
+            for (index, cell) in block.shape.enumerated() {
+                let gridRow = row + cell.row
+                let gridCol = col + cell.col
 
-    if isPlacementValid(for: block, at: row, col: col) {
-        let previousScore = score  // Save the score before placing the block
-        var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+                let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+                cellNode.fillColor = .clear
+                cellNode.strokeColor = .clear
+                cellNode.lineWidth = 0.0
 
-        var occupiedCells = 0
-        var cellNodes: [SKShapeNode] = []
-        var gridPositions: [GridCoordinate] = []
+                let asset = block.assets[index].name
+                let assetTexture = SKTexture(imageNamed: asset)
+                let spriteNode = SKSpriteNode(texture: assetTexture)
+                spriteNode.size = CGSize(width: tileSize, height: tileSize)
+                cellNode.addChild(spriteNode)
 
-        for (index, cell) in block.shape.enumerated() {
-            let gridRow = row + cell.row
-            let gridCol = col + cell.col
+                let cellPosition = CGPoint(
+                    x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
+                    y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+                )
+                cellNode.position = cellPosition
+                
+                addChild(cellNode)
+                setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
+                occupiedCells += 1
 
-            let cellNode = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
-            cellNode.fillColor = .clear  // Ensure no background color
-            cellNode.strokeColor = .clear  // Remove border outline
-            cellNode.lineWidth = 0.0  // Disable border thickness
+                cellNodes.append(cellNode)
+                gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
+                
+                addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
+            }
+            
+            // Create PlacedBlock object
+            let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
+            for cellNode in cellNodes {
+                cellNode.userData = ["placedBlock": placedBlock]
+            }
+            placedBlocks.append(placedBlock)
+            
+            score += occupiedCells
+            updateScoreLabel()
+            
+            // Add sparkle or other effects
+            addSparkleEffect(around: cellNodes)
 
-            let asset = block.assets[index].name
-            let assetTexture = SKTexture(imageNamed: asset)
-            let spriteNode = SKSpriteNode(texture: assetTexture)
-            spriteNode.size = CGSize(width: tileSize, height: tileSize)
-            cellNode.addChild(spriteNode)  // Add the asset texture to the cell
+            // Remove the block from the spawn area
+            if let index = boxNodes.firstIndex(of: block) {
+                boxNodes.remove(at: index)
+            }
+            block.removeFromParent()
 
-            let cellPosition = CGPoint(
-                x: gridOrigin.x + CGFloat(gridCol) * tileSize + tileSize / 2,
-                y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
+            // Check for completed lines
+            let clearedLines = checkForCompletedLines()
+            let totalLinesCleared = clearedLines.count
+            let totalPoints = totalLinesCleared * 10
+            
+            // **Place the centroid and combo multiplier code here**
+            if totalLinesCleared > 0 {
+                // Calculate the centroid of the placed block’s cells
+                let blockCenter = centroidOfBlockCells(cellNodes)
+                // Show score and apply combo multiplier at the block center
+                applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints, displayPosition: blockCenter)
+            }
+            
+            // Create a Move object for undo
+            let move = Move(
+                placedBlock: placedBlock,
+                blockNode: block,
+                previousScore: previousScore,
+                addedCells: addedCells,
+                clearedLines: clearedLines
             )
-            cellNode.position = cellPosition
+            undoStack.append(move)
 
-            addChild(cellNode)
-            setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
-            occupiedCells += 1
-
-            cellNodes.append(cellNode)
-            gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
-
-            // Collect added cells for undo
-            addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
-        }
-
-        let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
-
-        // Associate cell nodes with placedBlock
-        for cellNode in cellNodes {
-            cellNode.userData = ["placedBlock": placedBlock]
-        }
-
-        placedBlocks.append(placedBlock)
-        score += occupiedCells
-        updateScoreLabel()
-
-        // Add sparkle effect around the block
-        addSparkleEffect(around: cellNodes)
-
-        // Remove the block from the spawn queue
-        if let index = boxNodes.firstIndex(of: block) {
-            boxNodes.remove(at: index)
-        }
-        block.removeFromParent()
-
-        // Check for completed lines and collect cleared lines
-        let clearedLines = checkForCompletedLines()
-
-        // Create a Move object and push it onto the undo stack
-        let move = Move(placedBlock: placedBlock, blockNode: block, previousScore: previousScore, addedCells: addedCells, clearedLines: clearedLines)
-        undoStack.append(move)
-
-        if isUndoInProgress {
-            // Restore the original spawned blocks
-            boxNodes = tempSpawnedBlocks
-            tempSpawnedBlocks.removeAll()
-            for spawnedBlock in boxNodes {
-                safeAddBlock(spawnedBlock)
+            // Handle spawning new blocks or checking for game-over
+            if isUndoInProgress {
+                boxNodes = tempSpawnedBlocks
+                tempSpawnedBlocks.removeAll()
+                for spawnedBlock in boxNodes {
+                    safeAddBlock(spawnedBlock)
+                }
+                layoutSpawnedBlocks()
+                isUndoInProgress = false
+            } else if boxNodes.isEmpty {
+                spawnNewBlocks()
+            } else if !checkForPossibleMoves(for: boxNodes) {
+                let gridNodes = placedBlocks.flatMap { $0.cellNodes }
+                fadeBlocksToGrey(gridNodes) {
+                    self.showGameOverScreen()
+                }
             }
-            layoutSpawnedBlocks()
-            isUndoInProgress = false
-        } else if boxNodes.isEmpty {
-            spawnNewBlocks()
-        } else if !checkForPossibleMoves(for: boxNodes) {
-            // Collect all cell nodes in the grid
-            let gridNodes = placedBlocks.flatMap { $0.cellNodes }
 
-            fadeBlocksToGrey(gridNodes) {
-                // Transition to the game-over screen after the fade animation
-                self.showGameOverScreen()
-            }
+            run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
+        } else {
+            // If invalid, return the block to its initial position
+            block.position = block.initialPosition
+            block.run(SKAction.scale(to: initialScale, duration: 0.1))
         }
-
-        run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
-    } else {
-        block.position = block.initialPosition
-        block.run(SKAction.scale(to: initialScale, duration: 0.1))
     }
-}
+
+    func centroidOfBlockCells(_ cellNodes: [SKShapeNode]) -> CGPoint {
+        guard !cellNodes.isEmpty else { return .zero }
+        var totalX: CGFloat = 0
+        var totalY: CGFloat = 0
+        
+        for cell in cellNodes {
+            totalX += cell.position.x
+            totalY += cell.position.y
+        }
+        
+        let count = CGFloat(cellNodes.count)
+        return CGPoint(x: totalX / count, y: totalY / count)
+    }
 
 // Creates sparkle effect around the placed block
 func addSparkleEffect(around cellNodes: [SKShapeNode]) {
@@ -884,54 +911,45 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
             return lineClears
         }
     
-func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, clearedCells: Set<GridPosition>) {
-    // Calculate points based on the number of lines cleared and combo multiplier
-    var points = totalPoints * currentCombo
-    
-    // Apply multiplier power-up if active
-    if activePowerup == .multiplier {
-        points *= 2  // Apply 2x multiplier
+    func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPosition: CGPoint) {
+        var points = totalPoints * currentCombo
         
-        // Find the placeholder index of the active power-up
-        if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-           let index = placeholderIndex(for: placeholder) {
-            resetPlaceholder(at: index)
+        // Apply multiplier power-up if active
+        if activePowerup == .multiplier {
+            points *= 2  // Apply 2x multiplier
+            
+            // Find the placeholder index of the active power-up and reset it
+            if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+               let index = placeholderIndex(for: placeholder) {
+                resetPlaceholder(at: index)
+            }
+            deactivateActivePowerup()
         }
-        deactivateActivePowerup()
-    }
-    
-    score += points
-    updateScoreLabel()
-    
-    // Display combo animation if combo multiplier is greater than 1
-    if currentCombo > 1 {
-        displayComboAnimation(for: currentCombo)
-    }
-    
-    // Calculate the center position for the points animation
-    if !clearedCells.isEmpty {
-        // Convert clearedCells to an array and get the last element
-        let clearedCellsArray = Array(clearedCells)
-        let lastClearedCell = clearedCellsArray.last! // Get the last cleared cell
         
-        // Convert grid position to screen coordinates
-        let pointsPosition = gridToScreenPosition(row: lastClearedCell.row, col: lastClearedCell.col)
+        // Update score
+        score += points
+        updateScoreLabel()
         
-        // Display animated points at the last cleared position
-        displayAnimatedPoints(points, at: pointsPosition)
+        // Display combo animation if combo multiplier is greater than 1
+        if currentCombo > 1 {
+            displayComboAnimation(for: currentCombo)
+        }
+        
+        // Display animated points at the block placement position
+        displayAnimatedPoints(points, at: displayPosition)
+        
+        // Increment combo multiplier for consecutive clears
+        currentCombo += 1
+        
+        // Reset combo after a delay if no further lines are cleared
+        resetComboAfterDelay()
+        
+        // Play a combo sound effect for multi-line clears
+        if linesCleared > 1 {
+            run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
+        }
     }
-    
-    // Increment combo multiplier for consecutive clears
-    currentCombo += 1
-    
-    // Reset combo multiplier if 5 seconds pass without clearing a line
-    resetComboAfterDelay()
-    
-    // Play a combo sound effect for multi-line clears
-    if linesCleared > 1 {
-        run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
-    }
-}
+
 
 
 
