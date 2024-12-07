@@ -859,21 +859,17 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
 
     func checkForCompletedLines() -> [LineClear] {
         var lineClears: [LineClear] = []
-        var totalLinesCleared = 0
-        var totalPoints = 0
+        var completedRows: [Int] = []
+        var completedColumns: [Int] = []
         
-        // Check for completed rows
+        // Identify completed rows
         for row in 0..<gridSize {
             if grid[row].allSatisfy({ $0 != nil }) {
-                let clearedCells = clearRow(row)
-                let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-                totalLinesCleared += 1
-                totalPoints += 10
+                completedRows.append(row)
             }
         }
         
-        // Check for completed columns
+        // Identify completed columns
         for col in 0..<gridSize {
             var isCompleted = true
             for row in 0..<gridSize {
@@ -883,15 +879,31 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
                 }
             }
             if isCompleted {
-                let clearedCells = clearColumn(col)
-                let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-                lineClears.append(lineClear)
-                totalLinesCleared += 1
-                totalPoints += 10
+                completedColumns.append(col)
             }
         }
         
-        // Handle combo and progress bar
+        // Now clear all identified rows and columns
+        var totalLinesCleared = 0
+        var totalPoints = 0
+        
+        for row in completedRows {
+            let clearedCells = clearRow(row)
+            let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+            lineClears.append(lineClear)
+            totalLinesCleared += 1
+            totalPoints += 10
+        }
+        
+        for col in completedColumns {
+            let clearedCells = clearColumn(col)
+            let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+            lineClears.append(lineClear)
+            totalLinesCleared += 1
+            totalPoints += 10
+        }
+        
+        // Handle progress, combo, etc.
         if totalLinesCleared > 0 {
             self.linesCleared += totalLinesCleared
             updateProgressBar()
@@ -906,11 +918,12 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
             lastClearTime = Date().timeIntervalSinceReferenceDate
         }
         
-        // **New line**: Sync placedBlocks to ensure consistency
+        // Sync placed blocks
         syncPlacedBlocks()
         
         return lineClears
     }
+
 
     func syncPlacedBlocks() {
         placedBlocks = placedBlocks.compactMap { block in
