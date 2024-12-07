@@ -546,18 +546,20 @@ class BGameScene: SKScene {
         addChild(scoreContainer)
     }
     
- func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
-    for block in blocks {
-        for row in 0..<gridSize {
-            for col in 0..<gridSize {
-                if isPlacementValid(for: block, at: row, col: col) {
-                    return true
+    func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
+        for block in blocks {
+            for row in 0..<gridSize {
+                for col in 0..<gridSize {
+                    if isPlacementValid(for: block, at: row, col: col) {
+                        print("Valid move found for block at row: \(row), col: \(col)")
+                        return true
+                    }
                 }
             }
         }
+        print("No valid moves available.")
+        return false
     }
-    return false
-}
 
 
 func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) {
@@ -656,15 +658,18 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
             let gridCol = col + cell.col
             
             if gridRow < 0 || gridRow >= gridSize || gridCol < 0 || gridCol >= gridSize {
+                print("Placement out of bounds for cell at row: \(gridRow), col: \(gridCol)")
                 return false
             }
             
             if grid[gridRow][gridCol] != nil {
+                print("Cell already occupied at row: \(gridRow), col: \(gridCol)")
                 return false
             }
         }
         return true
     }
+
     func deactivateActivePowerup() {
         if let activeIcon = activePowerupIcon {
             removeHighlightFromPowerupIcon(activeIcon)
@@ -785,6 +790,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
             block.position = block.initialPosition
             block.run(SKAction.scale(to: initialScale, duration: 0.1))
         }
+        printGridState()
     }
 
     func centroidOfBlockCells(_ cellNodes: [SKShapeNode]) -> CGPoint {
@@ -851,65 +857,81 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         let col: Int
     }
 
-    // MARK: - Line Clearing Logic
-        func checkForCompletedLines() -> [LineClear] {
-         
-            var lineClears: [LineClear] = []
-            var totalLinesCleared = 0
-            var totalPoints = 0  // Accumulate total points for all cleared lines
-            
-            // Check for completed rows
-            for row in 0..<gridSize {
-                if grid[row].allSatisfy({ $0 != nil }) {
-                    let clearedCells = clearRow(row)
-                    let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-                    lineClears.append(lineClear)
-                    totalLinesCleared += 1
-                    totalPoints += 10  // Add points for this row clear
-                }
+    func checkForCompletedLines() -> [LineClear] {
+        var lineClears: [LineClear] = []
+        var totalLinesCleared = 0
+        var totalPoints = 0
+        
+        // Check for completed rows
+        for row in 0..<gridSize {
+            if grid[row].allSatisfy({ $0 != nil }) {
+                let clearedCells = clearRow(row)
+                let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+                lineClears.append(lineClear)
+                totalLinesCleared += 1
+                totalPoints += 10
             }
-            
-            // Check for completed columns
-            for col in 0..<gridSize {
-                var isCompleted = true
-                for row in 0..<gridSize {
-                    if grid[row][col] == nil {
-                        isCompleted = false
-                        break
-                    }
-                }
-                if isCompleted {
-                    let clearedCells = clearColumn(col)
-                    let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-                    lineClears.append(lineClear)
-                    totalLinesCleared += 1
-                    totalPoints += 10  // Add points for this column clear
-                }
-            }
-            
-            // Apply combo multiplier and display the total points only once
-            if totalLinesCleared > 0 {
-//                applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints)
-                self.linesCleared += totalLinesCleared
-                // Spawn a random power-up
-    //            spawnRandomPowerup()
-                updateProgressBar()
-            } else {
-                // Reset combo if no lines are cleared within the reset time
-                let currentTime = Date().timeIntervalSinceReferenceDate
-                if currentTime - lastClearTime > comboResetTime {
-                    currentCombo = 1
-                }
-            }
-            
-            // Update last clear time if lines were cleared
-            if totalLinesCleared > 0 {
-                lastClearTime = Date().timeIntervalSinceReferenceDate
-                
-            }
-            
-            return lineClears
         }
+        
+        // Check for completed columns
+        for col in 0..<gridSize {
+            var isCompleted = true
+            for row in 0..<gridSize {
+                if grid[row][col] == nil {
+                    isCompleted = false
+                    break
+                }
+            }
+            if isCompleted {
+                let clearedCells = clearColumn(col)
+                let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+                lineClears.append(lineClear)
+                totalLinesCleared += 1
+                totalPoints += 10
+            }
+        }
+        
+        // Handle combo and progress bar
+        if totalLinesCleared > 0 {
+            self.linesCleared += totalLinesCleared
+            updateProgressBar()
+        } else {
+            let currentTime = Date().timeIntervalSinceReferenceDate
+            if currentTime - lastClearTime > comboResetTime {
+                currentCombo = 1
+            }
+        }
+        
+        if totalLinesCleared > 0 {
+            lastClearTime = Date().timeIntervalSinceReferenceDate
+        }
+        
+        // **New line**: Sync placedBlocks to ensure consistency
+        syncPlacedBlocks()
+        
+        return lineClears
+    }
+
+    func syncPlacedBlocks() {
+        placedBlocks = placedBlocks.compactMap { block in
+            // Filter out any cellNodes that no longer exist in the scene
+            block.cellNodes = block.cellNodes.filter { $0.parent != nil }
+            
+            // If the block has no remaining cells, exclude it
+            return block.cellNodes.isEmpty ? nil : block
+        }
+    }
+    func printGridState() {
+        for row in (0..<gridSize).reversed() { // print top row last for a visual top-to-bottom
+            var rowState = ""
+            for col in 0..<gridSize {
+                rowState += (grid[row][col] == nil) ? "." : "X"
+            }
+            print(rowState)
+        }
+        print("-----")
+    }
+
     
     func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPosition: CGPoint) {
         var points = totalPoints * currentCombo
@@ -1349,16 +1371,24 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         case .delete:
             if let cellNode = nodeTapped.closestParent(ofType: SKShapeNode.self),
                let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-                // Delete the placed block
-                deletePlacedBlock(placedBlock, updateScore: false)
-                // Find the placeholder index of the active power-up
-                if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-                   let index = placeholderIndex(for: placeholder) {
-                    resetPlaceholder(at: index)
-                }
-                deactivateActivePowerup()
+               
+               let wasDeleted = deletePlacedBlock(placedBlock, updateScore: false)
+               
+               if wasDeleted {
+                   // Full block was successfully deleted
+                   if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+                      let index = placeholderIndex(for: placeholder) {
+                       resetPlaceholder(at: index)
+                   }
+                   deactivateActivePowerup()
+               } else {
+                   // Block not deleted because it isn't full
+                   print("Block could not be deleted because it wasn't full. Power-up remains active.")
+                   // The block should remain as is, with no changes to the grid or placedBlocks.
+               }
             }
             return
+
         case .swap:
             if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
                boxNodes.contains(blockNode) {
@@ -1446,38 +1476,53 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
     
-    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) {
-        // Remove all the cell nodes from the scene and grid
+    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
+        // Debug print to inspect the block's cell counts before the fullness check
+        print("Attempting to delete block...")
+        print("cellNodes.count = \(placedBlock.cellNodes.count), gridPositions.count = \(placedBlock.gridPositions.count)")
+
+        // Check if the block is still full (no missing cells)
+        if placedBlock.cellNodes.count < placedBlock.gridPositions.count {
+            print("Cannot delete this block because it is not full. Some cells are missing due to line clears.")
+            return false
+        }
+
+        // If we reach here, the block is considered full
+        // You can also print a confirmation here:
+        print("Block is full and will be deleted.")
+
+        // Proceed with the existing deletion logic
         for cellNode in placedBlock.cellNodes {
             cellNode.removeFromParent()
             // Clear userData
             cellNode.userData = nil
         }
+
         for gridPos in placedBlock.gridPositions {
             grid[gridPos.row][gridPos.col] = nil
         }
-        
-        // Remove the placedBlock from the placedBlocks array
+
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
             placedBlocks.remove(at: index)
         }
-        
-        // Update score only if this deletion should impact the score (i.e., it's not from a delete power-up)
+
         if updateScore {
             score += placedBlock.cellNodes.count
             updateScoreLabel()
         }
-        
-        // **Add this line to check for completed lines after deletion**
-        let clearedLines = checkForCompletedLines()
-        
-        // If you need to handle `clearedLines` for undo or other purposes, you can do so here
-        
-        // Check for game-over condition after deletion
+
+        _ = checkForCompletedLines()
+        syncPlacedBlocks()
+
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
         }
+
+        return true
     }
+
+
+
 
     
     func isDeletePowerupAvailable() -> Bool {
