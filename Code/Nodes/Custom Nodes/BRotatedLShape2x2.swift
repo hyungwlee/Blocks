@@ -12,11 +12,11 @@ class BRotatedLShapeNode2x2: BBoxNode {
     
     private let availableAssets = [
         "Laughing-1", "Laughing-2", "Laughing", // Example assets
-        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16315","Straight Face"
+        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16315","Straight"
     ]
     
     
-    private let selectedAsset = "Straight Face"  // Choose the asset you want
+    private let selectedAsset = "Straight"  // Choose the asset you want
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .orange) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)

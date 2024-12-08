@@ -13,12 +13,12 @@ class BRotatedLShapeNode5Block: BBoxNode {
     // List of possible asset names for the block
     private let availableAssets = [
         "Laughing-1", "Laughing-2", "Laughing", // Example assets
-        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16333","Bored "
+        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16333","Bored"
     ]
     
     
     // Now directly selecting a specific asset (e.g., "Laughing-1")
-    private let selectedAsset = "Bored "  // Choose the asset you want
+    private let selectedAsset = "Bored"  // Choose the asset you want
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .purple) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)

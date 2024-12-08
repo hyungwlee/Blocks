@@ -8,12 +8,12 @@ class BTShapedBlock: BBoxNode {
     private let availableAssets = [
         "T-Block-1", "T-Block-2", "T-Block", // Example assets
         "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1",
-        "Group 16313", "Group 16314-1", "Group 16316", "Group 16363-1", "Dead"
+        "Group 16313", "Group 16314-1", "Group 16316", "Group 16363-1", "Dead 1"
     ]
     
     
     // Selected asset for the block
-    private let selectedAsset = "Dead"
+    private let selectedAsset = "Dead 1"
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .blue) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
