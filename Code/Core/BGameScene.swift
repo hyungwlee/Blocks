@@ -18,6 +18,7 @@ class BGameScene: SKScene {
     var activePowerupIcon: SKSpriteNode? = nil // New variable to track the active power-up icon
 
     var score = 0
+    var multiplierLabel: SKLabelNode!
     var grid: [[SKShapeNode?]] = []
     var boxNodes: [BBoxNode] = []
     var currentlyDraggedNode: BBoxNode?
@@ -340,7 +341,7 @@ class BGameScene: SKScene {
         BZShapedBlock.self
     ]
     
-    func addHorizontalLines() {
+   /* func addHorizontalLines() {
         let scaledTileSize = tileSize * 0.7
         let verticalBlockHeight = 4 * scaledTileSize  // Adjusted height for scaled blocks
         let placeholderHeight: CGFloat = 50
@@ -369,7 +370,7 @@ class BGameScene: SKScene {
         bottomLine.strokeColor = .clear
         bottomLine.zPosition = 1
         addChild(bottomLine)
-    }
+    }*/
 
 
 
@@ -460,8 +461,9 @@ class BGameScene: SKScene {
         spawnNewBlocks()
         setupGridHighlights()
         
+        
         // Add horizontal lines
-        addHorizontalLines()
+       // addHorizontalLines()
         
         // Play background music
         if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
@@ -1110,14 +1112,14 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         return 10 * lines
     }
     
-  func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
     for col in 0..<gridSize {
         if let cellNode = grid[row][col] {
             let originalPosition = cellNode.position
 
-            let burstAction = SKAction.group([
+            let burstAction = SKAction.group([ 
                 SKAction.scale(to: 1.5, duration: 0.2),
                 SKAction.fadeOut(withDuration: 0.2),
                 SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
@@ -1139,6 +1141,9 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
 
     // Add multiplier animation if the power-up is active
     if activePowerup == .multiplier {
+        // Remove multiplier label before showing the effect
+        removeMultiplierLabel()
+
         let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
         showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY))
     }
@@ -1148,9 +1153,6 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
     return clearedCells
 }
 
-
-
-
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
@@ -1158,7 +1160,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         if let cellNode = grid[row][col] {
             let originalPosition = cellNode.position
 
-            let burstAction = SKAction.group([
+            let burstAction = SKAction.group([ 
                 SKAction.scale(to: 1.5, duration: 0.2),
                 SKAction.fadeOut(withDuration: 0.2),
                 SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
@@ -1180,6 +1182,9 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
     // Add multiplier animation if the power-up is active
     if activePowerup == .multiplier {
+        // Remove multiplier label before showing the effect
+        removeMultiplierLabel()
+
         let colCenterX = gridToScreenPosition(row: gridSize / 2, col: col).x
         showMultiplierEffect(at: CGPoint(x: colCenterX, y: size.height / 2))
     }
@@ -1356,7 +1361,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         spawnNewBlocks()
         createPowerupPlaceholders()
         setupGridHighlights()
-        addHorizontalLines()
+        //addHorizontalLines()
         createProgressBar()
         // Remove existing background music if it exists
         backgroundMusic?.removeFromParent()
@@ -1382,6 +1387,65 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
     
+func showMultiplierLabel() {
+    // Create an "x1.5" label to show next to the score container
+    let multiplierLabel = SKLabelNode(text: "x1.5")
+    multiplierLabel.fontSize = 30
+    multiplierLabel.fontColor = .green
+    multiplierLabel.fontName = "Helvetica-Bold"
+    multiplierLabel.position = CGPoint(x: size.width / 2 + 120, y: size.height - 100) // Position next to the score container
+    multiplierLabel.alpha = 0 // Initially hidden
+    multiplierLabel.name = "multiplierLabel" // Set the name for identification
+
+    // Add the label to the scene
+    addChild(multiplierLabel)
+    
+    // Animate the label's appearance (fade in and scale up)
+    let fadeIn = SKAction.fadeIn(withDuration: 0.3)
+    let scaleUp = SKAction.scale(to: 1.2, duration: 0.3)
+    multiplierLabel.run(SKAction.group([fadeIn, scaleUp]))
+
+    // Rainbow color animation
+    let rainbowColors: [UIColor] = [
+        .red, .orange, .yellow, .green, .blue, .purple, .cyan
+    ]
+    
+    var colorActions: [SKAction] = []
+    for (index, color) in rainbowColors.enumerated() {
+        let colorAction = SKAction.run {
+            multiplierLabel.fontColor = color
+        }
+        let delayAction = SKAction.wait(forDuration: 0.2)
+        colorActions.append(colorAction)
+        colorActions.append(delayAction)
+    }
+    
+    let rainbowSequence = SKAction.sequence(colorActions)
+    let repeatRainbow = SKAction.repeatForever(rainbowSequence)
+    multiplierLabel.run(repeatRainbow)
+
+    // Pulsing animation (scale up and down)
+    let pulseUp = SKAction.scale(to: 1.3, duration: 0.5)
+    let pulseDown = SKAction.scale(to: 1.1, duration: 0.5)
+    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+    let pulsing = SKAction.repeatForever(pulseSequence)
+    multiplierLabel.run(pulsing)
+}
+
+
+
+func removeMultiplierLabel() {
+    if let multiplierLabel = childNode(withName: "multiplierLabel") as? SKLabelNode {
+        // Animate label disappearance (fade out and scale down)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        let scaleDown = SKAction.scale(to: 0.5, duration: 0.3)
+        
+        let removeAction = SKAction.sequence([SKAction.group([fadeOut, scaleDown]), SKAction.removeFromParent()])
+        multiplierLabel.run(removeAction)
+    }
+}
+
+
 
 
 
@@ -1405,6 +1469,9 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             if currentActivePowerupIcon == powerupIcon {
                 // Tapped on the active power-up icon, so deactivate it
                 deactivateActivePowerup()
+                if powerupType == .multiplier {
+                    removeMultiplierLabel() // Hide multiplier animation when deactivated
+                }
             } else {
                 // Another power-up is already active, cannot activate a new one
                 print("Another power-up is already active.")
@@ -1423,6 +1490,9 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
                     resetPlaceholder(at: index)
                 }
                 deactivateActivePowerup()
+            } else if powerupType == .multiplier {
+                // When multiplier is activated, show "x1.5" animation
+                showMultiplierLabel()
             }
         }
         return
@@ -1527,6 +1597,7 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         node.userData = ["offsetX": offsetX, "offsetY": offsetY]
     }
 }
+
 
 // Helper function to calculate the distance between two points
 func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
