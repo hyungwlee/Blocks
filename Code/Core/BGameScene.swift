@@ -142,7 +142,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
         var progressBar: SKSpriteNode? // Updated to SKSpriteNode
         var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
@@ -1618,29 +1618,30 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
     
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
-        // Debug print to inspect the block's cell counts before the fullness check
-        print("Attempting to delete block...")
-        print("cellNodes.count = \(placedBlock.cellNodes.count), gridPositions.count = \(placedBlock.gridPositions.count)")
-
-        // Check if the block is still full (no missing cells)
-        if placedBlock.cellNodes.count < placedBlock.gridPositions.count {
-            print("Cannot delete this block because it is not full. Some cells are missing due to line clears.")
-            return false
+        // Ensure all original grid positions are intact and match the block's cells
+        for gridPosition in placedBlock.gridPositions {
+            if let cellNode = grid[gridPosition.row][gridPosition.col],
+               let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
+                if blockInCell !== placedBlock {
+                    print("Block cannot be deleted because its cells do not all belong to the same block.")
+                    return false
+                }
+            } else {
+                print("Block cannot be deleted because a cell is missing at row \(gridPosition.row), col \(gridPosition.col).")
+                return false
+            }
         }
 
-        // If we reach here, the block is considered full
-        // You can also print a confirmation here:
-        print("Block is full and will be deleted.")
-
-        // Proceed with the existing deletion logic
+        print("Block is intact and will be deleted.")
+        
+        // Proceed with the deletion
         for cellNode in placedBlock.cellNodes {
             cellNode.removeFromParent()
-            // Clear userData
             cellNode.userData = nil
         }
 
-        for gridPos in placedBlock.gridPositions {
-            grid[gridPos.row][gridPos.col] = nil
+        for gridPosition in placedBlock.gridPositions {
+            grid[gridPosition.row][gridPosition.col] = nil
         }
 
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
@@ -1655,12 +1656,16 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         _ = checkForCompletedLines()
         syncPlacedBlocks()
 
+        // Check for game-over condition
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
         }
 
         return true
     }
+ 
+
+
 
 
 
