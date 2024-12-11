@@ -627,38 +627,43 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     func layoutSpawnedBlocks() {
         let scaledTileSize = tileSize * 0.6  // Adjust scale to make blocks visually smaller
 
-        // Calculate total width of all blocks without spacing
-        var totalBlockWidth: CGFloat = 0
-        for block in boxNodes {
-            let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
-            totalBlockWidth += blockWidth
+        // Define X positions for the three blocks: 1/4, 1/2, 3/4 of screen width
+        let xPositions: [CGFloat] = [
+            size.width * 0.2,
+            size.width * 0.5,
+            size.width * 0.8
+        ]
+
+        // Y position remains unchanged, but ensure blocks are vertically centered on this position
+        let blockYPosition = size.height * 0.3
+
+        // Ensure there are exactly three blocks
+        guard boxNodes.count == 3 else {
+            print("Error: Expected exactly 3 blocks, found \(boxNodes.count)")
+            return
         }
 
-        // Calculate available width and spacing between blocks
-        let availableWidth = size.width - totalBlockWidth  // Remaining space for spacing
-        let numberOfSpaces = CGFloat(boxNodes.count - 1)
-        let spacing = availableWidth / (numberOfSpaces + 2)  // Include equal spacing on the sides
+        for (index, block) in boxNodes.enumerated() {
 
-        // Adjust starting X position to center the blocks horizontally
-        let startXPosition = spacing
-
-        // Keep the same Y position for spawned blocks
-        let blockYPosition = size.height * 0.25  // Y position remains unchanged
-        var currentXPosition = startXPosition
-
-        // Layout the blocks with consistent spacing
-        for block in boxNodes {
+            // Calculate block's height based on its grid height and scaled tile size
+            let blockHeight = CGFloat(block.gridHeight) * scaledTileSize
             let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
-            block.position = CGPoint(x: currentXPosition, y: blockYPosition)
+            
+            let xPosition = xPositions[index] - (blockWidth / 2)
+
+            // To center the block vertically on blockYPosition, set y to blockYPosition
+            // Assuming block's position is at its center
+            let yPosition = blockYPosition - (blockHeight / 2)
+
+            // Update block's position
+            block.position = CGPoint(x: xPosition, y: yPosition)
             block.initialPosition = block.position
             block.gameScene = self
 
             // Set scale and add block to the scene
-            block.setScale(0.6)  // Keep blocks at 70% of their full size
-            safeAddBlock(block)
+            block.setScale(0.6)  // Adjust as needed
 
-            // Move to the next block position
-            currentXPosition += blockWidth + spacing
+            safeAddBlock(block)
         }
     }
     
@@ -835,36 +840,86 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
     // Create multiple sparkles around the edges of each block
     for cellNode in cellNodes {
         // Create a small number of sparkles for each cell to make it cleaner
-        let sparkleCount = 8 // Adjust the number of sparkles around each cell
-        let edgeOffset: CGFloat = tileSize / 2.5  // Adjust how far from the edges the sparkles appear
+//        let sparkleCount = 8 // Adjust the number of sparkles around each cell
+//        let edgeOffset: CGFloat = tileSize / 2.5  // Adjust how far from the edges the sparkles appear
+//
+//        for _ in 0..<sparkleCount {
+//            // Create a small circle for the sparkle
+//            let sparkleTexture = SKTexture(imageNamed: "b_twinkle")
+//            let sparkle = SKSpriteNode(texture: sparkleTexture, size: sparkleTexture.size())  // Smaller sparkles
+////            let sparkle = SKShapeNode(circleOfRadius: 3)  // Smaller sparkles
+////            sparkle.fillColor = .white
+//            sparkle.setScale(0.3)
+//            sparkle.alpha = 0.4  // Slightly transparent for subtle effect
+//
+//            // Randomize the position around the edges of the cell node
+//            let randomAngle = CGFloat.random(in: 0..<2 * .pi)
+//            let randomRadius = CGFloat.random(in: edgeOffset...tileSize / 2)
+//            let randomXOffset = randomRadius * cos(randomAngle)
+//            let randomYOffset = randomRadius * sin(randomAngle)
+//            
+//            sparkle.position = CGPoint(x: cellNode.position.x + randomXOffset, y: cellNode.position.y + randomYOffset)
+//
+//            addChild(sparkle)
+//
+//            // Animate the sparkle (scale up, fade out, and move)
+//            let scaleUpAction = SKAction.scale(to: 0.4, duration: 0.2)
+////            let scaleUpAction = SKAction.scale(to: 1.2, duration: 0.2)
+//            let fadeOutAction = SKAction.fadeOut(withDuration: 0.4)
+//            let moveAction = SKAction.moveBy(x: randomXOffset * 0.3, y: randomYOffset * 0.3, duration: 0.4)
+//
+//            // Combine the actions (scale up, fade out, move)
+//            let sparkleAnimation = SKAction.group([scaleUpAction, fadeOutAction, moveAction])
+//
+//            // Run the animation on the sparkle node
+//            sparkle.run(sparkleAnimation) {
+//                sparkle.removeFromParent() // Remove the sparkle after animation completes
+//            }
+//        }
+        
+        var twinkleNodes: [SKSpriteNode] = []
+        let twinkleTexture = SKTexture(imageNamed: "b_twinkle")
 
-        for _ in 0..<sparkleCount {
-            // Create a small circle for the sparkle
-            let sparkle = SKShapeNode(circleOfRadius: 3)  // Smaller sparkles
-            sparkle.fillColor = .white  // Color of the sparkle
-            sparkle.alpha = 0.6  // Slightly transparent for subtle effect
+        for index in 0..<3 {
+            let twinkleNode = SKSpriteNode(texture: twinkleTexture)
+            twinkleNode.alpha = 0.0
+            twinkleNode.zPosition = 15
+            twinkleNode.setScale(0.4)
 
-            // Randomize the position around the edges of the cell node
-            let randomAngle = CGFloat.random(in: 0..<2 * .pi)
-            let randomRadius = CGFloat.random(in: edgeOffset...tileSize / 2)
-            let randomXOffset = randomRadius * cos(randomAngle)
-            let randomYOffset = randomRadius * sin(randomAngle)
+            let randomX = CGFloat.random(in: -self.tileSize/2...self.tileSize/2)
+            let randomY = CGFloat.random(in: -self.tileSize/2...self.tileSize/2)
+            twinkleNode.position = CGPoint(x: cellNode.position.x + randomX, y: cellNode.position.y + randomY)
+
+            self.addChild(twinkleNode)
+            twinkleNodes.append(twinkleNode)
+        }
+        twinkleNodes.shuffle()
+
+        let fadeIn = SKAction.fadeAlpha(to: 0.4, duration: 0.1)
+        let wait = SKAction.wait(forDuration: 0.2)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        let baseSequence = SKAction.sequence([fadeIn, wait, fadeOut])
+
+        let dispatchGroup = DispatchGroup()
+
+        for twinkleNode in twinkleNodes {
+            dispatchGroup.enter()
             
-            sparkle.position = CGPoint(x: cellNode.position.x + randomXOffset, y: cellNode.position.y + randomYOffset)
+            // Generate a random delay between 0 and 0.5 seconds (adjust as needed)
+            let randomDelay = Double.random(in: 0.0...0.2)
+            let delayAction = SKAction.wait(forDuration: randomDelay)
+            
+            // Create a new sequence with the delay followed by the base sequence
+            let delayedSequence = SKAction.sequence([delayAction, baseSequence])
+            
+            twinkleNode.run(delayedSequence) {
+                dispatchGroup.leave()
+            }
+        }
 
-            addChild(sparkle)
-
-            // Animate the sparkle (scale up, fade out, and move)
-            let scaleUpAction = SKAction.scale(to: 1.2, duration: 0.2)
-            let fadeOutAction = SKAction.fadeOut(withDuration: 0.4)
-            let moveAction = SKAction.moveBy(x: randomXOffset * 0.3, y: randomYOffset * 0.3, duration: 0.4)
-
-            // Combine the actions (scale up, fade out, move)
-            let sparkleAnimation = SKAction.group([scaleUpAction, fadeOutAction, moveAction])
-
-            // Run the animation on the sparkle node
-            sparkle.run(sparkleAnimation) {
-                sparkle.removeFromParent() // Remove the sparkle after animation completes
+        dispatchGroup.notify(queue: .main) {
+            for twinkleNode in twinkleNodes {
+                twinkleNode.removeFromParent()
             }
         }
     }
@@ -1594,7 +1649,9 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         }
 
         // Increase the size of the block when it's selected
-        node.run(SKAction.scale(to: 1.0, duration: 0.1))
+        node.run(SKAction.scale(to: 1.0, duration: 0.1)) {
+            node.removeOutline()
+        }
 
         // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
         let touchLocation = touch.location(in: self)
@@ -1871,7 +1928,9 @@ func getUndoBlockCenterPosition() -> CGPoint {
                     // If the placement is invalid, return the block to its original position
                     node.position = node.initialPosition
                 }
-                node.run(SKAction.scale(to: initialScale, duration: 0.1)) // Scale back to initial scale
+                node.run(SKAction.scale(to: initialScale, duration: 0.1)) {
+                    node.addOutline()
+                }
             }
         }
 
