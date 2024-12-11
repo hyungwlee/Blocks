@@ -111,17 +111,20 @@ class BGameScene: SKScene {
     
     func createPowerupPlaceholders() {
         let placeholderSize = CGSize(width: 60, height: 60)
-        let spacing: CGFloat = 40
+        let spacing: CGFloat = 30
         let totalWidth = placeholderSize.width * 4 + spacing * 3
         let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
-        
+
         // Position the placeholders below the spawned blocks
         let yPosition = size.height * 0.16  // Adjusted to place beneath the blocks
-        
+
         for i in 0..<4 {
             let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
-            placeholder.strokeColor = .white
-            placeholder.lineWidth = 2.0
+            
+            // Subtle outline effect
+            placeholder.strokeColor = UIColor.white.withAlphaComponent(0.3) // Light, semi-transparent white
+            placeholder.lineWidth = 1.0 // Thinner line for subtlety
+            
             placeholder.fillColor = .clear
             placeholder.name = "powerupPlaceholder\(i)"
             placeholder.userData = ["powerup": NSNull()]
@@ -146,7 +149,7 @@ class BGameScene: SKScene {
 
         func createProgressBar() {
             // Define progress bar dimensions
-            let barWidth: CGFloat = size.width * 0.95
+            let barWidth: CGFloat = size.width * 0.80
             let barHeight: CGFloat = 10
             let placeholderYPosition = size.height * 0.1
             let barY = placeholderYPosition - 10
@@ -1684,8 +1687,16 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             boxNodes.remove(at: index)
         }
         
-        // Generate a new block to replace the deleted one
-        let newBlock = generateRandomShapes(count: 1).first!
+        // Generate a new block that is not of the same type as the block being swapped
+        var newBlock: BBoxNode
+        repeat {
+            let blockType = availableBlockTypes.randomElement()!
+            newBlock = blockType.init(
+                layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
+                tileSize: tileSize
+            )
+        } while type(of: newBlock) == type(of: blockNode)  // Ensure the new block is not the same type
+        
         newBlock.gameScene = self
         newBlock.setScale(initialScale)
         boxNodes.append(newBlock)
@@ -1699,6 +1710,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             showGameOverScreen()
         }
     }
+
     
 override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first, let node = currentlyDraggedNode else { return }
@@ -1827,7 +1839,7 @@ func undoLastMove() {
 // Helper function to calculate the center position for the undo block
 func getUndoBlockCenterPosition() -> CGPoint {
     let centerX = size.width / 2
-    let centerY = size.height * 0.2  // Match the Y position of the spawn area
+    let centerY = size.height * 0.25  // Match the Y position of the spawn area
     return CGPoint(x: centerX, y: centerY)
 }
 
@@ -1840,28 +1852,36 @@ func getUndoBlockCenterPosition() -> CGPoint {
     // Handle the block placement and reset its size when placed on the grid
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let node = currentlyDraggedNode else { return }
-        
+
         // Determine the grid position for placement
         let gridPos = node.gridPosition()
-        
+
         // Attempt to place the block at the calculated grid position
         if let gameScene = node.gameScene {
             if gameScene.isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
                 gameScene.placeBlock(node, at: gridPos)
                 // saveStateForUndo() is now handled inside placeBlock
             } else {
-                // If the placement is invalid, return the block to its original position
-                node.position = node.initialPosition
-                node.run(SKAction.scale(to: initialScale, duration: 0.1))  // Scale back to initial scale
+                // Check if the block is the only one in the spawn area
+                if boxNodes.count == 1 && boxNodes.first === node {
+                    // Fix the block to the center of the spawn area
+                    node.position = getUndoBlockCenterPosition()
+                    node.initialPosition = node.position // Update the initial position to the center
+                } else {
+                    // If the placement is invalid, return the block to its original position
+                    node.position = node.initialPosition
+                }
+                node.run(SKAction.scale(to: initialScale, duration: 0.1)) // Scale back to initial scale
             }
         }
-        
+
         // Remove the offset data
         node.userData = nil
-        
+
         currentlyDraggedNode = nil
         clearHighlights()
     }
+
     
     // Check if the dragged block is colliding with any placed blocks
     func isCollisionWithPlacedBlocks(at position: CGPoint) -> Bool {
