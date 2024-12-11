@@ -110,13 +110,13 @@ class BGameScene: SKScene {
     }
     
     func createPowerupPlaceholders() {
-        let placeholderSize = CGSize(width: 50, height: 50)
+        let placeholderSize = CGSize(width: 60, height: 60)
         let spacing: CGFloat = 40
         let totalWidth = placeholderSize.width * 4 + spacing * 3
         let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
         
         // Position the placeholders below the spawned blocks
-        let yPosition = size.height * 0.13  // Adjusted to place beneath the blocks
+        let yPosition = size.height * 0.16  // Adjusted to place beneath the blocks
         
         for i in 0..<4 {
             let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
@@ -139,17 +139,17 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
         var progressBar: SKSpriteNode? // Updated to SKSpriteNode
         var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
 
         func createProgressBar() {
             // Define progress bar dimensions
-            let barWidth: CGFloat = size.width * 0.8
+            let barWidth: CGFloat = size.width * 0.95
             let barHeight: CGFloat = 10
             let placeholderYPosition = size.height * 0.1
-            let barY = placeholderYPosition - 50
+            let barY = placeholderYPosition - 10
 
             // Create the background for the progress bar
             progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
@@ -482,17 +482,20 @@ class BGameScene: SKScene {
     func getGridOrigin() -> CGPoint {
         let totalGridWidth = CGFloat(gridSize) * tileSize
         let totalGridHeight = CGFloat(gridSize) * tileSize
-        
+
         // Center horizontally
         let gridOriginX = (size.width - totalGridWidth) / 2
-        
-        // Position vertically (space above the grid for the score and below for placeholders)
+
+        // Adjust the vertical positioning
         let topMargin: CGFloat = size.height * 0.10 // Space for score and icons
-        let bottomMargin: CGFloat = size.height * 0.25 // Space for placeholders
-        let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + bottomMargin
-        
+        let bottomMargin: CGFloat = size.height * 0.20 // Reduced space for placeholders
+        let additionalOffset: CGFloat = 70 // Shift grid upwards by 30 points
+
+        let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + bottomMargin + additionalOffset
+
         return CGPoint(x: gridOriginX, y: gridOriginY)
     }
+
     
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
@@ -637,7 +640,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         let startXPosition = spacing
 
         // Keep the same Y position for spawned blocks
-        let blockYPosition = size.height * 0.2  // Y position remains unchanged
+        let blockYPosition = size.height * 0.25  // Y position remains unchanged
         var currentXPosition = startXPosition
 
         // Layout the blocks with consistent spacing
