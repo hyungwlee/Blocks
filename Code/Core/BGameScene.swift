@@ -1755,7 +1755,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             boxNodes.remove(at: index)
         }
         
-        // Generate a new block that is not of the same type as the block being swapped
+        // Generate a new block
         var newBlock: BBoxNode
         repeat {
             let blockType = availableBlockTypes.randomElement()!
@@ -1763,10 +1763,11 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
                 layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
                 tileSize: tileSize
             )
-        } while type(of: newBlock) == type(of: blockNode)  // Ensure the new block is not the same type
+        } while type(of: newBlock) == type(of: blockNode) // Ensure the new block is not of the same type
         
         newBlock.gameScene = self
         newBlock.setScale(initialScale)
+        newBlock.position = blockNode.position // Set the position to the same as the deleted block
         boxNodes.append(newBlock)
         safeAddBlock(newBlock)
         
@@ -1778,6 +1779,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             showGameOverScreen()
         }
     }
+
 
     
     func resetBlockHighlights() {
