@@ -22,6 +22,7 @@ class BBoxNode: SKNode {
     // Property to define the shape of the block
     var shape: [(row: Int, col: Int)] = []
     var assets: [(name: String, position: (row: Int, col: Int))] = [] // Assets associated with the block
+    private var outlineNode: SKShapeNode?
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .clear) {
         self.layoutInfo = layoutInfo
@@ -47,81 +48,148 @@ class BBoxNode: SKNode {
 
     
     func createVisualRepresentation() {
-            removeAllChildren()
+        removeAllChildren()
 
-            // First, add all sprite nodes
-            for (index, cell) in shape.enumerated() {
-                let assetInfo = assets[index]
-                let assetName = assetInfo.name
-                
-                let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
-                let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
-                
-                let spriteNode = SKSpriteNode(imageNamed: assetName)
-                spriteNode.size = CGSize(width: tileSize, height: tileSize)
-                spriteNode.zPosition = 1
-                spriteNode.alpha = 1.0
-                spriteNode.position = CGPoint(x: xPos, y: yPos)
-                
-                addChild(spriteNode)
-            }
-
-            // Now create the outline
-            let cellSet = Set(shape.map { GridCoordinate(row: $0.row, col: $0.col) })
-            let path = CGMutablePath()
-
-            for cell in shape {
-                let (cellX, cellY) = (CGFloat(cell.col)*tileSize, CGFloat(cell.row)*tileSize)
-                
-                // Each cell is a square: (cellX, cellY) is bottom-left corner
-                // Top edge: from (cellX, cellY+tileSize) to (cellX+tileSize, cellY+tileSize)
-                // Bottom edge: from (cellX, cellY) to (cellX+tileSize, cellY)
-                // Left edge: from (cellX, cellY) to (cellX, cellY+tileSize)
-                // Right edge: from (cellX+tileSize, cellY) to (cellX+tileSize, cellY+tileSize)
-
-                let upNeighbor = GridCoordinate(row: cell.row+1, col: cell.col)
-                if !cellSet.contains(upNeighbor) {
-                    // Add top edge
-                    path.move(to: CGPoint(x: cellX, y: cellY+tileSize))
-                    path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY+tileSize))
-                }
-
-                let downNeighbor = GridCoordinate(row: cell.row-1, col: cell.col)
-                if !cellSet.contains(downNeighbor) {
-                    // Add bottom edge
-                    path.move(to: CGPoint(x: cellX, y: cellY))
-                    path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY))
-                }
-
-                let leftNeighbor = GridCoordinate(row: cell.row, col: cell.col-1)
-                if !cellSet.contains(leftNeighbor) {
-                    // Add left edge
-                    path.move(to: CGPoint(x: cellX, y: cellY))
-                    path.addLine(to: CGPoint(x: cellX, y: cellY+tileSize))
-                }
-
-                let rightNeighbor = GridCoordinate(row: cell.row, col: cell.col+1)
-                if !cellSet.contains(rightNeighbor) {
-                    // Add right edge
-                    path.move(to: CGPoint(x: cellX+tileSize, y: cellY))
-                    path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY+tileSize))
-                }
-            }
-
-            let outlineNode = SKShapeNode(path: path)
-            outlineNode.strokeColor = .white
-            outlineNode.lineWidth = 2.0
-            outlineNode.fillColor = .clear
-            outlineNode.zPosition = 2
-            outlineNode.lineJoin = .round
-            outlineNode.lineCap = .round
-
-            addChild(outlineNode)
+        // First, add all sprite nodes
+        for (index, cell) in shape.enumerated() {
+            let assetInfo = assets[index]
+            let assetName = assetInfo.name
+            
+            let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
+            let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
+            
+            let spriteNode = SKSpriteNode(imageNamed: assetName)
+            spriteNode.size = CGSize(width: tileSize, height: tileSize)
+            spriteNode.zPosition = 1
+            spriteNode.alpha = 1.0
+            spriteNode.position = CGPoint(x: xPos, y: yPos)
+            
+            addChild(spriteNode)
         }
 
+        // Now create the outline
+        let cellSet = Set(shape.map { GridCoordinate(row: $0.row, col: $0.col) })
+        let path = CGMutablePath()
+
+        for cell in shape {
+            let (cellX, cellY) = (CGFloat(cell.col)*tileSize, CGFloat(cell.row)*tileSize)
+            
+            // Each cell is a square: (cellX, cellY) is bottom-left corner
+            // Top edge: from (cellX, cellY+tileSize) to (cellX+tileSize, cellY+tileSize)
+            // Bottom edge: from (cellX, cellY) to (cellX+tileSize, cellY)
+            // Left edge: from (cellX, cellY) to (cellX, cellY+tileSize)
+            // Right edge: from (cellX+tileSize, cellY) to (cellX+tileSize, cellY+tileSize)
+
+            let upNeighbor = GridCoordinate(row: cell.row+1, col: cell.col)
+            if !cellSet.contains(upNeighbor) {
+                // Add top edge
+                path.move(to: CGPoint(x: cellX, y: cellY+tileSize))
+                path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY+tileSize))
+            }
+
+            let downNeighbor = GridCoordinate(row: cell.row-1, col: cell.col)
+            if !cellSet.contains(downNeighbor) {
+                // Add bottom edge
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY))
+            }
+
+            let leftNeighbor = GridCoordinate(row: cell.row, col: cell.col-1)
+            if !cellSet.contains(leftNeighbor) {
+                // Add left edge
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX, y: cellY+tileSize))
+            }
+
+            let rightNeighbor = GridCoordinate(row: cell.row, col: cell.col+1)
+            if !cellSet.contains(rightNeighbor) {
+                // Add right edge
+                path.move(to: CGPoint(x: cellX+tileSize, y: cellY))
+                path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY+tileSize))
+            }
+        }
+
+        outlineNode = SKShapeNode(path: path)
+        outlineNode?.strokeColor = .white
+        outlineNode?.lineWidth = 2.0
+        outlineNode?.lineJoin = .round
+        outlineNode?.lineCap = .round
+        outlineNode?.fillColor = .clear
+        outlineNode?.zPosition = 2
+        outlineNode?.lineJoin = .round
+        outlineNode?.lineCap = .round
+
+        if let outline = outlineNode {
+            addChild(outline)
+        }
+    }
 
 
 
+    func removeOutline() {
+        outlineNode?.removeFromParent()
+        outlineNode = nil
+    }
+
+    /// Adds the outline back to the block
+    func addOutline() {
+        // Ensure that the outline is only added if it doesn't already exist
+        guard outlineNode == nil else { return }
+
+        // Recreate the outline path
+        let cellSet = Set(shape.map { GridCoordinate(row: $0.row, col: $0.col) })
+        let path = CGMutablePath()
+
+        for cell in shape {
+            let gridCoord = GridCoordinate(row: cell.row, col: cell.col)
+            let (cellX, cellY) = (CGFloat(cell.col) * tileSize, CGFloat(cell.row) * tileSize)
+
+            // Each cell is a square: (cellX, cellY) is bottom-left corner
+            // Top edge
+            let upNeighbor = GridCoordinate(row: cell.row + 1, col: cell.col)
+            if !cellSet.contains(upNeighbor) {
+                path.move(to: CGPoint(x: cellX, y: cellY + tileSize))
+                path.addLine(to: CGPoint(x: cellX + tileSize, y: cellY + tileSize))
+            }
+
+            // Bottom edge
+            let downNeighbor = GridCoordinate(row: cell.row - 1, col: cell.col)
+            if !cellSet.contains(downNeighbor) {
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX + tileSize, y: cellY))
+            }
+
+            // Left edge
+            let leftNeighbor = GridCoordinate(row: cell.row, col: cell.col - 1)
+            if !cellSet.contains(leftNeighbor) {
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX, y: cellY + tileSize))
+            }
+
+            // Right edge
+            let rightNeighbor = GridCoordinate(row: cell.row, col: cell.col + 1)
+            if !cellSet.contains(rightNeighbor) {
+                path.move(to: CGPoint(x: cellX + tileSize, y: cellY))
+                path.addLine(to: CGPoint(x: cellX + tileSize, y: cellY + tileSize))
+            }
+        }
+
+        // Recreate the outline node
+        let newOutline = SKShapeNode(path: path)
+        newOutline.strokeColor = .white
+//        newOutline.alpha = 0.6
+        newOutline.lineWidth = 2.0
+        newOutline.lineJoin = .round
+        newOutline.lineCap = .round
+        newOutline.fillColor = .clear
+        newOutline.zPosition = 2
+        newOutline.lineJoin = .round
+        newOutline.lineCap = .round
+
+        // Assign to the outlineNode property
+        outlineNode = newOutline
+        addChild(newOutline)
+    }
 
 
     
