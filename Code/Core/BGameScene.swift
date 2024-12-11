@@ -10,6 +10,7 @@ import AVFoundation
 
 class BGameScene: SKScene {
     let gridSize = 8
+    var hasShownMultiplierEffect = false  // Flag to track multiplier animation
     var tileSize: CGFloat {
         return (size.width - 40) / CGFloat(gridSize)
     }
@@ -287,12 +288,15 @@ class BGameScene: SKScene {
         icon.run(glow)
     }
     
-    func removeHighlightFromPowerupIcon(_ icon: SKSpriteNode) {
-        let removeGlow = SKAction.run {
-            icon.colorBlendFactor = 0.0
-        }
-        icon.run(removeGlow)
-    }
+   func removeHighlightFromPowerupIcon(_ icon: SKSpriteNode) {
+    let removeGlow = SKAction.group([
+        SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2),
+        SKAction.scale(to: 1.0, duration: 0.2), // Reset the scale to its original size
+        SKAction.fadeAlpha(to: 1.0, duration: 0.2) // Ensure the icon is fully opaque
+    ])
+    icon.run(removeGlow)
+}
+
     
 //    func deactivateActivePowerup() {
 //        // Find the power-up icon in the placeholder and remove it
@@ -680,13 +684,20 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         return true
     }
 
-    func deactivateActivePowerup() {
-        if let activeIcon = activePowerupIcon {
-            removeHighlightFromPowerupIcon(activeIcon)
-            activePowerupIcon = nil
-        }
-        activePowerup = nil
+   func deactivateActivePowerup() {
+    if let activeIcon = activePowerupIcon {
+        removeHighlightFromPowerupIcon(activeIcon)
+        activePowerupIcon = nil
     }
+    activePowerup = nil
+    
+    // Reset block highlights when the power-up is deactivated
+    resetBlockHighlights()
+    
+    // Additional cleanup for specific power-ups
+    removeMultiplierLabel() // Ensure multiplier label is removed if applicable
+}
+
 
 
  func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
@@ -1120,7 +1131,9 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         return 10 * lines
     }
     
- func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+
+
+func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
     for col in 0..<gridSize {
@@ -1147,13 +1160,16 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         }
     }
 
-    // Add multiplier animation if the power-up is active
-    if activePowerup == .multiplier {
+    // Add multiplier animation if the power-up is active and it hasn't been shown yet
+    if activePowerup == .multiplier && !hasShownMultiplierEffect {
         // Remove multiplier label before showing the effect
         removeMultiplierLabel()
 
         let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
         showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY))
+
+        // Mark the effect as shown to prevent multiple triggers
+        hasShownMultiplierEffect = true
     }
 
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -1188,13 +1204,16 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
 
-    // Add multiplier animation if the power-up is active
-    if activePowerup == .multiplier {
+    // Add multiplier animation if the power-up is active and it hasn't been shown yet
+    if activePowerup == .multiplier && !hasShownMultiplierEffect {
         // Remove multiplier label before showing the effect
         removeMultiplierLabel()
 
         let colCenterX = gridToScreenPosition(row: gridSize / 2, col: col).x
         showMultiplierEffect(at: CGPoint(x: colCenterX, y: size.height / 2))
+
+        // Mark the effect as shown to prevent multiple triggers
+        hasShownMultiplierEffect = true
     }
 
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -1454,8 +1473,6 @@ func removeMultiplierLabel() {
 
 
 
-
-
 override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first else { return }
     let location = touch.location(in: self)
@@ -1498,8 +1515,10 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
                 }
                 deactivateActivePowerup()
             } else if powerupType == .multiplier {
-                // When multiplier is activated, show "x1.5" animation
                 showMultiplierLabel()
+            } else if powerupType == .delete {
+                // Highlight deletable blocks when delete power-up is activated
+                updateDeletableBlockHighlights()
             }
         }
         return
@@ -1515,16 +1534,13 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
                let wasDeleted = deletePlacedBlock(placedBlock, updateScore: false)
                
                if wasDeleted {
-                   // Full block was successfully deleted
                    if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
                       let index = placeholderIndex(for: placeholder) {
                        resetPlaceholder(at: index)
                    }
                    deactivateActivePowerup()
                } else {
-                   // Block not deleted because it isn't full
                    print("Block could not be deleted because it wasn't full. Power-up remains active.")
-                   // The block should remain as is, with no changes to the grid or placedBlocks.
                }
             }
             return
@@ -1532,9 +1548,7 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         case .swap:
             if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
                boxNodes.contains(blockNode) {
-                // Swap the block
                 deleteBlock(blockNode)
-                // Find the placeholder index of the active power-up
                 if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
                    let index = placeholderIndex(for: placeholder) {
                     resetPlaceholder(at: index)
@@ -1542,13 +1556,12 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
                 deactivateActivePowerup()
             }
             return
+
         case .undo:
-            // Undo is executed immediately when tapped, so no action here
             return
+
         case .multiplier:
-            // Multiplier is applied during line clears, no immediate action
-            // Do not return here; allow block interaction
-            break // Continue to allow block interaction
+            break
         }
     }
 
@@ -1556,16 +1569,13 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self), boxNodes.contains(blockNode) {
         currentlyDraggedNode = blockNode
     } else {
-        // If tapped outside, check proximity to all blocks
         for blockNode in boxNodes {
             let distance = distanceBetweenPoints(location, blockNode.position)
-            let selectionRadius: CGFloat = 100 // Increase this radius as needed
+            let selectionRadius: CGFloat = 100
             
-            // Debug print to check the distance
             print("Distance from touch to block: \(distance), Selection radius: \(selectionRadius)")
 
             if distance < selectionRadius {
-                // Debug print to confirm the block selected
                 print("Block selected: \(blockNode)")
                 currentlyDraggedNode = blockNode
                 break
@@ -1573,14 +1583,11 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         }
     }
 
-    // Play block selection sound when a block is selected
     if let node = currentlyDraggedNode {
-        // Reset rotate power-up icon appearance
         if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
             rotatePowerupIcon.colorBlendFactor = 0.0
         }
 
-        // Play the selection sound
         if let url = Bundle.main.url(forResource: "Soft_Pop_or_Click", withExtension: "mp3") {
             do {
                 audioPlayer = try AVAudioPlayer(contentsOf: url)
@@ -1593,10 +1600,8 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             print("Error: Audio file not found.")
         }
 
-        // Increase the size of the block when it's selected
         node.run(SKAction.scale(to: 1.0, duration: 0.1))
 
-        // Calculate touch offset for smooth dragging (ensure the block stays centered under the touch)
         let touchLocation = touch.location(in: self)
         let offsetX = node.position.x - touchLocation.x
         let offsetY = node.position.y - touchLocation.y
@@ -1715,6 +1720,38 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             showGameOverScreen()
         }
     }
+
+    
+    func resetBlockHighlights() {
+    for blockNode in boxNodes {
+        blockNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+    }
+}
+
+    
+    func updateDeletableBlockHighlights() {
+    for blockNode in boxNodes {
+        if let placedBlock = blockNode.userData?["placedBlock"] as? PlacedBlock {
+            if canDeleteBlock(placedBlock) {
+                // Highlight deletable blocks (e.g., apply a glow effect)
+                blockNode.run(SKAction.sequence([
+                    SKAction.colorize(with: .green, colorBlendFactor: 0.5, duration: 0.2)
+                ]))
+            } else {
+                // Gray-out non-deletable blocks
+                blockNode.run(SKAction.sequence([
+                    SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2)
+                ]))
+            }
+        }
+    }
+}
+
+func canDeleteBlock(_ placedBlock: PlacedBlock) -> Bool {
+    return placedBlock.cellNodes.count == placedBlock.gridPositions.count
+}
+    
+
 
     
 override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
