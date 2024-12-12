@@ -1438,50 +1438,46 @@ func showGameOverScreen() {
 
     
     func restartGame() {
-    print("Restarting game...")
-    
-    // Stop the Game Over sound
-    if let gameOverAudioPlayer = gameOverAudioPlayer {
-        gameOverAudioPlayer.stop()
-        self.gameOverAudioPlayer = nil
-    }
-    
-    score = 0
-    updateScoreLabel()
-    
-    // Reset the grid and remove all children from the scene
-    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-    removeAllChildren()
-    
-    isGameOver = false
-    placedBlocks.removeAll() // Clear the placed blocks
-    undoStack.removeAll()    // Clear the undo stack
-    
-    // Re-add other game elements
-    createGrid()
-    addScoreLabel()
-    spawnNewBlocks()
-    createPowerupPlaceholders()
-    setupGridHighlights()
-    createProgressBar()
-    
-    // Remove existing background music if it exists
-    backgroundMusic?.removeFromParent()
-    backgroundMusic = nil
-    
-    // Restart background music with preserved volume
-    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-        backgroundMusic = SKAudioNode(url: url)
-        if let backgroundMusic = backgroundMusic {
-            print("Background music found and will play.")
-            backgroundMusic.autoplayLooped = true
-            backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0)) // Apply current volume
-            addChild(backgroundMusic)
+        // Unpause the scene before re-initializing.
+        self.isPaused = false
+        
+        print("Restarting game...")
+        
+        // Stop the Game Over sound if playing
+        gameOverAudioPlayer?.stop()
+        gameOverAudioPlayer = nil
+        
+        score = 0
+        updateScoreLabel()
+        
+        // Reset the grid and remove all children
+        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+        removeAllChildren()
+        
+        isGameOver = false
+        placedBlocks.removeAll()
+        undoStack.removeAll()
+        
+        // Re-add game elements
+        createGrid()
+        addScoreLabel()
+        createPowerupPlaceholders()
+        createProgressBar()
+        spawnNewBlocks()
+        setupGridHighlights()
+        
+        // Restart background music
+        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+            backgroundMusic = SKAudioNode(url: url)
+            if let backgroundMusic = backgroundMusic {
+                backgroundMusic.autoplayLooped = true
+                backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
+                addChild(backgroundMusic)
+            }
+        } else {
+            print("Error: Background music file not found.")
         }
-    } else {
-        print("Error: Background music file not found.")
     }
-}
 
     
     func updateScoreLabel() {
