@@ -46,8 +46,8 @@
             filePath = "Code/Core/BGameScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1841"
-            endingLineNumber = "1841"
+            startingLineNumber = "1836"
+            endingLineNumber = "1836"
             landmarkName = "deleteBlock(_:)"
             landmarkType = "7">
          </BreakpointContent>

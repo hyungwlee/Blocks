@@ -871,7 +871,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
 //            let randomRadius = CGFloat.random(in: edgeOffset...tileSize / 2)
 //            let randomXOffset = randomRadius * cos(randomAngle)
 //            let randomYOffset = randomRadius * sin(randomAngle)
-//            
+//
 //            sparkle.position = CGPoint(x: cellNode.position.x + randomXOffset, y: cellNode.position.y + randomYOffset)
 //
 //            addChild(sparkle)
@@ -1191,49 +1191,44 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
     
 
 
-func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+    func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
-    for col in 0..<gridSize {
-        if let cellNode = grid[row][col] {
-            let originalPosition = cellNode.position
+        for col in 0..<gridSize {
+            if let cellNode = grid[row][col] {
+                // Store the cell's original position
+                let originalPosition = cellNode.position
 
-            let burstAction = SKAction.group([ 
-                SKAction.scale(to: 1.5, duration: 0.2),
-                SKAction.fadeOut(withDuration: 0.2),
-                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
-            ])
+                // Clear animations for visual feedback
+                let burstAction = SKAction.group([
+                    SKAction.scale(to: 1.5, duration: 0.2),
+                    SKAction.fadeOut(withDuration: 0.2),
+                    SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
+                ])
 
-            let removeAction = SKAction.run {
-                cellNode.removeFromParent()
+                // Remove node after animation
+                let removeAction = SKAction.run {
+                    cellNode.removeFromParent()
+                }
+
+                let sequence = SKAction.sequence([burstAction, removeAction])
+                cellNode.run(sequence)
+
+                // Reset the grid state
+                grid[row][col] = nil
+                clearedCells.append((row: row, col: col, cellNode: cellNode))
+
+                // Ensure user data is cleared
+                cellNode.userData = nil
+            } else {
+                print("Cell at row \(row), col \(col) is already nil.")
             }
-
-            let sequence = SKAction.sequence([burstAction, removeAction])
-            cellNode.run(sequence)
-
-            grid[row][col] = nil
-            clearedCells.append((row: row, col: col, cellNode: cellNode))
-
-            cellNode.userData?["originalPosition"] = originalPosition
         }
+
+        print("Row \(row) cleared successfully.")
+        return clearedCells
     }
 
-    // Add multiplier animation if the power-up is active and it hasn't been shown yet
-    if activePowerup == .multiplier && !hasShownMultiplierEffect {
-        // Remove multiplier label before showing the effect
-        removeMultiplierLabel()
-
-        let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
-        showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY))
-
-        // Mark the effect as shown to prevent multiple triggers
-        hasShownMultiplierEffect = true
-    }
-
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
-
-    return clearedCells
-}
 
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
