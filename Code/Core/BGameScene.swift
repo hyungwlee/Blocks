@@ -1617,6 +1617,9 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
                 // Highlight deletable blocks when delete power-up is activated
                 updateDeletableBlockHighlights()
             }
+            else if powerupType == .swap {
+                            blurGridBlocks()
+                        }
         }
         return
     }
@@ -1827,7 +1830,50 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         }
         return false
     }
-    
+    func highlightSwapPowerupIcon(_ icon: SKSpriteNode) {
+            let pulseUp = SKAction.scale(to: 1.3, duration: 0.5)
+            let pulseDown = SKAction.scale(to: 1.0, duration: 0.5)
+            let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+            icon.run(SKAction.repeatForever(pulseSequence), withKey: "swapPulse")
+        }
+
+        func removeHighlightFromSwapPowerupIcon(_ icon: SKSpriteNode) {
+            icon.removeAction(forKey: "swapPulse")
+            icon.run(SKAction.scale(to: 1.0, duration: 0.2)) // Reset to original size
+        }
+        func blurGridBlocks(excludeSpawnedBlocks: Bool = true) {
+            for row in 0..<gridSize {
+                for col in 0..<gridSize {
+                    if let cellNode = grid[row][col] {
+                        // Dim out all grid blocks
+                        cellNode.alpha = 0.3
+                        cellNode.run(SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2))
+                    }
+                }
+            }
+
+            // Subtle pulse effect for spawned blocks
+            for blockNode in boxNodes {
+                blockNode.removeAllActions() // Stop existing animations
+                let pulseUp = SKAction.scale(to: 0.7, duration: 0.3) // Subtle scale up
+                let pulseDown = SKAction.scale(to: 0.6, duration: 0.3) // Return to original size
+                let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+                blockNode.run(SKAction.repeatForever(pulseSequence), withKey: "pulse")
+            }
+        }
+
+
+
+        func resetGridBlur() {
+            for row in 0..<gridSize {
+                for col in 0..<gridSize {
+                    if let cellNode = grid[row][col] {
+                        cellNode.alpha = 1.0 // Reset alpha
+                        cellNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+                    }
+                }
+            }
+        }
     func deleteBlock(_ blockNode: BBoxNode) {
         // Remove the block node from the scene
         blockNode.removeFromParent()
