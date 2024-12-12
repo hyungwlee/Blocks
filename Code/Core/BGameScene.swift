@@ -298,24 +298,7 @@ class BGameScene: SKScene {
 }
 
     
-//    func deactivateActivePowerup() {
-//        // Find the power-up icon in the placeholder and remove it
-//        for i in 0..<4 {
-//            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
-//               let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode,
-//               let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType,
-//               powerupType == activePowerup {
-//
-//                // Remove the power-up icon
-//                powerupIcon.removeFromParent()
-//                // Reset the placeholder
-//                resetPlaceholder(at: i)
-//                break
-//            }
-//        }
-//        // Clear the active power-up
-//        activePowerup = nil
-//    }
+
     
     // MARK: - Grid Management
     func isCellOccupied(row: Int, col: Int) -> Bool {
@@ -719,6 +702,8 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     
     // Additional cleanup for specific power-ups
     removeMultiplierLabel() // Ensure multiplier label is removed if applicable
+    
+    resetGridVisuals()
 }
 
 
@@ -1716,6 +1701,61 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
 
+    func highlightDeletableCells() {
+        for row in 0..<gridSize {
+            for col in 0..<gridSize {
+                if let cellNode = grid[row][col] {
+                    if let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock,
+                       canDeleteBlock(placedBlock) {
+                        cellNode.alpha = 1.0
+                        cellNode.run(SKAction.colorize(with: .green, colorBlendFactor: 0.5, duration: 0.2))
+                    } else {
+                        cellNode.alpha = 0.3
+                        cellNode.run(SKAction.colorize(with: .gray, colorBlendFactor: 1.0, duration: 0.2))
+                    }
+                } else {
+                    // This ensures no nil reference errors occur
+                    grid[row][col]?.alpha = 0.3
+                    grid[row][col]?.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+                }
+            }
+        }
+    }
+    func resetGridVisuals() {
+        for row in 0..<gridSize {
+            for col in 0..<gridSize {
+                if let cellNode = grid[row][col] {
+                    // Reset alpha
+                    cellNode.alpha = 1.0
+
+                    // Remove colorization
+                    cellNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+
+                    // Remove any scale or pulse animations
+                    cellNode.removeAllActions()
+                    cellNode.setScale(1.0)
+                }
+            }
+        }
+
+        // Reset block nodes (spawned blocks in the spawn area)
+        for blockNode in boxNodes {
+            blockNode.alpha = 1.0
+            blockNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+            blockNode.removeAllActions()
+            blockNode.setScale(initialScale)
+        }
+
+        // Reset placed blocks
+        for placedBlock in placedBlocks {
+            for cellNode in placedBlock.cellNodes {
+                cellNode.alpha = 1.0
+                cellNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+                cellNode.removeAllActions()
+                cellNode.setScale(1.0)
+            }
+        }
+    }
 
     
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
@@ -1828,27 +1868,68 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
     
     func updateDeletableBlockHighlights() {
-    for blockNode in boxNodes {
-        if let placedBlock = blockNode.userData?["placedBlock"] as? PlacedBlock {
-            if canDeleteBlock(placedBlock) {
-                // Highlight deletable blocks (e.g., apply a glow effect)
-                blockNode.run(SKAction.sequence([
-                    SKAction.colorize(with: .green, colorBlendFactor: 0.5, duration: 0.2)
-                ]))
-            } else {
-                // Gray-out non-deletable blocks
-                blockNode.run(SKAction.sequence([
-                    SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2)
-                ]))
+        // Dim out almost all scene elements except placeholders, score, and gameOverUI
+        // This draws attention to the grid and the blocks that can be deleted
+        for child in children {
+            if !(child is BBoxNode) &&
+                child.name?.starts(with: "powerupPlaceholder") == false &&
+                child.name != "scoreContainer" &&
+                child.name != "gameOverUI" &&
+                child.name != "restartButton" {
+                child.run(SKAction.fadeAlpha(to: 0.3, duration: 0.2))
             }
         }
-    }
-}
 
-func canDeleteBlock(_ placedBlock: PlacedBlock) -> Bool {
-    return placedBlock.cellNodes.count == placedBlock.gridPositions.count
-}
-    
+        // Highlight placed blocks that can be deleted
+        for placedBlock in placedBlocks {
+            if canDeleteBlock(placedBlock) {
+                // This placed block is fully intact and can be deleted
+                // Give it a bright green highlight and a subtle pulse
+                for cellNode in placedBlock.cellNodes {
+                    cellNode.removeAllActions()
+                    cellNode.run(SKAction.group([
+                        SKAction.fadeAlpha(to: 1.0, duration: 0.2),
+                        SKAction.colorize(with: .green, colorBlendFactor: 0.7, duration: 0.2)
+                    ]))
+                    
+                    // Add a pulsing scale effect to draw attention
+                    let scaleUp = SKAction.scale(to: 1.1, duration: 0.3)
+                    let scaleDown = SKAction.scale(to: 1.0, duration: 0.3)
+                    let pulse = SKAction.sequence([scaleUp, scaleDown])
+                    cellNode.run(SKAction.repeatForever(pulse))
+                }
+            } else {
+                // This placed block cannot be deleted (not all original cells are present)
+                // Fade it out and color it gray
+                for cellNode in placedBlock.cellNodes {
+                    cellNode.removeAllActions()
+                    cellNode.run(SKAction.group([
+                        SKAction.fadeAlpha(to: 0.3, duration: 0.2),
+                        SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2)
+                    ]))
+                }
+            }
+        }
+
+        // Newly spawned blocks (in boxNodes) cannot be deleted since they're not placed
+        // Fade them out and color them gray
+        for blockNode in boxNodes {
+            blockNode.removeAllActions()
+            blockNode.run(SKAction.group([
+                SKAction.fadeAlpha(to: 0.3, duration: 0.2),
+                SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2)
+            ]))
+        }
+    }
+
+
+
+    func canDeleteBlock(_ placedBlock: PlacedBlock) -> Bool {
+        // Ensure all cells of the block are still present in the grid
+        return placedBlock.cellNodes.count == placedBlock.gridPositions.count &&
+               placedBlock.gridPositions.allSatisfy { grid[$0.row][$0.col] != nil }
+    }
+
 
 
     
