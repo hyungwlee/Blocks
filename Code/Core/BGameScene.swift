@@ -690,21 +690,31 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         return true
     }
 
-   func deactivateActivePowerup() {
-    if let activeIcon = activePowerupIcon {
-        removeHighlightFromPowerupIcon(activeIcon)
-        activePowerupIcon = nil
+    func deactivateActivePowerup() {
+        if let activeIcon = activePowerupIcon {
+            removeHighlightFromPowerupIcon(activeIcon)
+            activePowerupIcon = nil
+        }
+        activePowerup = nil
+        
+        // Reset block highlights when the power-up is deactivated
+        resetBlockHighlights()
+        
+        // Additional cleanup for specific power-ups
+        removeMultiplierLabel() // Ensure multiplier label is removed if applicable
+        
+        resetGridVisuals()
+        
+        // Reset visuals of spawned blocks
+        for blockNode in boxNodes {
+            blockNode.removeAllActions()
+            blockNode.run(SKAction.group([
+                SKAction.fadeAlpha(to: 1.0, duration: 0.2),
+                SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2)
+            ]))
+        }
     }
-    activePowerup = nil
-    
-    // Reset block highlights when the power-up is deactivated
-    resetBlockHighlights()
-    
-    // Additional cleanup for specific power-ups
-    removeMultiplierLabel() // Ensure multiplier label is removed if applicable
-    
-    resetGridVisuals()
-}
+
 
 
 
@@ -1191,44 +1201,49 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
     
 
 
-    func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
-        var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
+    var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
-        for col in 0..<gridSize {
-            if let cellNode = grid[row][col] {
-                // Store the cell's original position
-                let originalPosition = cellNode.position
+    for col in 0..<gridSize {
+        if let cellNode = grid[row][col] {
+            let originalPosition = cellNode.position
 
-                // Clear animations for visual feedback
-                let burstAction = SKAction.group([
-                    SKAction.scale(to: 1.5, duration: 0.2),
-                    SKAction.fadeOut(withDuration: 0.2),
-                    SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
-                ])
+            let burstAction = SKAction.group([
+                SKAction.scale(to: 1.5, duration: 0.2),
+                SKAction.fadeOut(withDuration: 0.2),
+                SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
+            ])
 
-                // Remove node after animation
-                let removeAction = SKAction.run {
-                    cellNode.removeFromParent()
-                }
-
-                let sequence = SKAction.sequence([burstAction, removeAction])
-                cellNode.run(sequence)
-
-                // Reset the grid state
-                grid[row][col] = nil
-                clearedCells.append((row: row, col: col, cellNode: cellNode))
-
-                // Ensure user data is cleared
-                cellNode.userData = nil
-            } else {
-                print("Cell at row \(row), col \(col) is already nil.")
+            let removeAction = SKAction.run {
+                cellNode.removeFromParent()
             }
-        }
 
-        print("Row \(row) cleared successfully.")
-        return clearedCells
+            let sequence = SKAction.sequence([burstAction, removeAction])
+            cellNode.run(sequence)
+
+            grid[row][col] = nil
+            clearedCells.append((row: row, col: col, cellNode: cellNode))
+
+            cellNode.userData?["originalPosition"] = originalPosition
+        }
     }
 
+    // Add multiplier animation if the power-up is active and it hasn't been shown yet
+    if activePowerup == .multiplier && !hasShownMultiplierEffect {
+        // Remove multiplier label before showing the effect
+        removeMultiplierLabel()
+
+        let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
+        showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY))
+
+        // Mark the effect as shown to prevent multiple triggers
+        hasShownMultiplierEffect = true
+    }
+
+    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+
+    return clearedCells
+}
 
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
@@ -1237,7 +1252,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         if let cellNode = grid[row][col] {
             let originalPosition = cellNode.position
 
-            let burstAction = SKAction.group([ 
+            let burstAction = SKAction.group([
                 SKAction.scale(to: 1.5, duration: 0.2),
                 SKAction.fadeOut(withDuration: 0.2),
                 SKAction.moveBy(x: CGFloat.random(in: -30...30), y: CGFloat.random(in: -30...30), duration: 0.3)
@@ -1433,46 +1448,47 @@ func showGameOverScreen() {
 
     
     func restartGame() {
-        // Unpause the scene before re-initializing.
-        self.isPaused = false
-        
-        print("Restarting game...")
-        
-        // Stop the Game Over sound if playing
-        gameOverAudioPlayer?.stop()
-        gameOverAudioPlayer = nil
-        
-        score = 0
-        updateScoreLabel()
-        
-        // Reset the grid and remove all children
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        removeAllChildren()
-        
-        isGameOver = false
-        placedBlocks.removeAll()
-        undoStack.removeAll()
-        
-        // Re-add game elements
-        createGrid()
-        addScoreLabel()
-        createPowerupPlaceholders()
-        createProgressBar()
-        spawnNewBlocks()
-        setupGridHighlights()
-        
-        // Restart background music
-        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-            backgroundMusic = SKAudioNode(url: url)
-            if let backgroundMusic = backgroundMusic {
-                backgroundMusic.autoplayLooped = true
-                backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
-                addChild(backgroundMusic)
-            }
-        } else {
-            print("Error: Background music file not found.")
-        }
-    }
+           // Unpause the scene before re-initializing.
+           self.isPaused = false
+           
+           print("Restarting game...")
+           
+           // Stop the Game Over sound if playing
+           gameOverAudioPlayer?.stop()
+           gameOverAudioPlayer = nil
+           
+           score = 0
+           updateScoreLabel()
+           
+           // Reset the grid and remove all children
+           grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+           removeAllChildren()
+           
+           isGameOver = false
+           placedBlocks.removeAll()
+           undoStack.removeAll()
+           
+           // Re-add game elements
+           createGrid()
+           addScoreLabel()
+           createPowerupPlaceholders()
+           createProgressBar()
+           spawnNewBlocks()
+           setupGridHighlights()
+           
+           // Restart background music
+           if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+               backgroundMusic = SKAudioNode(url: url)
+               if let backgroundMusic = backgroundMusic {
+                   backgroundMusic.autoplayLooped = true
+                   backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
+                   addChild(backgroundMusic)
+               }
+           } else {
+               print("Error: Background music file not found.")
+           }
+       }
+
 
     
     func updateScoreLabel() {
@@ -1716,37 +1732,21 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         for row in 0..<gridSize {
             for col in 0..<gridSize {
                 if let cellNode = grid[row][col] {
-                    // Reset alpha
+                    // Reset visuals only if the cell is occupied logically
+                    guard grid[row][col] != nil else { continue }
+                    
+                    // Reset alpha and remove colorization
                     cellNode.alpha = 1.0
-
-                    // Remove colorization
                     cellNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
 
-                    // Remove any scale or pulse animations
+                    // Remove scale and animations
                     cellNode.removeAllActions()
                     cellNode.setScale(1.0)
                 }
             }
         }
-
-        // Reset block nodes (spawned blocks in the spawn area)
-        for blockNode in boxNodes {
-            blockNode.alpha = 1.0
-            blockNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
-            blockNode.removeAllActions()
-            blockNode.setScale(initialScale)
-        }
-
-        // Reset placed blocks
-        for placedBlock in placedBlocks {
-            for cellNode in placedBlock.cellNodes {
-                cellNode.alpha = 1.0
-                cellNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
-                cellNode.removeAllActions()
-                cellNode.setScale(1.0)
-            }
-        }
     }
+
 
     
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
@@ -2174,5 +2174,3 @@ extension UIImage {
         self.init(cgImage: image!.cgImage!)
     }
 }
-
-
