@@ -214,14 +214,47 @@ class BGameScene: SKScene {
             }
         }
     }
-    
+    func updatePowerupVisuals() {
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
+               let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode {
+                
+                if let activePowerup = activePowerup, // Check if there's an active power-up
+                   let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType,
+                   powerupType == activePowerup {
+                    // This is the active power-up, keep it highlighted
+                    highlightPowerupIcon(powerupIcon)
+                } else {
+                    // This is an inactive power-up, apply dimming or blur effect
+                    powerupIcon.run(SKAction.group([
+                        SKAction.fadeAlpha(to: 0.3, duration: 0.2), // Dim the alpha
+                        SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2) // Add a gray overlay
+                    ]))
+                }
+            }
+        }
+    }
+    func resetPowerupVisuals() {
+        for i in 0..<4 {
+            if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
+               let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode {
+                
+                // Reset the alpha and remove colorization
+                powerupIcon.run(SKAction.group([
+                    SKAction.fadeAlpha(to: 1.0, duration: 0.2),
+                    SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2)
+                ]))
+            }
+        }
+    }
+
     func startPowerupShuffle(in placeholder: SKShapeNode) {
         // Remove existing icons (e.g., question mark)
         placeholder.removeAllChildren()
         
         // Create an SKSpriteNode to display the power-up icon
         let powerupIcon = SKSpriteNode()
-        powerupIcon.size = CGSize(width: 40, height: 40)
+        powerupIcon.size = CGSize(width: 60, height: 60)
         powerupIcon.position = CGPoint.zero
         powerupIcon.name = "powerupIcon"
         placeholder.addChild(powerupIcon)
@@ -704,7 +737,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         removeMultiplierLabel() // Ensure multiplier label is removed if applicable
         
         resetGridVisuals()
-        
+        resetPowerupVisuals()
         // Reset visuals of spawned blocks
         for blockNode in boxNodes {
             blockNode.removeAllActions()
@@ -1603,6 +1636,7 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             activePowerup = powerupType
             activePowerupIcon = powerupIcon
             highlightPowerupIcon(powerupIcon)
+            updatePowerupVisuals()
 
             if powerupType == .undo {
                 if let placeholder = powerupIcon.parent as? SKShapeNode,
