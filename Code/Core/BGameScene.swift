@@ -73,7 +73,7 @@ class BGameScene: SKScene {
     let availablePowerups: [Powerup] = [
         Powerup(type: .delete, imageName: "delete.png"),
         Powerup(type: .swap, imageName: "swap.png"),
-        Powerup(type: .undo, imageName: "undo.png"),
+//        Powerup(type: .undo, imageName: "undo.png"),
         Powerup(type: .multiplier, imageName: "multiplier.webp")
     ]
     
@@ -608,7 +608,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
 
         let newBlocks = generateRandomShapes(count: 3)
         boxNodes = newBlocks
-        layoutSpawnedBlocks() // Only call here after new blocks are added
+        layoutSpawnedBlocks(isThreeNewBlocks: true) // Only call here after new blocks are added
 
         if !checkForPossibleMoves(for: newBlocks) {
             showGameOverScreen()
@@ -628,7 +628,9 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         return shapes
     }
 
-    func layoutSpawnedBlocks() {
+    func layoutSpawnedBlocks(isThreeNewBlocks: Bool) {
+        guard boxNodes.count > 0 else { return }
+        
         let scaledTileSize = tileSize * 0.6  // Adjust scale to make blocks visually smaller
 
         // Define X positions for the three blocks: 1/4, 1/2, 3/4 of screen width
@@ -641,17 +643,33 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         // Y position remains unchanged, but ensure blocks are vertically centered on this position
         let blockYPosition = size.height * 0.3
 
-        // Ensure there are exactly three blocks
-        guard boxNodes.count == 3 else {
-            print("Error: Expected exactly 3 blocks, found \(boxNodes.count)")
-            return
+        if isThreeNewBlocks {
+            for (index, block) in boxNodes.enumerated() {
+                block.position.x = xPositions[index]
+            }
+        }
+        
+        var positionInfo = [-1, -1, -1]
+        for (index, block) in boxNodes.enumerated() {
+            if block.position.x < size.width * 0.35 {
+                positionInfo[0] = index
+            } else if block.position.x < size.width * 0.65 {
+                positionInfo[1] = index
+            } else {
+                positionInfo[2] = index
+            }
         }
 
-        for (index, block) in boxNodes.enumerated() {
-
+        
+        for (index, blockIndex) in positionInfo.enumerated() {
+            if blockIndex == -1 { continue }
+            
+            let block = boxNodes[blockIndex]
+            
             // Calculate block's height based on its grid height and scaled tile size
             let blockHeight = CGFloat(block.gridHeight) * scaledTileSize
             let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
+
             
             let xPosition = xPositions[index] - (blockWidth / 2)
 
@@ -799,7 +817,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
             for spawnedBlock in boxNodes {
                 safeAddBlock(spawnedBlock)
             }
-            layoutSpawnedBlocks()
+            layoutSpawnedBlocks(isThreeNewBlocks: true)
             isUndoInProgress = false
         } else if boxNodes.isEmpty {
             spawnNewBlocks()
@@ -1792,7 +1810,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         safeAddBlock(newBlock)
         
         // Update the positions of the spawning blocks
-        layoutSpawnedBlocks()
+        layoutSpawnedBlocks(isThreeNewBlocks: false)
         
         // Check for game-over condition after deletion
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
