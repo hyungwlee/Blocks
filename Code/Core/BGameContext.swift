@@ -61,7 +61,25 @@ class BGameContext: GameContext {
         // Update placing state based on the state
         placingState = (stateClass == BGamePlacingState.self)
     }
+    
+    func configureLayoutInfo() {
+    let screenSize = UIScreen.main.bounds.size
 
+    layoutInfo.initialScale = calculateInitialScale(for: screenSize)
+}
+    
+    private func calculateInitialScale(for screenSize: CGSize) -> CGFloat {
+    if UIDevice.current.userInterfaceIdiom == .phone {
+        if screenSize.width <= 375 { // Adjust for iPhone SE (3rd generation)
+            return 0.5
+        } else {
+            return 0.6 // Default initialScale for other iPhones
+        }
+    }
+    return 0.6 // Default initialScale if device type is unknown
+}
+    
+ 
     // Example method to transition to the placing state
     func startPlacing() {
         enterState(BGamePlacingState.self)

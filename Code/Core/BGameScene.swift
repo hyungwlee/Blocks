@@ -73,8 +73,8 @@ class BGameScene: SKScene {
     let availablePowerups: [Powerup] = [
         Powerup(type: .delete, imageName: "delete.png"),
         Powerup(type: .swap, imageName: "swap.png"),
-//        Powerup(type: .undo, imageName: "undo.png"),
-        Powerup(type: .multiplier, imageName: "multiplier.webp")
+        Powerup(type: .undo, imageName: "undo.png"),
+        Powerup(type: .multiplier, imageName: "multiplier.png")
     ]
     
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
@@ -461,7 +461,7 @@ class BGameScene: SKScene {
             addChild(backgroundMusic)
 
             // Lower the volume to 50% (0.5 out of 1.0)
-            backgroundMusic.run(SKAction.changeVolume(to: 0.5, duration: 0))
+            backgroundMusic.run(SKAction.changeVolume(to: 0.2, duration: 0))
         }
     } else {
         print("Error: Background music file not found.")
@@ -1228,16 +1228,10 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
 
-    // Add multiplier animation if the power-up is active and it hasn't been shown yet
-    if activePowerup == .multiplier && !hasShownMultiplierEffect {
-        // Remove multiplier label before showing the effect
-        removeMultiplierLabel()
-
+    // Show multiplier effect if the power-up is active
+    if activePowerup == .multiplier {
         let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
         showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY))
-
-        // Mark the effect as shown to prevent multiple triggers
-        hasShownMultiplierEffect = true
     }
 
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -1272,16 +1266,10 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
 
-    // Add multiplier animation if the power-up is active and it hasn't been shown yet
-    if activePowerup == .multiplier && !hasShownMultiplierEffect {
-        // Remove multiplier label before showing the effect
-        removeMultiplierLabel()
-
+    // Show multiplier effect if the power-up is active
+    if activePowerup == .multiplier {
         let colCenterX = gridToScreenPosition(row: gridSize / 2, col: col).x
         showMultiplierEffect(at: CGPoint(x: colCenterX, y: size.height / 2))
-
-        // Mark the effect as shown to prevent multiple triggers
-        hasShownMultiplierEffect = true
     }
 
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -1291,32 +1279,34 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 
 
-   func showMultiplierEffect(at position: CGPoint) {
-    let multiplierLabel = SKLabelNode(text: "x1.5")
-    multiplierLabel.fontSize = 60
-    multiplierLabel.fontName = "HelveticaNeue-Bold"
-    multiplierLabel.position = position
-    multiplierLabel.zPosition = 100
-    multiplierLabel.colorBlendFactor = 1.0
-    addChild(multiplierLabel)
+
+ func showMultiplierEffect(at position: CGPoint) {
+    let numberOfTexts = 5 // Number of "x1.5" texts to show
+    let textSpacing: CGFloat = 20 // Spacing between each "x1.5"
     
-    // Rainbow color animation
-    let rainbowColors: [SKColor] = [.red, .orange, .yellow, .green, .blue, .purple]
-    let colorChangeActions = rainbowColors.map { color in
-        SKAction.colorize(with: color, colorBlendFactor: 1.0, duration: 0.2)
+    // Loop through and create multiple "x1.5" labels
+    for i in 0..<numberOfTexts {
+        let multiplierLabel = SKLabelNode(text: "x1.5")
+        multiplierLabel.fontSize = 25
+        multiplierLabel.fontName = "HelveticaNeue-Bold"
+        multiplierLabel.position = CGPoint(x: position.x + CGFloat(i) * textSpacing - CGFloat(numberOfTexts - 1) * textSpacing / 2, y: position.y)
+        multiplierLabel.zPosition = 100
+        multiplierLabel.alpha = 0.0 // Start invisible
+        multiplierLabel.color = .systemTeal // Lighter blue color
+        multiplierLabel.colorBlendFactor = 1.0 // Apply the color blend
+        addChild(multiplierLabel)
+        
+        // Animation sequence: fade in and out smoothly
+        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let delay = SKAction.wait(forDuration: Double(i) * 0.2) // Stagger each label's fade-in
+        let sequence = SKAction.sequence([delay, fadeIn, fadeOut])
+        
+        // Run the animation and remove the label after it fades out
+        let remove = SKAction.removeFromParent()
+        let fullSequence = SKAction.sequence([sequence, remove])
+        multiplierLabel.run(fullSequence)
     }
-    let rainbowSequence = SKAction.sequence(colorChangeActions)
-    let repeatRainbow = SKAction.repeatForever(rainbowSequence)
-    multiplierLabel.run(repeatRainbow)
-    
-    // Scale and fade out animation
-    let fadeOut = SKAction.fadeOut(withDuration: 1.5)
-    let scaleUp = SKAction.scale(to: 2.0, duration: 1.5)
-    let group = SKAction.group([fadeOut, scaleUp])
-    let remove = SKAction.removeFromParent()
-    let sequence = SKAction.sequence([group, remove])
-    
-    multiplierLabel.run(sequence)
     
     // Debug print
     print("Multiplier effect triggered at position: \(position)")
@@ -1502,7 +1492,7 @@ func showMultiplierLabel() {
     // Create an "x1.5" label to show next to the score container
     let multiplierLabel = SKLabelNode(text: "x1.5")
     multiplierLabel.fontSize = 30
-    multiplierLabel.fontColor = .green
+    multiplierLabel.fontColor = .systemBlue
     multiplierLabel.fontName = "Helvetica-Bold"
     multiplierLabel.position = CGPoint(x: size.width / 2 + 120, y: size.height - 100) // Position next to the score container
     multiplierLabel.alpha = 0 // Initially hidden
@@ -1511,36 +1501,24 @@ func showMultiplierLabel() {
     // Add the label to the scene
     addChild(multiplierLabel)
     
-    // Animate the label's appearance (fade in and scale up)
-    let fadeIn = SKAction.fadeIn(withDuration: 0.3)
-    let scaleUp = SKAction.scale(to: 1.2, duration: 0.3)
-    multiplierLabel.run(SKAction.group([fadeIn, scaleUp]))
-
-    // Rainbow color animation
-    let rainbowColors: [UIColor] = [
-        .red, .orange, .yellow, .green, .blue, .purple, .cyan
-    ]
+    // Animate the label's appearance with a smooth fade-in
+    let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+    let scaleIn = SKAction.scale(to: 1.0, duration: 0.5)
+    multiplierLabel.run(SKAction.group([fadeIn, scaleIn]))
     
-    var colorActions: [SKAction] = []
-    for (index, color) in rainbowColors.enumerated() {
-        let colorAction = SKAction.run {
-            multiplierLabel.fontColor = color
-        }
-        let delayAction = SKAction.wait(forDuration: 0.2)
-        colorActions.append(colorAction)
-        colorActions.append(delayAction)
-    }
-    
-    let rainbowSequence = SKAction.sequence(colorActions)
-    let repeatRainbow = SKAction.repeatForever(rainbowSequence)
-    multiplierLabel.run(repeatRainbow)
+    // Gentle shimmer effect
+    let shimmer = SKAction.sequence([
+        SKAction.fadeAlpha(to: 0.8, duration: 0.8),
+        SKAction.fadeAlpha(to: 1.0, duration: 0.8)
+    ])
+    let repeatShimmer = SKAction.repeatForever(shimmer)
+    multiplierLabel.run(repeatShimmer)
 
-    // Pulsing animation (scale up and down)
-    let pulseUp = SKAction.scale(to: 1.3, duration: 0.5)
-    let pulseDown = SKAction.scale(to: 1.1, duration: 0.5)
-    let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
-    let pulsing = SKAction.repeatForever(pulseSequence)
-    multiplierLabel.run(pulsing)
+    // Delayed removal to prevent clutter
+    let wait = SKAction.wait(forDuration: 3.0)
+    let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+    let remove = SKAction.removeFromParent()
+    multiplierLabel.run(SKAction.sequence([wait, fadeOut, remove]))
 }
 
 
@@ -1570,10 +1548,44 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         return
     }
 
-    // Check if a power-up icon is tapped
+  // Check if a power-up icon is tapped
     if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
        let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
-        
+
+        // Check if tapped power-up is in the placeholder
+        if let placeholder = powerupIcon.parent as? SKShapeNode,
+           placeholder.name == "powerupPlaceholder0" ||
+               placeholder.name == "powerupPlaceholder1" ||
+               placeholder.name == "powerupPlaceholder2" ||
+               placeholder.name == "powerupPlaceholder3"{ // Assuming the placeholder name is correct
+
+            print("Power-up icon tapped in placeholder!")
+            print("Placeholder name: \(placeholder.name)")
+            print("Power-up icon name: \(powerupIcon.name)")
+
+            // Play sound effect
+            if let url = Bundle.main.url(forResource: "first", withExtension: "mp3") {
+                do {
+                    audioPlayer = try AVAudioPlayer(contentsOf: url)
+                    audioPlayer?.prepareToPlay()
+                    audioPlayer?.play()
+                    audioPlayer?.volume = 0.2 // Adjust the volume (0.0 to 1.0)
+                    print("Sound effect played")
+                } catch {
+                    print("Error: Unable to play sound - \(error)")
+                }
+            } else {
+                print("Error: Audio file not found.")
+            }
+
+            // ... rest of power-up handling logic ...
+        } else {
+            print("Power-up icon tapped outside placeholder: \(nodeTapped.name)")
+            print("Parent node: \(nodeTapped.parent?.name ?? "No parent")")
+        }
+
+
+        // ... rest of power-up handling logic ...
         if let currentActivePowerupIcon = activePowerupIcon {
             if currentActivePowerupIcon == powerupIcon {
                 // Tapped on the active power-up icon, so deactivate it
@@ -1591,7 +1603,7 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             activePowerup = powerupType
             activePowerupIcon = powerupIcon
             highlightPowerupIcon(powerupIcon)
-            
+
             if powerupType == .undo {
                 if let placeholder = powerupIcon.parent as? SKShapeNode,
                    let index = placeholderIndex(for: placeholder) {
@@ -1615,18 +1627,18 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         case .delete:
             if let cellNode = nodeTapped.closestParent(ofType: SKShapeNode.self),
                let placedBlock = cellNode.userData?["placedBlock"] as? PlacedBlock {
-               
-               let wasDeleted = deletePlacedBlock(placedBlock, updateScore: false)
-               
-               if wasDeleted {
-                   if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-                      let index = placeholderIndex(for: placeholder) {
-                       resetPlaceholder(at: index)
-                   }
-                   deactivateActivePowerup()
-               } else {
-                   print("Block could not be deleted because it wasn't full. Power-up remains active.")
-               }
+
+                let wasDeleted = deletePlacedBlock(placedBlock, updateScore: false)
+
+                if wasDeleted {
+                    if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+                       let index = placeholderIndex(for: placeholder) {
+                        resetPlaceholder(at: index)
+                    }
+                    deactivateActivePowerup()
+                } else {
+                    print("Block could not be deleted because it wasn't full. Power-up remains active.")
+                }
             }
             return
 
@@ -1657,7 +1669,7 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for blockNode in boxNodes {
             let distance = distanceBetweenPoints(location, blockNode.position)
             let selectionRadius: CGFloat = 100
-            
+
             print("Distance from touch to block: \(distance), Selection radius: \(selectionRadius)")
 
             if distance < selectionRadius {
@@ -1678,6 +1690,7 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
                 audioPlayer = try AVAudioPlayer(contentsOf: url)
                 audioPlayer?.prepareToPlay()
                 audioPlayer?.play()
+                audioPlayer?.volume = 0.2
             } catch {
                 print("Error: Unable to play sound - \(error)")
             }
