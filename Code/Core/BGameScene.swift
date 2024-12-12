@@ -143,7 +143,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
         var progressBar: SKSpriteNode? // Updated to SKSpriteNode
         var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
@@ -1481,46 +1481,52 @@ func showGameOverScreen() {
 
     
     func restartGame() {
-           // Unpause the scene before re-initializing.
-           self.isPaused = false
-           
-           print("Restarting game...")
-           
-           // Stop the Game Over sound if playing
-           gameOverAudioPlayer?.stop()
-           gameOverAudioPlayer = nil
-           
-           score = 0
-           updateScoreLabel()
-           
-           // Reset the grid and remove all children
-           grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-           removeAllChildren()
-           
-           isGameOver = false
-           placedBlocks.removeAll()
-           undoStack.removeAll()
-           
-           // Re-add game elements
-           createGrid()
-           addScoreLabel()
-           createPowerupPlaceholders()
-           createProgressBar()
-           spawnNewBlocks()
-           setupGridHighlights()
-           
-           // Restart background music
-           if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-               backgroundMusic = SKAudioNode(url: url)
-               if let backgroundMusic = backgroundMusic {
-                   backgroundMusic.autoplayLooped = true
-                   backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
-                   addChild(backgroundMusic)
-               }
-           } else {
-               print("Error: Background music file not found.")
-           }
-       }
+        // Unpause the scene before re-initializing.
+        self.isPaused = false
+        
+        print("Restarting game...")
+        
+        // Stop the Game Over sound if playing
+        gameOverAudioPlayer?.stop()
+        gameOverAudioPlayer = nil
+        
+        score = 0
+        updateScoreLabel()
+        
+        // Reset the grid and remove all children
+        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+        removeAllChildren()
+        
+        isGameOver = false
+        placedBlocks.removeAll()
+        undoStack.removeAll()
+        
+        // Reset power-up state
+        activePowerup = nil
+        activePowerupIcon = nil
+        linesCleared = 0
+        
+        // Re-add game elements
+        createGrid()
+        addScoreLabel()
+        createPowerupPlaceholders() // Recreate placeholders with default state
+        createProgressBar()         // Recreate the progress bar
+        spawnNewBlocks()
+        setupGridHighlights()
+        
+        // Restart background music
+        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+            backgroundMusic = SKAudioNode(url: url)
+            if let backgroundMusic = backgroundMusic {
+                backgroundMusic.autoplayLooped = true
+                backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
+                addChild(backgroundMusic)
+            }
+        } else {
+            print("Error: Background music file not found.")
+        }
+    }
+
 
 
     
@@ -2266,14 +2272,25 @@ extension SKNode {
         return nil
     }
 }
+//extension UIImage {
+//    convenience init(color: UIColor, size: CGSize) {
+//        let rect = CGRect(origin: .zero, size: size)
+//        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+//        color.setFill()
+//        UIRectFill(rect)
+//        let image = UIGraphicsGetImageFromCurrentImageContext()
+//        UIGraphicsEndImageContext()
+//        self.init(cgImage: image!.cgImage!)
+//    }
+//}
 extension UIImage {
+    // Utility to create textures from UIColor
     convenience init(color: UIColor, size: CGSize) {
-        let rect = CGRect(origin: .zero, size: size)
-        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+        UIGraphicsBeginImageContext(size)
         color.setFill()
-        UIRectFill(rect)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIRectFill(CGRect(origin: .zero, size: size))
+        let image = UIGraphicsGetImageFromCurrentImageContext()!
         UIGraphicsEndImageContext()
-        self.init(cgImage: image!.cgImage!)
+        self.init(cgImage: image.cgImage!)
     }
 }
