@@ -218,22 +218,26 @@ class BGameScene: SKScene {
         for i in 0..<4 {
             if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
                let powerupIcon = placeholder.childNode(withName: "powerupIcon") as? SKSpriteNode {
-                
-                if let activePowerup = activePowerup, // Check if there's an active power-up
-                   let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType,
-                   powerupType == activePowerup {
-                    // This is the active power-up, keep it highlighted
-                    highlightPowerupIcon(powerupIcon)
+
+                // Skip greying out visuals for undo since it is instant
+                if activePowerup == .undo {
+                    continue
+                }
+
+                if let activePowerupIcon = activePowerupIcon, activePowerupIcon == powerupIcon {
+                    highlightPowerupIcon(powerupIcon) // Highlight the active icon
                 } else {
-                    // This is an inactive power-up, apply dimming or blur effect
                     powerupIcon.run(SKAction.group([
-                        SKAction.fadeAlpha(to: 0.3, duration: 0.2), // Dim the alpha
-                        SKAction.colorize(with: .gray, colorBlendFactor: 0.5, duration: 0.2) // Add a gray overlay
+                        SKAction.fadeAlpha(to: 0.3, duration: 0.2),
+                        SKAction.colorize(with: .gray, colorBlendFactor: 0.7, duration: 0.2)
                     ]))
                 }
             }
         }
     }
+
+
+
     func resetPowerupVisuals() {
         for i in 0..<4 {
             if let placeholder = childNode(withName: "powerupPlaceholder\(i)") as? SKShapeNode,
@@ -313,13 +317,13 @@ class BGameScene: SKScene {
     }
     
     func highlightPowerupIcon(_ icon: SKSpriteNode) {
-        // Add a visual effect to indicate activation, e.g., a glowing border
-        let glow = SKAction.run {
-            icon.color = .yellow
-            icon.colorBlendFactor = 0.5
-        }
-        icon.run(glow)
+        icon.run(SKAction.group([
+            SKAction.fadeAlpha(to: 1.0, duration: 0.2), // Ensure fully visible
+            SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2), // Remove any grey overlay
+            SKAction.scale(to: 1.2, duration: 0.2) // Slightly enlarge the icon
+        ]))
     }
+
     
    func removeHighlightFromPowerupIcon(_ icon: SKSpriteNode) {
     let removeGlow = SKAction.group([
@@ -724,6 +728,12 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     }
 
     func deactivateActivePowerup() {
+        if activePowerup == .undo {
+               // Skip resetting visuals or highlights for undo since it is instant
+               activePowerup = nil
+               activePowerupIcon = nil
+               return
+           }
         if let activeIcon = activePowerupIcon {
             removeHighlightFromPowerupIcon(activeIcon)
             activePowerupIcon = nil
