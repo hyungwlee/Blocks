@@ -158,8 +158,7 @@ class BGameScene: SKScene {
         // Define progress bar dimensions
         let barWidth: CGFloat = size.width * 0.80
         let barHeight: CGFloat = 10
-        let placeholderYPosition = size.height * 0.1
-        let barY = placeholderYPosition - 10
+        let barY = size.height * 0.1
         let cornerRadius = barHeight / 2
 
         // Create the background for the progress bar
@@ -169,24 +168,29 @@ class BGameScene: SKScene {
         progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
         addChild(progressBarBackground!)
 
+        // Create a clipping node for the progress bar
+        let clippingNode = SKCropNode()
+        clippingNode.position = progressBarBackground!.position
+        clippingNode.zPosition = progressBarBackground!.zPosition + 1
+
+        // Create a mask for the clipping node
+        let maskNode = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
+        maskNode.fillColor = .white
+        clippingNode.maskNode = maskNode
+
         // Create the progress bar as a shape node
-        progressBar = SKShapeNode(path: UIBezierPath(
-            roundedRect: CGRect(x: -barWidth / 2, y: -barHeight / 2, width: barWidth, height: barHeight),
-            byRoundingCorners: [.topLeft, .bottomLeft, .topRight, .bottomRight],
-            cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
-        ).cgPath)
+        progressBar = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
         progressBar?.fillColor = .green
         progressBar?.strokeColor = .clear
+        progressBar?.position = CGPoint(x: -barWidth / 2, y: 0) // Start from the left edge
+        progressBar?.xScale = 0.0 // Initially empty
 
-        // Position the progress bar
-        progressBar?.position = CGPoint(x: progressBarBackground!.position.x - barWidth / 2, y: barY)
-
-        // Initially set the scale to 0 (empty) or as needed
-        progressBar?.xScale = 0.0
-        progressBar?.yScale = 1.0
-
-        addChild(progressBar!)
+        // Add the progress bar to the clipping node
+        clippingNode.addChild(progressBar!)
+        addChild(clippingNode)
     }
+
+
 
 
     func updateProgressBar() {
@@ -196,32 +200,25 @@ class BGameScene: SKScene {
         }
 
         let barWidth = progressBarBackground.frame.width
-        let maxScale: CGFloat = 1.0  // Maximum xScale
         let progress = CGFloat(linesCleared) / CGFloat(requiredLinesForPowerup)
-        let newScale = min(progress, maxScale)
+        let newScale = min(progress, 1.0)
 
         // Update the scale of the progress bar
         progressBar.xScale = newScale
 
-        // Reposition so the left edge remains aligned with the background
-        progressBar.position = CGPoint(
-            x: progressBarBackground.position.x - barWidth / 2 + (barWidth * newScale) / 2,
-            y: progressBarBackground.position.y
-        )
+        // Reposition the progress bar to align with the background
+        let filledWidth = barWidth * newScale
+        progressBar.position = CGPoint(x: -barWidth / 2 + filledWidth / 2, y: 0)
 
         // If the bar reaches max scale, trigger the power-up
-        if newScale >= maxScale {
+        if newScale >= 1.0 {
             print("Power-up triggered!")
             progressBar.xScale = 0.0
-            progressBar.position = CGPoint(
-                x: progressBarBackground.position.x - barWidth / 2,
-                y: progressBarBackground.position.y
-            )
+            progressBar.position = CGPoint(x: -barWidth / 2, y: 0)
             linesCleared = 0
             spawnRandomPowerup()
         }
     }
-
 
 
     
