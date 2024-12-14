@@ -137,7 +137,7 @@ class BGameScene: SKScene {
             addChild(placeholder)
             
             // Add the question icon initially
-            let questionIcon = SKSpriteNode(imageNamed: "question.png")
+            let questionIcon = SKSpriteNode(imageNamed: "questionmark.png")
             questionIcon.size = CGSize(width: 40, height: 40)
             questionIcon.position = CGPoint.zero // Center within the placeholder
             questionIcon.name = "questionIcon\(i)"
@@ -330,7 +330,7 @@ class BGameScene: SKScene {
             placeholder.userData?["powerup"] = NSNull()
             
             // Add the question mark icon back
-            let questionIcon = SKSpriteNode(imageNamed: "question1.png")
+            let questionIcon = SKSpriteNode(imageNamed: "questionmark.png")
             questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
             questionIcon.position = CGPoint.zero // Center within the placeholder
             questionIcon.name = "questionIcon\(index)"
