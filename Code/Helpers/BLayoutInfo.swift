@@ -31,13 +31,7 @@ struct BLayoutInfo {
         self.boxSize = boxSize
         self.initialScale = initialScale
         // Adjust initialScale based on device type and screen size
-               if UIDevice.current.userInterfaceIdiom == .pad {
-                   if screenSize.width >= 792 { // iPad Pro and newer
-                       self.initialScale = 0.8 // Adjust for larger iPads
-                   } else {
-                       self.initialScale = 0.7 // Adjust for iPad 10th generation
-                   }
-               } else if UIDevice.current.userInterfaceIdiom == .phone {
+            if UIDevice.current.userInterfaceIdiom == .phone {
                    if screenSize.width <= 375 { // Adjust for iPhone SE (3rd generation)
                        self.initialScale = 0.5
                    } else {

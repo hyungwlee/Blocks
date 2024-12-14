@@ -8,8 +8,10 @@
 import SpriteKit
 import AVFoundation
 
+
 class BGameScene: SKScene {
     let gridSize = 8
+     var gameOverSoundPlayer: AVAudioPlayer? // Variable to store the sound action
     var hasShownMultiplierEffect = false  // Flag to track multiplier animation
     var tileSize: CGFloat {
         return (size.width - 40) / CGFloat(gridSize)
@@ -143,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
         var progressBar: SKSpriteNode? // Updated to SKSpriteNode
         var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
@@ -548,37 +550,29 @@ class BGameScene: SKScene {
     }
     
     // MARK: - Updated Score Label
-    func addScoreLabel() {
-        // Create a smaller and modern container node for the score
-        let scoreContainer = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25) // Slightly reduced size and corner radius
-        scoreContainer.fillColor = .white
-        scoreContainer.strokeColor = .clear
-        scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100) // Adjusted Y position slightly lower for balance
-        scoreContainer.name = "scoreContainer"
-        
-        // Add a subtle shadow effect to the container for a modern look
-        let shadowNode = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25)
-        shadowNode.fillColor = UIColor.black.withAlphaComponent(0.15)
-        shadowNode.strokeColor = .clear
-        shadowNode.position = CGPoint(x: scoreContainer.position.x + 2, y: scoreContainer.position.y - 2)
-        shadowNode.zPosition = -1
-        addChild(shadowNode)
-        
-        // Add the score label inside the container
-        let scoreLabel = SKLabelNode(text: "\(score)")
-        scoreLabel.fontSize = 24 // Reduced font size to match smaller container
-        scoreLabel.fontColor = .black
-        scoreLabel.fontName = "Helvetica-Bold"
-        scoreLabel.verticalAlignmentMode = .center
-        scoreLabel.position = CGPoint.zero // Centered within the container
-        scoreLabel.name = "scoreLabel"
-        
-        // Add the label to the container
-        scoreContainer.addChild(scoreLabel)
-        
-        // Add the container to the scene
-        addChild(scoreContainer)
-    }
+func addScoreLabel() {
+    // Create a smaller and modern container node for the score
+    let scoreContainer = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25) 
+    scoreContainer.fillColor = .lightGray 
+    scoreContainer.strokeColor = .clear
+    scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100) 
+    scoreContainer.name = "scoreContainer"
+
+    // Add the score label inside the container
+    let scoreLabel = SKLabelNode(text: "\(score)")
+    scoreLabel.fontSize = 24 
+    scoreLabel.fontColor = .black
+    scoreLabel.fontName = "Helvetica-Bold"
+    scoreLabel.verticalAlignmentMode = .center
+    scoreLabel.position = CGPoint.zero 
+    scoreLabel.name = "scoreLabel"
+    
+    // Add the label to the container
+    scoreContainer.addChild(scoreLabel)
+    
+    // Add the container to the scene
+    addChild(scoreContainer)
+}
     
     func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
         for block in blocks {
@@ -597,25 +591,108 @@ class BGameScene: SKScene {
 
 
 func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) {
+    // Create the dark red X shape using SKShapeNode
+    let xNode = SKShapeNode()
+    xNode.zPosition = 10 // Ensure it's on top of the grid
+    
+    // Get the grid dimensions
+    let gridWidth = CGFloat(gridSize) * tileSize
+    let gridHeight = CGFloat(gridSize) * tileSize
+    
+    // Set the X node size to a smaller value, e.g., 60% of the grid's size
+    let xNodeWidth = gridWidth * 0.6 // Adjust the percentage as needed
+    let xNodeHeight = gridHeight * 0.6 // Adjust the percentage as needed
+    xNode.path = createRoundedXPath(width: xNodeWidth, height: xNodeHeight)
+    
+    // Position the X at the center of the grid
+    let gridOrigin = getGridOrigin() // Assuming this gives the top-left corner of the grid
+    xNode.position = CGPoint(
+        x: gridOrigin.x + gridWidth / 2 - xNodeWidth / 2,  // Subtract half the width of the X node
+        y: gridOrigin.y + gridHeight / 2 - xNodeHeight / 2 // Subtract half the height of the X node
+    )
+    
+    xNode.fillColor = UIColor.red // Dark red color for the X
+    xNode.strokeColor = UIColor.red // Dark red stroke
+    xNode.lineWidth = 40 // Set line width for rounded edges
+
+    addChild(xNode)
+    
+    // Fade-in animation for the X node
+    let fadeInAction = SKAction.fadeIn(withDuration: 0.3)
+
+    // Fade actions for the blocks (apply colorize permanently)
     let fadeActions = nodes.map { node -> SKAction in
         if let spriteNode = node.children.first as? SKSpriteNode {
             return SKAction.sequence([
                 SKAction.group([
-                    SKAction.fadeAlpha(to: 0.5, duration: 0.2), // Fade effect
-                    SKAction.colorize(with: UIColor(white: 0.2, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Fully replace with dark gray
-                ])
+                    SKAction.fadeAlpha(to: 0.5, duration: 0.2), // Fade effect for blocks
+                    SKAction.colorize(with: UIColor(white: 0.2, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Darken the blocks
+                ]),
+                SKAction.run {
+                    // Ensure the color stays grey
+                    spriteNode.color = UIColor(white: 0.2, alpha: 1.0) // Apply grey color permanently
+                    spriteNode.colorBlendFactor = 1.0 // Keep the color blended
+                }
             ])
         }
         return SKAction() // No-op for nodes without children
     }
-    
+
     let animationGroup = SKAction.group(fadeActions)
-    let sequence = SKAction.sequence([animationGroup, SKAction.run(completion)])
+    let sequence = SKAction.sequence([animationGroup, fadeInAction, SKAction.run(completion)])
     
+    // Run the actions for the blocks and the "X"
     for node in nodes {
         node.run(sequence)
     }
+    
+    // Run the fade-in for the X node
+    xNode.run(fadeInAction)
 }
+
+
+// Helper function to create a rounded X path
+// Helper function to create a rounded X path
+func createRoundedXPath(width: CGFloat, height: CGFloat) -> CGPath {
+    let path = UIBezierPath()
+    let padding: CGFloat = 10 // Padding for the X's edges
+    let lineWidth: CGFloat = 40 // Set the line thickness for the X lines
+    let curveRadius: CGFloat = 20 // Radius for the curved ends
+
+    // Set the path's line width
+    path.lineWidth = lineWidth
+
+    // Set the path's line cap and join style
+    path.lineCapStyle = .round // Rounds the ends of the lines
+    path.lineJoinStyle = .round // Rounds the intersection of the lines
+
+    // First diagonal line (top-left to bottom-right)
+    let startPoint1 = CGPoint(x: padding, y: padding)
+    let endPoint1 = CGPoint(x: width - padding, y: height - padding)
+
+    path.move(to: startPoint1)
+    
+    // Create a curve at the start and end points using the curveRadius
+    path.addCurve(to: endPoint1, controlPoint1: CGPoint(x: startPoint1.x - curveRadius, y: startPoint1.y), 
+                  controlPoint2: CGPoint(x: endPoint1.x + curveRadius, y: endPoint1.y))
+
+    // Second diagonal line (bottom-left to top-right)
+    let startPoint2 = CGPoint(x: padding, y: height - padding)
+    let endPoint2 = CGPoint(x: width - padding, y: padding)
+
+    path.move(to: startPoint2)
+    
+    // Create a curve at the start and end points using the curveRadius
+    path.addCurve(to: endPoint2, controlPoint1: CGPoint(x: startPoint2.x - curveRadius, y: startPoint2.y), 
+                  controlPoint2: CGPoint(x: endPoint2.x + curveRadius, y: endPoint2.y))
+
+    return path.cgPath
+}
+
+
+
+
+
 
     func spawnNewBlocks() {
         guard !isGameOver else {
@@ -760,20 +837,19 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
 
 
 
-
- func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
+func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
     let row = gridPosition.row
     let col = gridPosition.col
     let gridOrigin = getGridOrigin()
-    
+
     if isPlacementValid(for: block, at: row, col: col) {
         let previousScore = score
         var addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
-        
+
         var occupiedCells = 0
         var cellNodes: [SKShapeNode] = []
         var gridPositions: [GridCoordinate] = []
-        
+
         // Place each cell of the block onto the grid
         for (index, cell) in block.shape.enumerated() {
             let gridRow = row + cell.row
@@ -795,28 +871,28 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
                 y: gridOrigin.y + CGFloat(gridRow) * tileSize + tileSize / 2
             )
             cellNode.position = cellPosition
-            
+
             addChild(cellNode)
             setCellOccupied(row: gridRow, col: gridCol, with: cellNode)
             occupiedCells += 1
 
             cellNodes.append(cellNode)
             gridPositions.append(GridCoordinate(row: gridRow, col: gridCol))
-            
+
             addedCells.append((row: gridRow, col: gridCol, cellNode: cellNode))
         }
-        
+
         // Create PlacedBlock object
         let placedBlock = PlacedBlock(cellNodes: cellNodes, gridPositions: gridPositions)
         for cellNode in cellNodes {
             cellNode.userData = ["placedBlock": placedBlock]
         }
         placedBlocks.append(placedBlock)
-        
+
         score += occupiedCells
         updateScoreLabel()
-        
-        // Add sparkle or other effects
+
+        // Original code to add sparkle effect
         addSparkleEffect(around: cellNodes)
 
         // Remove the block from the spawn area
@@ -829,15 +905,24 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         let clearedLines = checkForCompletedLines()
         let totalLinesCleared = clearedLines.count
         let totalPoints = totalLinesCleared * 10
-        
+
         // **Place the centroid and combo multiplier code here**
+        // Inside the part where lines are cleared:
+// Inside the part where lines are cleared:
         if totalLinesCleared > 0 {
+            // Trigger the success vibration using haptic feedback
+            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium) // Or .light, .heavy depending on the feedback intensity
+            feedbackGenerator.prepare()
+            feedbackGenerator.impactOccurred()
+
+            // Additional code for clearing lines and updating score
             // Calculate the centroid of the placed block’s cells
             let blockCenter = centroidOfBlockCells(cellNodes)
             // Show score and apply combo multiplier at the block center
             applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints, displayPosition: blockCenter)
         }
-        
+
+
         // Create a Move object for undo
         let move = Move(
             placedBlock: placedBlock,
@@ -859,22 +944,67 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
             isUndoInProgress = false
         } else if boxNodes.isEmpty {
             spawnNewBlocks()
-        } else if !checkForPossibleMoves(for: boxNodes) {
-            // Fade the blocks to grey and wait for animations and sounds to complete
-            let gridNodes = placedBlocks.flatMap { $0.cellNodes }
-            
-            let fadeDuration: TimeInterval = 0.1  // Duration of the fade animation
-            let soundDuration: TimeInterval = 0.0  // Estimated duration of the longest sound effect
-            
+        } // Handle spawning new blocks or checking for game-over
+// Handle spawning new blocks or checking for game-over
+else if !checkForPossibleMoves(for: boxNodes) {
+    // Create a sequence to play the sparkle effect first, then check for game-over
+    let sparkleAction = SKAction.run {
+        self.addSparkleEffect(around: cellNodes)
+    }
+
+    let waitForSparkle = SKAction.wait(forDuration: 0.5) // Adjust based on sparkle duration
+
+    let gameOverCheckAction = SKAction.run {
+        if !self.checkForPossibleMoves(for: self.boxNodes) {
+            let gridNodes = self.placedBlocks.flatMap { $0.cellNodes }
+            let fadeDuration: TimeInterval = 0.1
+            let soundDuration: TimeInterval = 0.0
             let totalWaitTime = fadeDuration + soundDuration
 
-            // Run fade-to-grey action
-            fadeBlocksToGrey(gridNodes) {
-                // Wait for both the fade and sound to complete before showing the game-over screen
+            // Create a more intense "shake buzz" vibration
+            let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
+            feedbackGenerator.prepare()
+
+            // Repeat the vibration rapidly for a shake/buzz effect
+            let vibrationDuration: TimeInterval = 1.0 // Total vibration duration
+            let interval: TimeInterval = 0.1 // Shorter interval for a buzz effect
+            let repetitions = Int(vibrationDuration / interval) // How many times to trigger the feedback
+
+            for _ in 0..<repetitions {
+                feedbackGenerator.impactOccurred()
+                feedbackGenerator.prepare()
+                Thread.sleep(forTimeInterval: interval) // Sleep between vibrations to create rapid bursts
+            }
+
+            // Play game over sound
+            if let gameOverSoundURL = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
+                do {
+                    self.gameOverSoundPlayer = try AVAudioPlayer(contentsOf: gameOverSoundURL)
+                    self.gameOverSoundPlayer?.volume = 0.5
+                    self.gameOverSoundPlayer?.prepareToPlay()
+                    self.gameOverSoundPlayer?.play()
+                } catch {
+                    print("Error loading sound file: \(error.localizedDescription)")
+                }
+            }
+
+            self.fadeBlocksToGrey(gridNodes) {
                 self.run(SKAction.wait(forDuration: totalWaitTime)) {
                     self.showGameOverScreen()
                 }
             }
+        }
+    }
+
+    // Run the sequence for sparkle effect and game over check
+    self.run(SKAction.sequence([sparkleAction, waitForSparkle, gameOverCheckAction]))
+}
+
+
+        if occupiedCells > 0 { // Check if at least one cell was placed
+            // Play haptic feedback for successful placement (single, light vibration)
+            let feedbackGenerator = UISelectionFeedbackGenerator()
+            feedbackGenerator.selectionChanged()
         }
 
         // Play the sound effect for placing a block
@@ -884,8 +1014,10 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         block.position = block.initialPosition
         block.run(SKAction.scale(to: initialScale, duration: 0.1))
     }
+
     printGridState()
 }
+
 
 
     func centroidOfBlockCells(_ cellNodes: [SKShapeNode]) -> CGPoint {
@@ -1160,42 +1292,47 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         return shadowLabel
     }
     
-    func displayComboAnimation(for multiplier: Int) {
-        // Define maximum position for the combo label based on screen size
-        let maxComboYPosition = frame.midY + 150
-        
-        // Position combo label within screen bounds
-        let comboLabelYPosition = min(frame.midY + 200, maxComboYPosition) // Clamps Y position to prevent going off-screen
-        
-        let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
-        comboLabel.fontSize = min(70, frame.width * 0.1)  // Adjust font size based on screen width
-        comboLabel.fontColor = .yellow
-        comboLabel.fontName = "Arial-BoldMT"
-        comboLabel.position = CGPoint(x: frame.midX, y: comboLabelYPosition)
-        
-        // Create shadow by adding another label
-        let shadowComboLabel = createShadowedLabel(text: "COMBO x\(multiplier)", position: comboLabel.position, fontSize: comboLabel.fontSize)
-        addChild(shadowComboLabel)
-        
-        addChild(comboLabel)  // Add combo label to the scene
-        
-        // Animation sequence (scale up, bounce, fade out)
-        let scaleUp = SKAction.scale(to: 1.5, duration: 0.2)
-        let bounce = SKAction.sequence([
-            SKAction.moveBy(x: 0, y: 20, duration: 0.1),
-            SKAction.moveBy(x: 0, y: -10, duration: 0.1),
-            SKAction.moveBy(x: 0, y: 10, duration: 0.1)
-        ])
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
-        let remove = SKAction.removeFromParent()
-        
-        let comboAnimation = SKAction.sequence([scaleUp, bounce, fadeOut, remove])
-        
-        comboLabel.run(comboAnimation)
-        shadowComboLabel.run(comboAnimation)  // Make shadow move as well
-    }
+func displayComboAnimation(for multiplier: Int) {
+    // Define maximum position for the combo label based on screen size
+    let maxComboYPosition = frame.midY + 150
     
-   func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
+    // Position combo label within screen bounds
+    let comboLabelYPosition = frame.midY + 300  // Position below screen
+    
+    let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
+    //comboLabel.fontSize = min(70, frame.width * 0.1)  // Adjust font size based on screen width
+    comboLabel.fontSize = min(40, frame.width * 0.08) // Reduced font size (adjust further as needed)
+    comboLabel.fontColor = .white
+    comboLabel.fontName = "Arial-BoldMT"
+    comboLabel.position = CGPoint(x: frame.midX, y: comboLabelYPosition)
+    
+        // Create shadow by adding another label
+    let shadowComboLabel = createShadowedLabel(text: "COMBO x\(multiplier)", position: comboLabel.position, fontSize: comboLabel.fontSize)
+    addChild(shadowComboLabel)
+    
+    addChild(comboLabel)  // Add combo label to the scene
+        
+    
+    
+        // Animation sequence (scale up, bounce, fade out)
+    let scaleUp = SKAction.scale(to: 1.5, duration: 0.5)  // Increased to 0.5 seconds
+    
+let bounce = SKAction.sequence([
+    SKAction.moveBy(x: 0, y: 80, duration: 0.2),  // Move up 80 pixels
+SKAction.moveBy(x: 0, y: -10, duration: 0.2),  // Minor downward movement
+SKAction.moveBy(x: 0, y: 10, duration: 0.2)   // Minor upward movement
+])
+    let fadeOut = SKAction.fadeOut(withDuration: 0.5)   // Increased to 0.5 seconds
+        let remove = SKAction.removeFromParent()
+    let delay = SKAction.wait(forDuration: 0.2)
+    let comboAnimation = SKAction.sequence([delay, scaleUp, bounce, fadeOut, remove])
+    
+    
+    comboLabel.run(comboAnimation)
+    shadowComboLabel.run(comboAnimation)  // Make shadow move as well
+} 
+    
+    func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
     let pointsLabel = SKLabelNode(text: "+\(points)")
     pointsLabel.fontName = "Arial-BoldMT"
     pointsLabel.fontSize = 24  // Smaller font size for less distraction
@@ -1323,38 +1460,31 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 
 
- func showMultiplierEffect(at position: CGPoint) {
-    let numberOfTexts = 5 // Number of "x1.5" texts to show
-    let textSpacing: CGFloat = 20 // Spacing between each "x1.5"
-    
-    // Loop through and create multiple "x1.5" labels
-    for i in 0..<numberOfTexts {
-        let multiplierLabel = SKLabelNode(text: "x1.5")
-        multiplierLabel.fontSize = 25
-        multiplierLabel.fontName = "HelveticaNeue-Bold"
-        multiplierLabel.position = CGPoint(x: position.x + CGFloat(i) * textSpacing - CGFloat(numberOfTexts - 1) * textSpacing / 2, y: position.y)
-        multiplierLabel.zPosition = 100
-        multiplierLabel.alpha = 0.0 // Start invisible
-        multiplierLabel.color = .systemTeal // Lighter blue color
-        multiplierLabel.colorBlendFactor = 1.0 // Apply the color blend
-        addChild(multiplierLabel)
-        
-        // Animation sequence: fade in and out smoothly
+func showMultiplierEffect(at position: CGPoint) {
+    let numberOfStars = 5
+    let starSpacing: CGFloat = 20
+
+    // Load the star image
+    let starImage = SKTexture(imageNamed: "multiplier3") // Replace with your image name
+
+    for i in 0..<numberOfStars {
+        // Create a sprite node with the star image
+        let starNode = SKSpriteNode(texture: starImage)
+        starNode.size = CGSize(width: 60, height: 60) // Adjust the size of the star
+        starNode.position = CGPoint(x: position.x + CGFloat(i) * starSpacing - CGFloat(numberOfStars - 1) * starSpacing / 2, y: position.y)
+        starNode.zPosition = 100
+        starNode.alpha = 0.0
+
+        addChild(starNode)
+
+        // Fade in and fade out actions
         let fadeIn = SKAction.fadeIn(withDuration: 0.5)
         let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-        let delay = SKAction.wait(forDuration: Double(i) * 0.2) // Stagger each label's fade-in
-        let sequence = SKAction.sequence([delay, fadeIn, fadeOut])
-        
-        // Run the animation and remove the label after it fades out
-        let remove = SKAction.removeFromParent()
-        let fullSequence = SKAction.sequence([sequence, remove])
-        multiplierLabel.run(fullSequence)
+        let delay = SKAction.wait(forDuration: Double(i) * 0.2)
+        let sequence = SKAction.sequence([delay, fadeIn, fadeOut, SKAction.removeFromParent()])
+        starNode.run(sequence)
     }
-    
-    // Debug print
-    print("Multiplier effect triggered at position: \(position)")
 }
-
 
 func showGameOverScreen() {
     isGameOver = true
@@ -1378,32 +1508,38 @@ func showGameOverScreen() {
     backgroundMusic?.removeFromParent()
     backgroundMusic = nil
     
-    // Play Game Over Sound (stop any sounds already playing)
-    if let url = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
-        do {
-            gameOverAudioPlayer = try AVAudioPlayer(contentsOf: url)
-            gameOverAudioPlayer?.play()
-        } catch {
-            print("Error: Unable to play Game Over sound. \(error.localizedDescription)")
-        }
-    }
+ // Set the background color to black
+    self.backgroundColor = UIColor.black
+
+    // Create the red Game Over banner (bottom layer)
+    let redBanner = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
+    redBanner.strokeColor = .black // Set stroke color to black
+    redBanner.fillColor = UIColor(red: 243.0 / 255.0, green: 80.0 / 255.0, blue: 76.0 / 255.0, alpha: 1.0) // Hex #F3504C converted
+    redBanner.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    redBanner.zPosition = 11
+    redBanner.name = "gameOverUI" // For cleanup
+    addChild(redBanner)
     
-    // Semi-transparent background overlay
-    let overlay = SKShapeNode(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-    overlay.fillColor = UIColor.black.withAlphaComponent(0.8)
-    overlay.strokeColor = UIColor.clear // Ensure no border is drawn
-    overlay.zPosition = 10
-    overlay.name = "gameOverUI"
-    overlay.position = CGPoint(x: 0, y: 0) // Align to screen's bottom-left corner
-    addChild(overlay)
     
-    // Create the red Game Over banner
-    let banner = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
-    banner.fillColor = UIColor.systemRed
-    banner.position = CGPoint(x: size.width / 2, y: size.height / 2)
-    banner.zPosition = 11
-    banner.name = "gameOverUI" // For cleanup
-    addChild(banner)
+    // Create the dark gray banner (top layer)
+    let grayBanner = SKShapeNode(rectOf: CGSize(width: size.width * 0.9, height: size.height * 0.18)) // Slightly smaller than red banner
+    grayBanner.strokeColor = .black // Set stroke color to black
+    grayBanner.fillColor = .black // Black
+    grayBanner.position = CGPoint(x: size.width / 2, y: size.height * 0.8) // Position the gray banner where the score label was
+    grayBanner.zPosition = 12 // Place above the red banner
+    grayBanner.name = "gameOverUI" // For cleanup
+    addChild(grayBanner)
+
+    // Create the "Game Over" label within the gray banner
+    let gameOverLabel = SKLabelNode(text: "Game Over")
+    gameOverLabel.fontSize = 36 // Adjust font size as needed
+    gameOverLabel.fontColor = UIColor.white
+    gameOverLabel.fontName = "HelveticaNeue-Bold"
+    gameOverLabel.position = CGPoint(x: 0, y: 0) // Position relative to the banner's center
+    gameOverLabel.horizontalAlignmentMode = .center
+    gameOverLabel.verticalAlignmentMode = .center
+    grayBanner.addChild(gameOverLabel) 
+    
     
     // Custom Smiley Face
     let faceRadius: CGFloat = 50
@@ -1447,15 +1583,15 @@ func showGameOverScreen() {
     mouth.name = "gameOverUI"
     addChild(mouth)
     
-    // Final score label
+  // Final score label (positioned below "Game Over" label)
     let finalScoreLabel = SKLabelNode(text: "Score: \(score)")
     finalScoreLabel.fontSize = 36
     finalScoreLabel.fontColor = UIColor.white
     finalScoreLabel.fontName = "HelveticaNeue-Bold"
-    finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.75)
-    finalScoreLabel.zPosition = 12
-    finalScoreLabel.name = "gameOverUI"
-    addChild(finalScoreLabel)
+    finalScoreLabel.position = CGPoint(x: 0, y: -(grayBanner.frame.height / 4)) // Position slightly below the center of the banner // Position slightly below the center
+    finalScoreLabel.horizontalAlignmentMode = .center
+    finalScoreLabel.verticalAlignmentMode = .center
+    grayBanner.addChild(finalScoreLabel)
     
     // Restart button
     let restartButton = SKShapeNode(rectOf: CGSize(width: size.width * 0.4, height: size.height * 0.08), cornerRadius: 10)
@@ -1469,8 +1605,9 @@ func showGameOverScreen() {
     restartLabel.fontSize = 24
     restartLabel.fontColor = UIColor.white
     restartLabel.fontName = "HelveticaNeue-Bold"
-    restartLabel.position = CGPoint(x: 0, y: -10)
-    restartLabel.zPosition = 13
+    restartLabel.position = CGPoint(x: 0, y: 0) // Position relative to the banner's center
+    restartLabel.horizontalAlignmentMode = .center
+    restartLabel.verticalAlignmentMode = .center
     restartLabel.name = "restartButton" // For touch detection
     restartButton.addChild(restartLabel)
     
@@ -1480,53 +1617,58 @@ func showGameOverScreen() {
 
 
     
-    func restartGame() {
-        // Unpause the scene before re-initializing.
-        self.isPaused = false
-        
-        print("Restarting game...")
-        
-        // Stop the Game Over sound if playing
-        gameOverAudioPlayer?.stop()
-        gameOverAudioPlayer = nil
-        
-        score = 0
-        updateScoreLabel()
-        
-        // Reset the grid and remove all children
-        grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        removeAllChildren()
-        
-        isGameOver = false
-        placedBlocks.removeAll()
-        undoStack.removeAll()
-        
-        // Reset power-up state
-        activePowerup = nil
-        activePowerupIcon = nil
-        linesCleared = 0
-        
-        // Re-add game elements
-        createGrid()
-        addScoreLabel()
-        createPowerupPlaceholders() // Recreate placeholders with default state
-        createProgressBar()         // Recreate the progress bar
-        spawnNewBlocks()
-        setupGridHighlights()
-        
-        // Restart background music
-        if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
-            backgroundMusic = SKAudioNode(url: url)
-            if let backgroundMusic = backgroundMusic {
-                backgroundMusic.autoplayLooped = true
-                backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
-                addChild(backgroundMusic)
-            }
-        } else {
-            print("Error: Background music file not found.")
-        }
-    }
+func restartGame() {
+    // Unpause the scene before re-initializing.
+    self.isPaused = false
 
+    print("Restarting game...")
+
+  // Stop and remove the game-over sound player
+   // Stop the game-over sound if it's playing
+   if let gameOverSoundPlayer = gameOverSoundPlayer {
+    gameOverSoundPlayer.stop() // Stop the audio playback
+    self.gameOverSoundPlayer = nil // Dereference the player if you no longer need it
+}
+
+
+   self.backgroundColor = UIColor(red: 38/255, green: 38/255, blue: 38/255, alpha: 1.0)
+    
+    score = 0
+    updateScoreLabel()
+
+    // Reset the grid and remove all children
+    grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
+    removeAllChildren()
+
+    isGameOver = false
+    placedBlocks.removeAll()
+    undoStack.removeAll()
+
+    // Reset power-up state
+    activePowerup = nil
+    activePowerupIcon = nil
+    linesCleared = 0
+
+    // Re-add game elements
+    createGrid()
+    addScoreLabel()
+    createPowerupPlaceholders() // Recreate placeholders with default state
+    createProgressBar() 
+    spawnNewBlocks()
+    setupGridHighlights()
+
+    // Restart background music
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+        backgroundMusic = SKAudioNode(url: url)
+        if let backgroundMusic = backgroundMusic {
+            backgroundMusic.autoplayLooped = true
+            backgroundMusic.run(SKAction.changeVolume(to: currentVolume, duration: 0))
+            addChild(backgroundMusic)
+        }
+    } else {
+        print("Error: Background music file not found.")
+    }
+}
 
 
     
@@ -1538,49 +1680,54 @@ func showGameOverScreen() {
     }
     
 func showMultiplierLabel() {
-    // Create an "x1.5" label to show next to the score container
-    let multiplierLabel = SKLabelNode(text: "x1.5")
-    multiplierLabel.fontSize = 30
-    multiplierLabel.fontColor = .systemBlue
-    multiplierLabel.fontName = "Helvetica-Bold"
-    multiplierLabel.position = CGPoint(x: size.width / 2 + 120, y: size.height - 100) // Position next to the score container
-    multiplierLabel.alpha = 0 // Initially hidden
-    multiplierLabel.name = "multiplierLabel" // Set the name for identification
+  // Create an SKSpriteNode for the multiplier image
+  let multiplierImage = SKSpriteNode(imageNamed: "multiplier2.png") // Replace with your image name
+  multiplierImage.size = CGSize(width: 50, height: 50) // Adjust size as needed
+  multiplierImage.position = CGPoint(x: size.width / 2 + 40, y: size.height - 115) // Position next to the score container
+  multiplierImage.alpha = 0 // Initially hidden
+  multiplierImage.name = "multiplierLabel" // Set the name for identification (optional)
 
-    // Add the label to the scene
-    addChild(multiplierLabel)
-    
-    // Animate the label's appearance with a smooth fade-in
-    let fadeIn = SKAction.fadeIn(withDuration: 0.5)
-    let scaleIn = SKAction.scale(to: 1.0, duration: 0.5)
-    multiplierLabel.run(SKAction.group([fadeIn, scaleIn]))
-    
-    // Gentle shimmer effect
-    let shimmer = SKAction.sequence([
-        SKAction.fadeAlpha(to: 0.8, duration: 0.8),
-        SKAction.fadeAlpha(to: 1.0, duration: 0.8)
-    ])
-    let repeatShimmer = SKAction.repeatForever(shimmer)
-    multiplierLabel.run(repeatShimmer)
+  // Add the image to the scene
+  addChild(multiplierImage)
 
-    // Delayed removal to prevent clutter
-    let wait = SKAction.wait(forDuration: 3.0)
-    let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-    let remove = SKAction.removeFromParent()
-    multiplierLabel.run(SKAction.sequence([wait, fadeOut, remove]))
+  // Animate the image's appearance with a smooth fade-in
+  let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+  let scaleIn = SKAction.scale(to: 1.0, duration: 0.5)
+  multiplierImage.run(SKAction.group([fadeIn, scaleIn]))
+
+  // Gentle shimmer effect (optional)
+  /*
+  let shimmer = SKAction.sequence([
+    SKAction.fadeAlpha(to: 0.8, duration: 0.8),
+    SKAction.fadeAlpha(to: 1.0, duration: 0.8)
+  ])
+  let repeatShimmer = SKAction.repeatForever(shimmer)
+  multiplierImage.run(repeatShimmer)
+  */
+
+  // Create a pulse action with desired duration and scale
+  let pulseUp = SKAction.scale(to: 1.1, duration: 0.5)
+  let pulseDown = SKAction.scale(to: 1.0, duration: 0.5)
+  let pulse = SKAction.sequence([pulseUp, pulseDown])
+  let repeatPulse = SKAction.repeatForever(pulse)
+
+  // Run the pulse animation after a slight delay
+  let delay = SKAction.wait(forDuration: 0.5) // Adjust delay if needed
+  let pulseSequence = SKAction.sequence([delay, repeatPulse])
+  multiplierImage.run(pulseSequence)
 }
 
 
-
 func removeMultiplierLabel() {
-    if let multiplierLabel = childNode(withName: "multiplierLabel") as? SKLabelNode {
-        // Animate label disappearance (fade out and scale down)
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
-        let scaleDown = SKAction.scale(to: 0.5, duration: 0.3)
-        
-        let removeAction = SKAction.sequence([SKAction.group([fadeOut, scaleDown]), SKAction.removeFromParent()])
-        multiplierLabel.run(removeAction)
-    }
+  if let multiplierLabel = childNode(withName: "multiplierLabel") as? SKSpriteNode {
+    // Animate label disappearance (fade out and scale down) - adjust for SpriteNode
+    let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+    // Scale actions are optional, adjust as needed
+    let scaleDown = SKAction.scale(to: 0.5, duration: 0.3)
+    
+    let removeAction = SKAction.sequence([SKAction.group([fadeOut, scaleDown]), SKAction.removeFromParent()])
+    multiplierLabel.run(removeAction)
+  }
 }
 
 
@@ -1600,6 +1747,10 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
   // Check if a power-up icon is tapped
     if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
        let powerupType = powerupIcon.userData?["powerupType"] as? PowerupType {
+        
+         // Play haptic feedback for power-up tap
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        feedbackGenerator.impactOccurred()
 
         // Check if tapped power-up is in the placeholder
         if let placeholder = powerupIcon.parent as? SKShapeNode,
