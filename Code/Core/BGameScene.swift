@@ -145,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -392,37 +392,6 @@ class BGameScene: SKScene {
         BZShapedBlock.self
     ]
     
-   /* func addHorizontalLines() {
-        let scaledTileSize = tileSize * 0.7
-        let verticalBlockHeight = 4 * scaledTileSize  // Adjusted height for scaled blocks
-        let placeholderHeight: CGFloat = 50
-        let spacing: CGFloat = 10  // Reduced spacing for a tighter layout
-
-        // Calculate positions for the lines
-        let centerX = size.width / 2
-        let topLineY = size.height * 0.350  // Adjusted Y position for the top line
-        let bottomLineY = topLineY - verticalBlockHeight - spacing  // Spaced below the top line
-
-        // Line thickness
-        let lineThickness: CGFloat = 1.5
-
-        // Create the top line
-        let topLine = SKShapeNode(rectOf: CGSize(width: size.width, height: lineThickness))
-        topLine.position = CGPoint(x: centerX, y: topLineY)
-        topLine.fillColor = .white
-        topLine.strokeColor = .clear
-        topLine.zPosition = 1
-        addChild(topLine)
-
-        // Create the bottom line
-        let bottomLine = SKShapeNode(rectOf: CGSize(width: size.width, height: lineThickness))
-        bottomLine.position = CGPoint(x: centerX, y: bottomLineY)
-        bottomLine.fillColor = .white
-        bottomLine.strokeColor = .clear
-        bottomLine.zPosition = 1
-        addChild(bottomLine)
-    }*/
-
 
 
 
@@ -2062,8 +2031,8 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             // Subtle pulse effect for spawned blocks
             for blockNode in boxNodes {
                 blockNode.removeAllActions() // Stop existing animations
-                let pulseUp = SKAction.scale(to: 0.7, duration: 0.3) // Subtle scale up
-                let pulseDown = SKAction.scale(to: 0.6, duration: 0.3) // Return to original size
+                let pulseUp = SKAction.scale(to: 0.7, duration: 0.6) // Subtle scale up
+                let pulseDown = SKAction.scale(to: 0.6, duration: 0.6) // Return to original size
                 let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
                 blockNode.run(SKAction.repeatForever(pulseSequence), withKey: "pulse")
             }
