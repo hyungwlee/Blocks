@@ -591,29 +591,27 @@ func addScoreLabel() {
 
 
 func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) {
-    // Create the dark red X shape using SKShapeNode
-    let xNode = SKShapeNode()
+    // Create the X image sprite using SKSpriteNode
+    let xNode = SKSpriteNode(imageNamed: "X") // Replace "X" with the name of your image asset
     xNode.zPosition = 10 // Ensure it's on top of the grid
-    
+
     // Get the grid dimensions
     let gridWidth = CGFloat(gridSize) * tileSize
     let gridHeight = CGFloat(gridSize) * tileSize
-    
+
     // Set the X node size to a smaller value, e.g., 60% of the grid's size
     let xNodeWidth = gridWidth * 0.6 // Adjust the percentage as needed
     let xNodeHeight = gridHeight * 0.6 // Adjust the percentage as needed
-    xNode.path = createRoundedXPath(width: xNodeWidth, height: xNodeHeight)
-    
-    // Position the X at the center of the grid
+    xNode.size = CGSize(width: xNodeWidth, height: xNodeHeight)
+
+    // Get the origin of the grid (top-left corner)
     let gridOrigin = getGridOrigin() // Assuming this gives the top-left corner of the grid
+
+    // Adjust the position of the X node to be in the center of the grid
     xNode.position = CGPoint(
-        x: gridOrigin.x + gridWidth / 2 - xNodeWidth / 2,  // Subtract half the width of the X node
-        y: gridOrigin.y + gridHeight / 2 - xNodeHeight / 2 // Subtract half the height of the X node
+        x: gridOrigin.x + gridWidth / 2,  // Center the X node horizontally
+        y: gridOrigin.y + gridHeight / 2 // Center the X node vertically
     )
-    
-    xNode.fillColor = UIColor.red // Dark red color for the X
-    xNode.strokeColor = UIColor.red // Dark red stroke
-    xNode.lineWidth = 40 // Set line width for rounded edges
 
     addChild(xNode)
     
@@ -650,44 +648,6 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     xNode.run(fadeInAction)
 }
 
-
-// Helper function to create a rounded X path
-// Helper function to create a rounded X path
-func createRoundedXPath(width: CGFloat, height: CGFloat) -> CGPath {
-    let path = UIBezierPath()
-    let padding: CGFloat = 10 // Padding for the X's edges
-    let lineWidth: CGFloat = 40 // Set the line thickness for the X lines
-    let curveRadius: CGFloat = 20 // Radius for the curved ends
-
-    // Set the path's line width
-    path.lineWidth = lineWidth
-
-    // Set the path's line cap and join style
-    path.lineCapStyle = .round // Rounds the ends of the lines
-    path.lineJoinStyle = .round // Rounds the intersection of the lines
-
-    // First diagonal line (top-left to bottom-right)
-    let startPoint1 = CGPoint(x: padding, y: padding)
-    let endPoint1 = CGPoint(x: width - padding, y: height - padding)
-
-    path.move(to: startPoint1)
-    
-    // Create a curve at the start and end points using the curveRadius
-    path.addCurve(to: endPoint1, controlPoint1: CGPoint(x: startPoint1.x - curveRadius, y: startPoint1.y), 
-                  controlPoint2: CGPoint(x: endPoint1.x + curveRadius, y: endPoint1.y))
-
-    // Second diagonal line (bottom-left to top-right)
-    let startPoint2 = CGPoint(x: padding, y: height - padding)
-    let endPoint2 = CGPoint(x: width - padding, y: padding)
-
-    path.move(to: startPoint2)
-    
-    // Create a curve at the start and end points using the curveRadius
-    path.addCurve(to: endPoint2, controlPoint1: CGPoint(x: startPoint2.x - curveRadius, y: startPoint2.y), 
-                  controlPoint2: CGPoint(x: endPoint2.x + curveRadius, y: endPoint2.y))
-
-    return path.cgPath
-}
 
 
 
@@ -911,9 +871,9 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
 // Inside the part where lines are cleared:
         if totalLinesCleared > 0 {
             // Trigger the success vibration using haptic feedback
-            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium) // Or .light, .heavy depending on the feedback intensity
-            feedbackGenerator.prepare()
-            feedbackGenerator.impactOccurred()
+           let feedbackGenerator = UINotificationFeedbackGenerator()
+    feedbackGenerator.prepare()
+    feedbackGenerator.notificationOccurred(.success) // Success feedback type
 
             // Additional code for clearing lines and updating score
             // Calculate the centroid of the placed block’s cells
@@ -1221,46 +1181,49 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         }
         print("-----")
     }
-
     
-    func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPosition: CGPoint) {
-        var points = totalPoints * currentCombo
-        
-        // Apply multiplier power-up if active
-        if activePowerup == .multiplier {
-            points *= 2  // Apply 2x multiplier
-            
-            // Find the placeholder index of the active power-up and reset it
-            if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-               let index = placeholderIndex(for: placeholder) {
-                resetPlaceholder(at: index)
-            }
-            deactivateActivePowerup()
+    
+
+func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPosition: CGPoint) {
+    var points: Double = Double(totalPoints * currentCombo) // points as a Double to handle multipliers
+    
+    // Apply multiplier power-up if active
+    if activePowerup == .multiplier {
+        points *= 1.5  // Apply multiplier (e.g., 1.5x)
+
+        // Find the placeholder index of the active power-up and reset it
+        if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+           let index = placeholderIndex(for: placeholder) {
+            resetPlaceholder(at: index)
         }
-        
-        // Update score
-        score += points
-        updateScoreLabel()
-        
-        // Display combo animation if combo multiplier is greater than 1
-        if currentCombo > 1 {
-            displayComboAnimation(for: currentCombo)
-        }
-        
-        // Display animated points at the block placement position
-        displayAnimatedPoints(points, at: displayPosition)
-        
-        // Increment combo multiplier for consecutive clears
-        currentCombo += 1
-        
-        // Reset combo after a delay if no further lines are cleared
-        resetComboAfterDelay()
-        
-        // Play a combo sound effect for multi-line clears
-        if linesCleared > 1 {
-            run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
-        }
+        deactivateActivePowerup()
     }
+    
+    // Update score by casting points to Int
+    score += Int(points) // Convert points (Double) to Int and add it to score
+    updateScoreLabel()
+    
+    // Display combo animation if combo multiplier is greater than 1
+    if currentCombo > 1 {
+        displayComboAnimation(for: currentCombo)
+    }
+    
+    // Display animated points at the block placement position
+    displayAnimatedPoints(Int(points), at: displayPosition)
+    
+    // Increment combo multiplier for consecutive clears
+    currentCombo += 1
+    
+    // Reset combo after a delay if no further lines are cleared
+    resetComboAfterDelay()
+    
+    // Play a combo sound effect for multi-line clears
+    if linesCleared > 1 {
+        run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))
+    }
+}
+
+
 
 
 
