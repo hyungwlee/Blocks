@@ -145,60 +145,83 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
-        var progressBar: SKSpriteNode? // Updated to SKSpriteNode
-        var progressBarBackground: SKShapeNode? // Keep this as SKShapeNode for the background
+    var progressBar: SKShapeNode? // Change from SKSpriteNode
+    var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
 
-        func createProgressBar() {
-            // Define progress bar dimensions
-            let barWidth: CGFloat = size.width * 0.80
-            let barHeight: CGFloat = 10
-            let placeholderYPosition = size.height * 0.1
-            let barY = placeholderYPosition - 10
 
-            // Create the background for the progress bar
-            progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: barHeight / 2)
-            progressBarBackground?.fillColor = .darkGray
-            progressBarBackground?.strokeColor = .clear
-            progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
-            addChild(progressBarBackground!)
+    // Change this property type accordingly at the top of your class:
+    // var progressBar: SKShapeNode? // Instead of SKSpriteNode
 
-            // Create the progress bar using SKSpriteNode
-            let texture = SKTexture(image: UIImage(color: UIColor.green, size: CGSize(width: 1, height: 1)))
-    // 1x1 green texture
-            progressBar = SKSpriteNode(texture: texture, size: CGSize(width: barWidth, height: barHeight))
-            progressBar?.anchorPoint = CGPoint(x: 0, y: 0.5)  // Anchor to the left edge
-            progressBar?.position = CGPoint(x: progressBarBackground!.frame.minX, y: barY) // Align with the left edge of the background
-            progressBar?.xScale = 0.0  // Start with zero width
-            addChild(progressBar!)
+    func createProgressBar() {
+        // Define progress bar dimensions
+        let barWidth: CGFloat = size.width * 0.80
+        let barHeight: CGFloat = 10
+        let placeholderYPosition = size.height * 0.1
+        let barY = placeholderYPosition - 10
+        let cornerRadius = barHeight / 2
+
+        // Create the background for the progress bar
+        progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
+        progressBarBackground?.fillColor = .darkGray
+        progressBarBackground?.strokeColor = .clear
+        progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
+        addChild(progressBarBackground!)
+
+        // Create the progress bar as a shape node
+        progressBar = SKShapeNode(path: UIBezierPath(
+            roundedRect: CGRect(x: -barWidth / 2, y: -barHeight / 2, width: barWidth, height: barHeight),
+            byRoundingCorners: [.topLeft, .bottomLeft, .topRight, .bottomRight],
+            cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
+        ).cgPath)
+        progressBar?.fillColor = .green
+        progressBar?.strokeColor = .clear
+
+        // Position the progress bar
+        progressBar?.position = CGPoint(x: progressBarBackground!.position.x - barWidth / 2, y: barY)
+
+        // Initially set the scale to 0 (empty) or as needed
+        progressBar?.xScale = 0.0
+        progressBar?.yScale = 1.0
+
+        addChild(progressBar!)
+    }
+
+
+    func updateProgressBar() {
+        guard let progressBar = progressBar, let progressBarBackground = progressBarBackground else {
+            print("Progress bar node is missing!")
+            return
         }
 
+        let barWidth = progressBarBackground.frame.width
+        let maxScale: CGFloat = 1.0  // Maximum xScale
+        let progress = CGFloat(linesCleared) / CGFloat(requiredLinesForPowerup)
+        let newScale = min(progress, maxScale)
 
+        // Update the scale of the progress bar
+        progressBar.xScale = newScale
 
-        func updateProgressBar() {
-            guard let progressBar = progressBar else {
-                print("Progress bar node is missing!")
-                return
-            }
-            
-            let maxScale: CGFloat = 1.0  // Maximum xScale
-            let progress = CGFloat(linesCleared) / CGFloat(requiredLinesForPowerup)
-            let newScale = min(progress, maxScale)
-            
-            let scaleAction = SKAction.scaleX(to: newScale, duration: 0.2)
-            progressBar.run(scaleAction)
-            
-            if newScale >= maxScale {
-                print("Power-up triggered!")
-                // Reset the progress bar
-                progressBar.run(SKAction.scaleX(to: 0.0, duration: 0.2))
-                // Reset the linesCleared counter
-                self.linesCleared = 0
-                // Spawn power-up
-                spawnRandomPowerup()
-            }
+        // Reposition so the left edge remains aligned with the background
+        progressBar.position = CGPoint(
+            x: progressBarBackground.position.x - barWidth / 2 + (barWidth * newScale) / 2,
+            y: progressBarBackground.position.y
+        )
+
+        // If the bar reaches max scale, trigger the power-up
+        if newScale >= maxScale {
+            print("Power-up triggered!")
+            progressBar.xScale = 0.0
+            progressBar.position = CGPoint(
+                x: progressBarBackground.position.x - barWidth / 2,
+                y: progressBarBackground.position.y
+            )
+            linesCleared = 0
+            spawnRandomPowerup()
         }
+    }
+
 
 
     
@@ -310,7 +333,7 @@ class BGameScene: SKScene {
             placeholder.userData?["powerup"] = NSNull()
             
             // Add the question mark icon back
-            let questionIcon = SKSpriteNode(imageNamed: "question.png")
+            let questionIcon = SKSpriteNode(imageNamed: "question1.png")
             questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
             questionIcon.position = CGPoint.zero // Center within the placeholder
             questionIcon.name = "questionIcon\(index)"
@@ -552,19 +575,19 @@ class BGameScene: SKScene {
     // MARK: - Updated Score Label
 func addScoreLabel() {
     // Create a smaller and modern container node for the score
-    let scoreContainer = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25) 
-    scoreContainer.fillColor = .lightGray 
+    let scoreContainer = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25)
+    scoreContainer.fillColor = .lightGray
     scoreContainer.strokeColor = .clear
-    scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100) 
+    scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100)
     scoreContainer.name = "scoreContainer"
 
     // Add the score label inside the container
     let scoreLabel = SKLabelNode(text: "\(score)")
-    scoreLabel.fontSize = 24 
+    scoreLabel.fontSize = 24
     scoreLabel.fontColor = .black
     scoreLabel.fontName = "Helvetica-Bold"
     scoreLabel.verticalAlignmentMode = .center
-    scoreLabel.position = CGPoint.zero 
+    scoreLabel.position = CGPoint.zero
     scoreLabel.name = "scoreLabel"
     
     // Add the label to the container
@@ -1293,7 +1316,7 @@ SKAction.moveBy(x: 0, y: 10, duration: 0.2)   // Minor upward movement
     
     comboLabel.run(comboAnimation)
     shadowComboLabel.run(comboAnimation)  // Make shadow move as well
-} 
+}
     
     func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
     let pointsLabel = SKLabelNode(text: "+\(points)")
@@ -1501,7 +1524,7 @@ func showGameOverScreen() {
     gameOverLabel.position = CGPoint(x: 0, y: 0) // Position relative to the banner's center
     gameOverLabel.horizontalAlignmentMode = .center
     gameOverLabel.verticalAlignmentMode = .center
-    grayBanner.addChild(gameOverLabel) 
+    grayBanner.addChild(gameOverLabel)
     
     
     // Custom Smiley Face
@@ -1616,7 +1639,7 @@ func restartGame() {
     createGrid()
     addScoreLabel()
     createPowerupPlaceholders() // Recreate placeholders with default state
-    createProgressBar() 
+    createProgressBar()
     spawnNewBlocks()
     setupGridHighlights()
 
