@@ -32,7 +32,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1650"
             endingLineNumber = "1650"
-            landmarkName = "touchesBegan(_:with:)"
+            landmarkName = "showMultiplierLabel()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

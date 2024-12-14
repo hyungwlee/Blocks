@@ -779,7 +779,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         
         // Reset block highlights when the power-up is deactivated
         resetBlockHighlights()
-        
+        stopDeletePowerupVibrations()
         // Additional cleanup for specific power-ups
         removeMultiplierLabel() // Ensure multiplier label is removed if applicable
         
@@ -1694,7 +1694,21 @@ func removeMultiplierLabel() {
 }
 
 
+    var deletePowerupVibrationTimer: Timer? // Keep a reference to the timer
 
+    func startDeletePowerupVibrations() {
+        // Start a repeating timer for vibrations
+        deletePowerupVibrationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { _ in
+            let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+            feedbackGenerator.prepare()
+            feedbackGenerator.impactOccurred()
+        }
+    }
+
+    func stopDeletePowerupVibrations() {
+        deletePowerupVibrationTimer?.invalidate()
+        deletePowerupVibrationTimer = nil
+    }
 override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first else { return }
     let location = touch.location(in: self)
@@ -1780,9 +1794,11 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             } else if powerupType == .delete {
                 // Highlight deletable blocks when delete power-up is activated
                 updateDeletableBlockHighlights()
+                startDeletePowerupVibrations()
             }
             else if powerupType == .swap {
                             blurGridBlocks()
+                startDeletePowerupVibrations()
                         }
         }
         return
@@ -1889,6 +1905,10 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
     func highlightDeletableCells() {
+        // Create the haptic feedback generator for vibrations
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        feedbackGenerator.prepare()
+
         for row in 0..<gridSize {
             for col in 0..<gridSize {
                 if let cellNode = grid[row][col] {
@@ -1901,13 +1921,16 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
                         cellNode.run(SKAction.colorize(with: .gray, colorBlendFactor: 1.0, duration: 0.2))
                     }
                 } else {
-                    // This ensures no nil reference errors occur
                     grid[row][col]?.alpha = 0.3
                     grid[row][col]?.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
                 }
             }
         }
+
+        // Trigger a vibration every time the cells are updated
+        feedbackGenerator.impactOccurred()
     }
+
     func resetGridVisuals() {
         for row in 0..<gridSize {
             for col in 0..<gridSize {
