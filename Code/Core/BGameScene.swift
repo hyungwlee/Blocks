@@ -1332,7 +1332,6 @@ SKAction.moveBy(x: 0, y: 10, duration: 0.2)   // Minor upward movement
     }
     
 
-
 func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
@@ -1363,7 +1362,7 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     // Show multiplier effect if the power-up is active
     if activePowerup == .multiplier {
         let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
-        showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY))
+        showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY), orientation: "horizontal")
     }
 
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -1373,6 +1372,7 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
+    var clearedRows: [Int] = []
 
     for row in 0..<gridSize {
         if let cellNode = grid[row][col] {
@@ -1393,15 +1393,21 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
             grid[row][col] = nil
             clearedCells.append((row: row, col: col, cellNode: cellNode))
+            clearedRows.append(row)
 
             cellNode.userData?["originalPosition"] = originalPosition
         }
     }
 
     // Show multiplier effect if the power-up is active
-    if activePowerup == .multiplier {
-        let colCenterX = gridToScreenPosition(row: gridSize / 2, col: col).x
-        showMultiplierEffect(at: CGPoint(x: colCenterX, y: size.height / 2))
+    if activePowerup == .multiplier, !clearedRows.isEmpty {
+        let minRow = clearedRows.min()!
+        let maxRow = clearedRows.max()!
+        let midRow = (minRow + maxRow) / 2
+        let colCenterX = gridToScreenPosition(row: midRow, col: col).x
+        let colCenterY = gridToScreenPosition(row: midRow, col: col).y
+
+        showMultiplierEffect(at: CGPoint(x: colCenterX, y: colCenterY), orientation: "vertical")
     }
 
     run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
@@ -1410,9 +1416,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 }
 
 
-
-
-func showMultiplierEffect(at position: CGPoint) {
+func showMultiplierEffect(at position: CGPoint, orientation: String) {
     let numberOfStars = 5
     let starSpacing: CGFloat = 20
 
@@ -1423,20 +1427,36 @@ func showMultiplierEffect(at position: CGPoint) {
         // Create a sprite node with the star image
         let starNode = SKSpriteNode(texture: starImage)
         starNode.size = CGSize(width: 60, height: 60) // Adjust the size of the star
-        starNode.position = CGPoint(x: position.x + CGFloat(i) * starSpacing - CGFloat(numberOfStars - 1) * starSpacing / 2, y: position.y)
+
+        // Set the position based on the orientation
+        if orientation == "vertical" {
+            starNode.position = CGPoint(
+                x: position.x,
+                y: position.y + CGFloat(i) * starSpacing - CGFloat(numberOfStars - 1) * starSpacing / 2
+            )
+        } else {
+            starNode.position = CGPoint(
+                x: position.x + CGFloat(i) * starSpacing - CGFloat(numberOfStars - 1) * starSpacing / 2,
+                y: position.y
+            )
+        }
+
         starNode.zPosition = 100
         starNode.alpha = 0.0
 
         addChild(starNode)
 
-        // Fade in and fade out actions
-        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
-        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-        let delay = SKAction.wait(forDuration: Double(i) * 0.2)
+        // Make the fade-in, fade-out, and delay faster
+        let fadeIn = SKAction.fadeIn(withDuration: 0.3)    // Reduced from 0.5 to 0.3
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)  // Reduced from 0.5 to 0.3
+        let delay = SKAction.wait(forDuration: Double(i) * 0.1) // Reduced delay between stars
+
         let sequence = SKAction.sequence([delay, fadeIn, fadeOut, SKAction.removeFromParent()])
         starNode.run(sequence)
     }
 }
+
+
 
 func showGameOverScreen() {
     isGameOver = true
