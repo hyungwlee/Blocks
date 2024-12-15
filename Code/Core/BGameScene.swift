@@ -584,7 +584,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     // Create the X image sprite using SKSpriteNode
     let xNode = SKSpriteNode(imageNamed: "X") // Replace "X" with the name of your image asset
     xNode.zPosition = 10 // Ensure it's on top of the grid
-    xNode.alpha = 1.0    // Start fully visible
+    xNode.alpha = 0.0    // Start fully transparent
 
     // Get the grid dimensions
     let gridWidth = CGFloat(gridSize) * tileSize
@@ -604,37 +604,20 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         y: gridOrigin.y + gridHeight / 2 
     )
 
-    // Position the X node above the grid initially (a little higher than the top of the grid)
-    let startPosition = CGPoint(
-        x: finalPosition.x,  
-        y: gridOrigin.y + gridHeight * 1.5 
-    )
-    
-    xNode.position = startPosition
+    // Position the X node directly in the center of the grid
+    xNode.position = finalPosition
     addChild(xNode)
-
-    // Drop animation with a slight bounce effect
-    let dropAction = SKAction.moveTo(y: finalPosition.y, duration: 0.4)
-    dropAction.timingMode = .easeOut
-
-    let bounceAction = SKAction.sequence([
-        SKAction.moveBy(x: 0, y: -1.5, duration: 0.05), // Smaller bounce down
-        SKAction.moveBy(x: 0, y: 1, duration: 0.1)   // Slightly higher bounce up
-    ])
-
-    // Create the full drop sequence with bounce
-    let dropSequence = SKAction.sequence([dropAction, bounceAction])
 
     // Fade actions for the blocks
     let fadeActions = nodes.map { node -> SKAction in
         if let spriteNode = node.children.first as? SKSpriteNode {
             return SKAction.sequence([
                 SKAction.group([
-                    SKAction.fadeAlpha(to: 0.0, duration: 0.2),  // Fully fade out
-                    SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Full grey
+                    SKAction.fadeAlpha(to: 0.8, duration: 0.1),  // Fade the alpha to 0.8 to reduce opacity, not fully transparent
+                    SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.1) // Grey out completely
                 ]),
                 SKAction.run {
-                    spriteNode.color = UIColor(white: 0.5, alpha: 1.0)  // Set to full grey
+                    spriteNode.color = UIColor(white: 0.5, alpha: 1.0)  // Set to full grey (no original color showing)
                     spriteNode.colorBlendFactor = 1.0  // Ensure full grey color
                 }
             ])
@@ -656,10 +639,8 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     let animationGroup = SKAction.group(fadeActions)
     let sequence = SKAction.sequence([
         animationGroup,
-        SKAction.run {
-            xNode.run(dropSequence)
-        },
-        SKAction.wait(forDuration: 0.5), // Wait for the drop animation to complete
+        SKAction.wait(forDuration: 0.5), // Wait for the block fade out to complete
+        SKAction.wait(forDuration: 0.5), // Add a delay before fade to black (adjust as needed)
         SKAction.run {
             fadeToBlack.run(fadeScreenAction)
         },
@@ -670,9 +651,14 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     for node in nodes {
         node.run(sequence)
     }
+    
+    // Fade-in the X node in the center of the grid with ease-in effect
+    let fadeInAction = SKAction.fadeAlpha(to: 1.0, duration: 0.5)  // Fade-in duration for "X"
+    
+    // Apply ease-in timing mode to the fade-in action
+    fadeInAction.timingMode = .easeIn
+    xNode.run(fadeInAction)
 }
-
-
 
 
 
@@ -888,17 +874,12 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         let totalLinesCleared = clearedLines.count
         let totalPoints = totalLinesCleared * 10
 
-        // Inside the part where lines are cleared:
         if totalLinesCleared > 0 {
-            // Trigger the success vibration using haptic feedback
             let feedbackGenerator = UINotificationFeedbackGenerator()
             feedbackGenerator.prepare()
-            feedbackGenerator.notificationOccurred(.success) // Success feedback type
+            feedbackGenerator.notificationOccurred(.success)
 
-            // Additional code for clearing lines and updating score
-            // Calculate the centroid of the placed block’s cells
             let blockCenter = centroidOfBlockCells(cellNodes)
-            // Show score and apply combo multiplier at the block center
             applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints, displayPosition: blockCenter)
         }
 
@@ -934,23 +915,30 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
             let gameOverCheckAction = SKAction.run {
                 if !self.checkForPossibleMoves(for: self.boxNodes) {
                     let gridNodes = self.placedBlocks.flatMap { $0.cellNodes }
-                    let fadeDuration: TimeInterval = 0.1  // Reduced fade duration
-                    let totalWaitTime = fadeDuration
+                    let fadeDuration: TimeInterval = 0.3
 
-                    // Create a more intense "shake buzz" vibration
-                    let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
-                    feedbackGenerator.prepare()
-
-                    // Repeat the vibration rapidly for a shake/buzz effect
-                    let vibrationDuration: TimeInterval = 1.0 // Total vibration duration
-                    let interval: TimeInterval = 0.1 // Shorter interval for a buzz effect
-                    let repetitions = Int(vibrationDuration / interval) // How many times to trigger the feedback
-
-                    for _ in 0..<repetitions {
-                        feedbackGenerator.impactOccurred()
-                        feedbackGenerator.prepare()
-                        Thread.sleep(forTimeInterval: interval) // Sleep between vibrations to create rapid bursts
+                    // Create a non-blocking vibration sequence
+                    let vibrationActions = (0..<10).map { _ in
+                        SKAction.sequence([
+                            SKAction.run {
+                                let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
+                                feedbackGenerator.impactOccurred()
+                            },
+                            SKAction.wait(forDuration: 0.1) // Short interval for buzz effect
+                        ])
                     }
+
+                    let vibrationSequence = SKAction.sequence(vibrationActions)
+
+                    // Run vibration and fade in parallel
+                    self.run(SKAction.group([
+                        vibrationSequence,
+                        SKAction.run {
+                            self.fadeBlocksToGrey(gridNodes) {
+                                self.showGameOverScreen()
+                            }
+                        }
+                    ]))
 
                     // Play game over sound
                     if let gameOverSoundURL = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
@@ -963,33 +951,26 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
                             print("Error loading sound file: \(error.localizedDescription)")
                         }
                     }
-
-                    self.fadeBlocksToGrey(gridNodes) {
-                        self.showGameOverScreen() // Skip the waiting time for transition
-                    }
                 }
             }
 
-            // Run the sequence for sparkle effect and game over check
             self.run(SKAction.sequence([sparkleAction, waitForSparkle, gameOverCheckAction]))
         }
 
-        if occupiedCells > 0 { // Check if at least one cell was placed
-            // Play haptic feedback for successful placement (single, light vibration)
+        if occupiedCells > 0 {
             let feedbackGenerator = UISelectionFeedbackGenerator()
             feedbackGenerator.selectionChanged()
         }
 
-        // Play the sound effect for placing a block
         run(SKAction.playSoundFileNamed("download.mp3", waitForCompletion: false))
     } else {
-        // If invalid, return the block to its initial position
         block.position = block.initialPosition
         block.run(SKAction.scale(to: initialScale, duration: 0.1))
     }
 
     printGridState()
 }
+
 
 
 
