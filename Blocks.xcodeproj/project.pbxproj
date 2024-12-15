@@ -43,6 +43,7 @@
 		80605FCA2D0E2C9E003336FE /* question.png in Resources */ = {isa = PBXBuildFile; fileRef = 80605FC92D0E2C9E003336FE /* question.png */; };
 		80605FCC2D0E2DFC003336FE /* questionmark.png in Resources */ = {isa = PBXBuildFile; fileRef = 80605FCB2D0E2DFC003336FE /* questionmark.png */; };
 		808EFBE22CD88AA800AF1606 /* BLShapeNode5Block.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */; };
+		80BDCC3C2D0F616300947F4B /* questioni.png in Resources */ = {isa = PBXBuildFile; fileRef = 80BDCC3B2D0F616300947F4B /* questioni.png */; };
 		80CA97472CDC83EF007AB840 /* download.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 80CA97462CDC83EF007AB840 /* download.mp3 */; };
 		9E3580752CD1A407007ABB7D /* BLayoutInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3580622CD1A407007ABB7D /* BLayoutInfo.swift */; };
 		9E3580762CD1A407007ABB7D /* BGameIdleState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35806F2CD1A407007ABB7D /* BGameIdleState.swift */; };
@@ -99,6 +100,7 @@
 		80605FC92D0E2C9E003336FE /* question.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = question.png; sourceTree = "<group>"; };
 		80605FCB2D0E2DFC003336FE /* questionmark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = questionmark.png; sourceTree = "<group>"; };
 		808EFBE12CD88AA800AF1606 /* BLShapeNode5Block.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLShapeNode5Block.swift; sourceTree = "<group>"; };
+		80BDCC3B2D0F616300947F4B /* questioni.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = questioni.png; sourceTree = "<group>"; };
 		80CA97462CDC83EF007AB840 /* download.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = download.mp3; sourceTree = "<group>"; };
 		9E35805E2CD1A407007ABB7D /* BGameContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameContext.swift; sourceTree = "<group>"; };
 		9E35805F2CD1A407007ABB7D /* BGameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGameScene.swift; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 		9E35806D2CD1A407007ABB7D /* Nodes */ = {
 			isa = PBXGroup;
 			children = (
+				80BDCC3B2D0F616300947F4B /* questioni.png */,
 				80605FCB2D0E2DFC003336FE /* questionmark.png */,
 				80605FC92D0E2C9E003336FE /* question.png */,
 				51FC7F962D0B4FB700064AA2 /* swap.png */,
@@ -369,6 +372,7 @@
 				510714912CE6C3D500E7B201 /* bg.png in Resources */,
 				5190EBD92D0CB3DB00E1674A /* gameover_voice.mp3 in Resources */,
 				80605FCC2D0E2DFC003336FE /* questionmark.png in Resources */,
+				80BDCC3C2D0F616300947F4B /* questioni.png in Resources */,
 				51FC7F992D0B570A00064AA2 /* first.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

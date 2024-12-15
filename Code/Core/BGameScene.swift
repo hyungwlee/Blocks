@@ -74,9 +74,9 @@ class BGameScene: SKScene {
     
     let availablePowerups: [Powerup] = [
         Powerup(type: .delete, imageName: "delete.png"),
-        Powerup(type: .swap, imageName: "swap.png"),
-        Powerup(type: .undo, imageName: "undo.png"),
-        Powerup(type: .multiplier, imageName: "multiplier.png")
+//        Powerup(type: .swap, imageName: "swap.png"),
+//        Powerup(type: .undo, imageName: "undo.png"),
+//        Powerup(type: .multiplier, imageName: "multiplier.png")
     ]
     
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
@@ -137,7 +137,7 @@ class BGameScene: SKScene {
             addChild(placeholder)
             
             // Add the question icon initially
-            let questionIcon = SKSpriteNode(imageNamed: "questionmark.png")
+            let questionIcon = SKSpriteNode(imageNamed: "questioni.png")
             questionIcon.size = CGSize(width: 40, height: 40)
             questionIcon.position = CGPoint.zero // Center within the placeholder
             questionIcon.name = "questionIcon\(i)"
@@ -330,7 +330,7 @@ class BGameScene: SKScene {
             placeholder.userData?["powerup"] = NSNull()
             
             // Add the question mark icon back
-            let questionIcon = SKSpriteNode(imageNamed: "questionmark.png")
+            let questionIcon = SKSpriteNode(imageNamed: "questioni.png")
             questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
             questionIcon.position = CGPoint.zero // Center within the placeholder
             questionIcon.name = "questionIcon\(index)"
@@ -2014,8 +2014,42 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 //        return true
 //    }
 // 
+    
+    func addDeletionEffect(to block: PlacedBlock) {
+        // Iterate over each cell node in the block
+        for cellNode in block.cellNodes {
+            // Create a burst effect at the cell's position
+            let burstEffect = SKEmitterNode(fileNamed: "BurstEffect.sks") // Use a pre-made particle effect
+            burstEffect?.position = cellNode.position
+            burstEffect?.zPosition = 10 // Above the grid
+            
+            // Adjust particle properties (optional)
+            burstEffect?.particleAlpha = 0.8
+            burstEffect?.particleScale = 0.5
+            burstEffect?.particleColorBlendFactor = 1.0
+            
+            if let burst = burstEffect {
+                addChild(burst)
+            }
+            
+            // Scale and fade out the cell node
+            let scaleDown = SKAction.scale(to: 0.5, duration: 0.2)
+            let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+            let remove = SKAction.run {
+                cellNode.removeFromParent()
+            }
+            
+            // Run the actions in sequence
+            cellNode.run(SKAction.sequence([SKAction.group([scaleDown, fadeOut]), remove]))
+        }
+        
+        // Play a sound effect for the deletion
+        run(SKAction.playSoundFileNamed("deleteSound.mp3", waitForCompletion: false))
+    }
+
+    // Example integration in deletePlacedBlock
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
-        // Check if all cells of the block are intact and match the grid state
+        // Ensure all cells of the block are intact and match the grid state
         for gridPosition in placedBlock.gridPositions {
             if let cellNode = grid[gridPosition.row][gridPosition.col],
                let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
@@ -2030,13 +2064,13 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         }
 
         print("Block is intact and will be deleted.")
+        
+        // Add the deletion effect
+        addDeletionEffect(to: placedBlock)
 
         // Delete all cells of the block
         for gridPosition in placedBlock.gridPositions {
-            if let cellNode = grid[gridPosition.row][gridPosition.col] {
-                cellNode.removeFromParent()
-                grid[gridPosition.row][gridPosition.col] = nil
-            }
+            grid[gridPosition.row][gridPosition.col] = nil
         }
 
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
@@ -2059,6 +2093,51 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         return true
     }
 
+//    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
+//        // Check if all cells of the block are intact and match the grid state
+//        for gridPosition in placedBlock.gridPositions {
+//            if let cellNode = grid[gridPosition.row][gridPosition.col],
+//               let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
+//                if blockInCell !== placedBlock {
+//                    print("Block cannot be deleted: Some cells belong to another block.")
+//                    return false
+//                }
+//            } else {
+//                print("Block cannot be deleted: Missing cells.")
+//                return false
+//            }
+//        }
+//
+//        print("Block is intact and will be deleted.")
+//
+//        // Delete all cells of the block
+//        for gridPosition in placedBlock.gridPositions {
+//            if let cellNode = grid[gridPosition.row][gridPosition.col] {
+//                cellNode.removeFromParent()
+//                grid[gridPosition.row][gridPosition.col] = nil
+//            }
+//        }
+//
+//        if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
+//            placedBlocks.remove(at: index)
+//        }
+//
+//        if updateScore {
+//            score += placedBlock.gridPositions.count
+//            updateScoreLabel()
+//        }
+//
+//        _ = checkForCompletedLines()
+//        syncPlacedBlocks()
+//
+//        // Handle game-over conditions
+//        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
+//            showGameOverScreen()
+//        }
+//
+//        return true
+//    }
+//
 
 
 
