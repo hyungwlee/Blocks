@@ -630,12 +630,12 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         if let spriteNode = node.children.first as? SKSpriteNode {
             return SKAction.sequence([
                 SKAction.group([
-                    SKAction.fadeAlpha(to: 0.8, duration: 0.2),  // Reduce fade to make blocks less transparent
-                    SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Change to grey
+                    SKAction.fadeAlpha(to: 0.0, duration: 0.2),  // Fully fade out
+                    SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Full grey
                 ]),
                 SKAction.run {
-                    spriteNode.color = UIColor(white: 0.5, alpha: 1.0)  // Light grey color
-                    spriteNode.colorBlendFactor = 1.0
+                    spriteNode.color = UIColor(white: 0.5, alpha: 1.0)  // Set to full grey
+                    spriteNode.colorBlendFactor = 1.0  // Ensure full grey color
                 }
             ])
         }
@@ -649,8 +649,8 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     fadeToBlack.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
     addChild(fadeToBlack)
 
-    // Faster fade-in action for the black screen
-    let fadeScreenAction = SKAction.fadeAlpha(to: 1.0, duration: 0.4)
+    // Instant fade-to-black effect (no duration)
+    let fadeScreenAction = SKAction.fadeAlpha(to: 1.0, duration: 0.0)
 
     // Run the actions
     let animationGroup = SKAction.group(fadeActions)
@@ -663,7 +663,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         SKAction.run {
             fadeToBlack.run(fadeScreenAction)
         },
-        SKAction.wait(forDuration: 0.4), // Wait for fade-to-black completion
+        SKAction.wait(forDuration: 0.1), // Small wait for immediate fade effect
         SKAction.run(completion)
     ])
 
@@ -929,12 +929,12 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
                 self.addSparkleEffect(around: cellNodes)
             }
 
-            let waitForSparkle = SKAction.wait(forDuration: 0.3) // Reduced wait time
+            let waitForSparkle = SKAction.wait(forDuration: 0.2) // Reduced wait time
 
             let gameOverCheckAction = SKAction.run {
                 if !self.checkForPossibleMoves(for: self.boxNodes) {
                     let gridNodes = self.placedBlocks.flatMap { $0.cellNodes }
-                    let fadeDuration: TimeInterval = 0.2  // Reduced fade duration
+                    let fadeDuration: TimeInterval = 0.1  // Reduced fade duration
                     let totalWaitTime = fadeDuration
 
                     // Create a more intense "shake buzz" vibration
