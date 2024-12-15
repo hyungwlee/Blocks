@@ -1967,31 +1967,76 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
     
+//    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
+//        // Ensure all original grid positions are intact and match the block's cells
+//        for gridPosition in placedBlock.gridPositions {
+//            if let cellNode = grid[gridPosition.row][gridPosition.col],
+//               let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
+//                if blockInCell !== placedBlock {
+//                    print("Block cannot be deleted because its cells do not all belong to the same block.")
+//                    return false
+//                }
+//            } else {
+//                print("Block cannot be deleted because a cell is missing at row \(gridPosition.row), col \(gridPosition.col).")
+//                return false
+//            }
+//        }
+//
+//        print("Block is intact and will be deleted.")
+//        
+//        // Proceed with the deletion
+//        for cellNode in placedBlock.cellNodes {
+//            cellNode.removeFromParent()
+//            cellNode.userData = nil
+//        }
+//
+//        for gridPosition in placedBlock.gridPositions {
+//            grid[gridPosition.row][gridPosition.col] = nil
+//        }
+//
+//        if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
+//            placedBlocks.remove(at: index)
+//        }
+//
+//        if updateScore {
+//            score += placedBlock.cellNodes.count
+//            updateScoreLabel()
+//        }
+//
+//        _ = checkForCompletedLines()
+//        syncPlacedBlocks()
+//
+//        // Check for game-over condition
+//        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
+//            showGameOverScreen()
+//        }
+//
+//        return true
+//    }
+// 
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
-        // Ensure all original grid positions are intact and match the block's cells
+        // Check if all cells of the block are intact and match the grid state
         for gridPosition in placedBlock.gridPositions {
             if let cellNode = grid[gridPosition.row][gridPosition.col],
                let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
                 if blockInCell !== placedBlock {
-                    print("Block cannot be deleted because its cells do not all belong to the same block.")
+                    print("Block cannot be deleted: Some cells belong to another block.")
                     return false
                 }
             } else {
-                print("Block cannot be deleted because a cell is missing at row \(gridPosition.row), col \(gridPosition.col).")
+                print("Block cannot be deleted: Missing cells.")
                 return false
             }
         }
 
         print("Block is intact and will be deleted.")
-        
-        // Proceed with the deletion
-        for cellNode in placedBlock.cellNodes {
-            cellNode.removeFromParent()
-            cellNode.userData = nil
-        }
 
+        // Delete all cells of the block
         for gridPosition in placedBlock.gridPositions {
-            grid[gridPosition.row][gridPosition.col] = nil
+            if let cellNode = grid[gridPosition.row][gridPosition.col] {
+                cellNode.removeFromParent()
+                grid[gridPosition.row][gridPosition.col] = nil
+            }
         }
 
         if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
@@ -1999,21 +2044,20 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         }
 
         if updateScore {
-            score += placedBlock.cellNodes.count
+            score += placedBlock.gridPositions.count
             updateScoreLabel()
         }
 
         _ = checkForCompletedLines()
         syncPlacedBlocks()
 
-        // Check for game-over condition
+        // Handle game-over conditions
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
         }
 
         return true
     }
- 
 
 
 
@@ -2145,10 +2189,11 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
                     ]))
                     
                     // Add a pulsing scale effect to draw attention
-                    let scaleUp = SKAction.scale(to: 1.1, duration: 0.3)
-                    let scaleDown = SKAction.scale(to: 1.0, duration: 0.3)
+                    let scaleUp = SKAction.scale(to: 1, duration: 0.3)
+                    let scaleDown = SKAction.scale(to: 0.95, duration: 0.3)
                     let pulse = SKAction.sequence([scaleUp, scaleDown])
                     cellNode.run(SKAction.repeatForever(pulse))
+
                 }
             } else {
                 // This placed block cannot be deleted (not all original cells are present)
