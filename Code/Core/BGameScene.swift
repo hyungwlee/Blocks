@@ -301,6 +301,10 @@ class BGameScene: SKScene {
             powerupIcon.userData = ["powerupType": selectedPowerup.type]
             placeholder.userData?["powerup"] = selectedPowerup.type
             
+            // Hide the placeholder's visual appearance
+            placeholder.strokeColor = .clear
+            placeholder.fillColor = .clear
+            
             // Add a subtle glow or pulse effect
             let pulseUp = SKAction.scale(to: 1.1, duration: 0.6)
             let pulseDown = SKAction.scale(to: 1.0, duration: 0.6)
@@ -312,7 +316,7 @@ class BGameScene: SKScene {
         let sequence = SKAction.sequence([repeatShuffle, setFinalTexture])
         powerupIcon.run(sequence)
     }
-    
+
     func placeholderIndex(for placeholder: SKShapeNode) -> Int? {
         for i in 0..<4 {
             if childNode(withName: "powerupPlaceholder\(i)") === placeholder {
@@ -329,6 +333,10 @@ class BGameScene: SKScene {
             // Reset the placeholder's userData
             placeholder.userData?["powerup"] = NSNull()
             
+            // Restore the placeholder's visual appearance
+            placeholder.strokeColor = UIColor.white.withAlphaComponent(0.3) // Original stroke color
+            placeholder.fillColor = .clear // Original fill color (transparent)
+            
             // Add the question mark icon back
             let questionIcon = SKSpriteNode(imageNamed: "questioni.png")
             questionIcon.size = CGSize(width: 40, height: 40) // Adjust size as needed
@@ -337,7 +345,7 @@ class BGameScene: SKScene {
             placeholder.addChild(questionIcon)
         }
     }
-    
+
     func highlightPowerupIcon(_ icon: SKSpriteNode) {
         icon.run(SKAction.group([
             SKAction.fadeAlpha(to: 1.0, duration: 0.2), // Ensure fully visible

@@ -30,8 +30,8 @@
             filePath = "Code/Core/BGameScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1593"
-            endingLineNumber = "1593"
+            startingLineNumber = "1601"
+            endingLineNumber = "1601"
             landmarkName = "showGameOverScreen()"
             landmarkType = "7">
          </BreakpointContent>
@@ -46,8 +46,8 @@
             filePath = "Code/Core/BGameScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1594"
-            endingLineNumber = "1594"
+            startingLineNumber = "1602"
+            endingLineNumber = "1602"
             landmarkName = "showGameOverScreen()"
             landmarkType = "7">
          </BreakpointContent>
