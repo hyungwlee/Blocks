@@ -74,9 +74,9 @@ class BGameScene: SKScene {
     
     let availablePowerups: [Powerup] = [
         Powerup(type: .delete, imageName: "delete.png"),
-//        Powerup(type: .swap, imageName: "swap.png"),
-//        Powerup(type: .undo, imageName: "undo.png"),
-//        Powerup(type: .multiplier, imageName: "multiplier.png")
+        Powerup(type: .swap, imageName: "swap.png"),
+        Powerup(type: .undo, imageName: "undo.png"),
+        Powerup(type: .multiplier, imageName: "multiplier.png")
     ]
     
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
