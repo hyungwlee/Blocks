@@ -578,66 +578,99 @@ func addScoreLabel() {
         return false
     }
 
-
+    
+    
 func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) {
     // Create the X image sprite using SKSpriteNode
     let xNode = SKSpriteNode(imageNamed: "X") // Replace "X" with the name of your image asset
     xNode.zPosition = 10 // Ensure it's on top of the grid
+    xNode.alpha = 1.0    // Start fully visible
 
     // Get the grid dimensions
     let gridWidth = CGFloat(gridSize) * tileSize
     let gridHeight = CGFloat(gridSize) * tileSize
 
     // Set the X node size to a smaller value, e.g., 60% of the grid's size
-    let xNodeWidth = gridWidth * 0.6 // Adjust the percentage as needed
-    let xNodeHeight = gridHeight * 0.6 // Adjust the percentage as needed
+    let xNodeWidth = gridWidth * 0.6
+    let xNodeHeight = gridHeight * 0.6
     xNode.size = CGSize(width: xNodeWidth, height: xNodeHeight)
 
-    // Get the origin of the grid (top-left corner)
-    let gridOrigin = getGridOrigin() // Assuming this gives the top-left corner of the grid
+    // Get the origin of the grid
+    let gridOrigin = getGridOrigin()
 
-    // Adjust the position of the X node to be in the center of the grid
-    xNode.position = CGPoint(
-        x: gridOrigin.x + gridWidth / 2,  // Center the X node horizontally
-        y: gridOrigin.y + gridHeight / 2 // Center the X node vertically
+    // Calculate the final position at the center of the grid
+    let finalPosition = CGPoint(
+        x: gridOrigin.x + gridWidth / 2, 
+        y: gridOrigin.y + gridHeight / 2 
     )
 
-    addChild(xNode)
+    // Position the X node above the grid initially (a little higher than the top of the grid)
+    let startPosition = CGPoint(
+        x: finalPosition.x,  
+        y: gridOrigin.y + gridHeight * 1.5 
+    )
     
-    // Fade-in animation for the X node
-    let fadeInAction = SKAction.fadeIn(withDuration: 0.3)
+    xNode.position = startPosition
+    addChild(xNode)
 
-    // Fade actions for the blocks (apply colorize permanently)
+    // Drop animation with a slight bounce effect
+    let dropAction = SKAction.moveTo(y: finalPosition.y, duration: 0.4)
+    dropAction.timingMode = .easeOut
+
+    let bounceAction = SKAction.sequence([
+        SKAction.moveBy(x: 0, y: -1.5, duration: 0.05), // Smaller bounce down
+        SKAction.moveBy(x: 0, y: 1, duration: 0.1)   // Slightly higher bounce up
+    ])
+
+    // Create the full drop sequence with bounce
+    let dropSequence = SKAction.sequence([dropAction, bounceAction])
+
+    // Fade actions for the blocks
     let fadeActions = nodes.map { node -> SKAction in
         if let spriteNode = node.children.first as? SKSpriteNode {
             return SKAction.sequence([
                 SKAction.group([
-                    SKAction.fadeAlpha(to: 0.5, duration: 0.2), // Fade effect for blocks
-                    SKAction.colorize(with: UIColor(white: 0.2, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Darken the blocks
+                    SKAction.fadeAlpha(to: 0.8, duration: 0.2),  // Reduce fade to make blocks less transparent
+                    SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.2) // Change to grey
                 ]),
                 SKAction.run {
-                    // Ensure the color stays grey
-                    spriteNode.color = UIColor(white: 0.2, alpha: 1.0) // Apply grey color permanently
-                    spriteNode.colorBlendFactor = 1.0 // Keep the color blended
+                    spriteNode.color = UIColor(white: 0.5, alpha: 1.0)  // Light grey color
+                    spriteNode.colorBlendFactor = 1.0
                 }
             ])
         }
-        return SKAction() // No-op for nodes without children
+        return SKAction()
     }
 
+    // Create a fade-to-black effect using SKSpriteNode
+    let fadeToBlack = SKSpriteNode(color: .black, size: CGSize(width: self.size.width, height: self.size.height))
+    fadeToBlack.zPosition = 20
+    fadeToBlack.alpha = 0.0
+    fadeToBlack.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
+    addChild(fadeToBlack)
+
+    // Faster fade-in action for the black screen
+    let fadeScreenAction = SKAction.fadeAlpha(to: 1.0, duration: 0.4)
+
+    // Run the actions
     let animationGroup = SKAction.group(fadeActions)
-    let sequence = SKAction.sequence([animationGroup, fadeInAction, SKAction.run(completion)])
-    
-    // Run the actions for the blocks and the "X"
+    let sequence = SKAction.sequence([
+        animationGroup,
+        SKAction.run {
+            xNode.run(dropSequence)
+        },
+        SKAction.wait(forDuration: 0.5), // Wait for the drop animation to complete
+        SKAction.run {
+            fadeToBlack.run(fadeScreenAction)
+        },
+        SKAction.wait(forDuration: 0.4), // Wait for fade-to-black completion
+        SKAction.run(completion)
+    ])
+
     for node in nodes {
         node.run(sequence)
     }
-    
-    // Run the fade-in for the X node
-    xNode.run(fadeInAction)
 }
-
-
 
 
 
@@ -855,14 +888,12 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
         let totalLinesCleared = clearedLines.count
         let totalPoints = totalLinesCleared * 10
 
-        // **Place the centroid and combo multiplier code here**
         // Inside the part where lines are cleared:
-// Inside the part where lines are cleared:
         if totalLinesCleared > 0 {
             // Trigger the success vibration using haptic feedback
-           let feedbackGenerator = UINotificationFeedbackGenerator()
-    feedbackGenerator.prepare()
-    feedbackGenerator.notificationOccurred(.success) // Success feedback type
+            let feedbackGenerator = UINotificationFeedbackGenerator()
+            feedbackGenerator.prepare()
+            feedbackGenerator.notificationOccurred(.success) // Success feedback type
 
             // Additional code for clearing lines and updating score
             // Calculate the centroid of the placed block’s cells
@@ -870,7 +901,6 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
             // Show score and apply combo multiplier at the block center
             applyComboMultiplier(for: totalLinesCleared, totalPoints: totalPoints, displayPosition: blockCenter)
         }
-
 
         // Create a Move object for undo
         let move = Move(
@@ -893,62 +923,56 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
             isUndoInProgress = false
         } else if boxNodes.isEmpty {
             spawnNewBlocks()
-        } // Handle spawning new blocks or checking for game-over
-// Handle spawning new blocks or checking for game-over
-else if !checkForPossibleMoves(for: boxNodes) {
-    // Create a sequence to play the sparkle effect first, then check for game-over
-    let sparkleAction = SKAction.run {
-        self.addSparkleEffect(around: cellNodes)
-    }
-
-    let waitForSparkle = SKAction.wait(forDuration: 0.5) // Adjust based on sparkle duration
-
-    let gameOverCheckAction = SKAction.run {
-        if !self.checkForPossibleMoves(for: self.boxNodes) {
-            let gridNodes = self.placedBlocks.flatMap { $0.cellNodes }
-            let fadeDuration: TimeInterval = 0.1
-            let soundDuration: TimeInterval = 0.0
-            let totalWaitTime = fadeDuration + soundDuration
-
-            // Create a more intense "shake buzz" vibration
-            let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
-            feedbackGenerator.prepare()
-
-            // Repeat the vibration rapidly for a shake/buzz effect
-            let vibrationDuration: TimeInterval = 1.0 // Total vibration duration
-            let interval: TimeInterval = 0.1 // Shorter interval for a buzz effect
-            let repetitions = Int(vibrationDuration / interval) // How many times to trigger the feedback
-
-            for _ in 0..<repetitions {
-                feedbackGenerator.impactOccurred()
-                feedbackGenerator.prepare()
-                Thread.sleep(forTimeInterval: interval) // Sleep between vibrations to create rapid bursts
+        } else if !checkForPossibleMoves(for: boxNodes) {
+            // Create a sequence to play the sparkle effect first, then check for game-over
+            let sparkleAction = SKAction.run {
+                self.addSparkleEffect(around: cellNodes)
             }
 
-            // Play game over sound
-            if let gameOverSoundURL = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
-                do {
-                    self.gameOverSoundPlayer = try AVAudioPlayer(contentsOf: gameOverSoundURL)
-                    self.gameOverSoundPlayer?.volume = 0.5
-                    self.gameOverSoundPlayer?.prepareToPlay()
-                    self.gameOverSoundPlayer?.play()
-                } catch {
-                    print("Error loading sound file: \(error.localizedDescription)")
+            let waitForSparkle = SKAction.wait(forDuration: 0.3) // Reduced wait time
+
+            let gameOverCheckAction = SKAction.run {
+                if !self.checkForPossibleMoves(for: self.boxNodes) {
+                    let gridNodes = self.placedBlocks.flatMap { $0.cellNodes }
+                    let fadeDuration: TimeInterval = 0.2  // Reduced fade duration
+                    let totalWaitTime = fadeDuration
+
+                    // Create a more intense "shake buzz" vibration
+                    let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
+                    feedbackGenerator.prepare()
+
+                    // Repeat the vibration rapidly for a shake/buzz effect
+                    let vibrationDuration: TimeInterval = 1.0 // Total vibration duration
+                    let interval: TimeInterval = 0.1 // Shorter interval for a buzz effect
+                    let repetitions = Int(vibrationDuration / interval) // How many times to trigger the feedback
+
+                    for _ in 0..<repetitions {
+                        feedbackGenerator.impactOccurred()
+                        feedbackGenerator.prepare()
+                        Thread.sleep(forTimeInterval: interval) // Sleep between vibrations to create rapid bursts
+                    }
+
+                    // Play game over sound
+                    if let gameOverSoundURL = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
+                        do {
+                            self.gameOverSoundPlayer = try AVAudioPlayer(contentsOf: gameOverSoundURL)
+                            self.gameOverSoundPlayer?.volume = 0.5
+                            self.gameOverSoundPlayer?.prepareToPlay()
+                            self.gameOverSoundPlayer?.play()
+                        } catch {
+                            print("Error loading sound file: \(error.localizedDescription)")
+                        }
+                    }
+
+                    self.fadeBlocksToGrey(gridNodes) {
+                        self.showGameOverScreen() // Skip the waiting time for transition
+                    }
                 }
             }
 
-            self.fadeBlocksToGrey(gridNodes) {
-                self.run(SKAction.wait(forDuration: totalWaitTime)) {
-                    self.showGameOverScreen()
-                }
-            }
+            // Run the sequence for sparkle effect and game over check
+            self.run(SKAction.sequence([sparkleAction, waitForSparkle, gameOverCheckAction]))
         }
-    }
-
-    // Run the sequence for sparkle effect and game over check
-    self.run(SKAction.sequence([sparkleAction, waitForSparkle, gameOverCheckAction]))
-}
-
 
         if occupiedCells > 0 { // Check if at least one cell was placed
             // Play haptic feedback for successful placement (single, light vibration)
@@ -966,6 +990,7 @@ else if !checkForPossibleMoves(for: boxNodes) {
 
     printGridState()
 }
+
 
 
 
