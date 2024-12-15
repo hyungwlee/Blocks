@@ -145,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -153,6 +153,13 @@ class BGameScene: SKScene {
 
     // Change this property type accordingly at the top of your class:
     // var progressBar: SKShapeNode? // Instead of SKSpriteNode
+    func changeProgressBarColor(to color: UIColor) {
+        guard let progressBar = progressBar else {
+            print("Progress bar node is missing!")
+            return
+        }
+        progressBar.fillColor = color
+    }
 
     func createProgressBar() {
         // Define progress bar dimensions
@@ -210,6 +217,15 @@ class BGameScene: SKScene {
         let filledWidth = barWidth * newScale
         progressBar.position = CGPoint(x: -barWidth / 2 + filledWidth / 2, y: 0)
 
+        // Change color based on progress (example logic)
+        if newScale < 0.5 {
+            changeProgressBarColor(to: .red) // Red for less progress
+        } else if newScale < 0.75 {
+            changeProgressBarColor(to: .yellow) // Yellow for moderate progress
+        } else {
+            changeProgressBarColor(to: .green) // Green for high progress
+        }
+
         // If the bar reaches max scale, trigger the power-up
         if newScale >= 1.0 {
             print("Power-up triggered!")
@@ -219,6 +235,7 @@ class BGameScene: SKScene {
             spawnRandomPowerup()
         }
     }
+
 
 
     
