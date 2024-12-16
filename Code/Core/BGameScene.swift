@@ -943,15 +943,30 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
                     let fadeDuration: TimeInterval = 0.3
 
                     // Create a non-blocking vibration sequence
-                    let vibrationActions = (0..<10).map { _ in
-                        SKAction.sequence([
-                            SKAction.run {
-                                let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
-                                feedbackGenerator.impactOccurred()
-                            },
-                            SKAction.wait(forDuration: 0.1) // Short interval for buzz effect
-                        ])
-                    }
+                   let vibrationActions = (0..<10).map { index in
+                let style: UIImpactFeedbackGenerator.FeedbackStyle
+                
+                // Alternate between light, medium, and heavy impacts to simulate symphony
+                switch index % 3 {
+                case 0:
+                    style = .heavy // Use light feedback for a soft impact
+                case 1:
+                    style = .heavy// Use medium feedback for a moderate impact
+                default:
+                    style = .heavy // Use heavy feedback for a strong impact
+                }
+    
+    return SKAction.sequence([
+        SKAction.run {
+            // Create a new haptic feedback generator for each impact
+            let feedbackGenerator = UIImpactFeedbackGenerator(style: style)
+            feedbackGenerator.prepare() // Prepare for quick feedback
+            feedbackGenerator.impactOccurred() // Trigger the haptic feedback
+        },
+       SKAction.wait(forDuration: Double.random(in: 0.05...0.2)) // Slightly wider range for a varied rhythm
+ 
+    ])
+}
 
                     let vibrationSequence = SKAction.sequence(vibrationActions)
 
