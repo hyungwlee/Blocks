@@ -2277,39 +2277,110 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
                 }
             }
         }
-    func deleteBlock(_ blockNode: BBoxNode) {
-        // Remove the block node from the scene
-        blockNode.removeFromParent()
-        
-        // Remove from boxNodes array if present
-        if let index = boxNodes.firstIndex(of: blockNode) {
-            boxNodes.remove(at: index)
+    func addSwapDeletionEffect(to blockNode: BBoxNode) {
+        // Use the center of the block’s frame as the position
+        let blockCenter = CGPoint(
+            x: blockNode.calculateAccumulatedFrame().midX,
+            y: blockNode.calculateAccumulatedFrame().midY
+        )
+
+
+        // Step 1: Swirl effect
+        if let swirlEffect = SKEmitterNode(fileNamed: "SwapBurstEffect.sks") {
+            swirlEffect.position = blockCenter
+            swirlEffect.zPosition = 100
+            addChild(swirlEffect)
+            
+            swirlEffect.run(SKAction.sequence([
+                SKAction.wait(forDuration: 0.5),
+                SKAction.removeFromParent()
+            ]))
         }
-        
-        // Generate a new block
-        var newBlock: BBoxNode
-        repeat {
-            let blockType = availableBlockTypes.randomElement()!
-            newBlock = blockType.init(
-                layoutInfo: BLayoutInfo(screenSize: size, boxSize: CGSize(width: tileSize, height: tileSize)),
-                tileSize: tileSize
+
+        // Step 2: Sparkle effects
+        let sparkleTexture = SKTexture(imageNamed: "b_twinkle")
+        let sparkleEmitterNode = SKNode()
+        sparkleEmitterNode.position = blockCenter
+        sparkleEmitterNode.zPosition = 150
+        addChild(sparkleEmitterNode)
+
+        let sparkleCount = 12
+        let sparkleRadius: CGFloat = blockNode.calculateAccumulatedFrame().width / 2 + 10
+
+        for i in 0..<sparkleCount {
+            let angle = CGFloat(i) * (2 * .pi / CGFloat(sparkleCount))
+            let sparkle = SKSpriteNode(texture: sparkleTexture)
+            sparkle.setScale(0.4)
+            sparkle.alpha = 0.0
+            sparkle.position = CGPoint(
+                x: sparkleRadius * cos(angle),
+                y: sparkleRadius * sin(angle)
             )
-        } while type(of: newBlock) == type(of: blockNode) // Ensure the new block is not of the same type
-        
-        newBlock.gameScene = self
-        newBlock.setScale(initialScale)
-        newBlock.position = blockNode.position // Set the position to the same as the deleted block
-        boxNodes.append(newBlock)
-        safeAddBlock(newBlock)
-        
-        // Update the positions of the spawning blocks
-        layoutSpawnedBlocks(isThreeNewBlocks: false)
-        
-        // Check for game-over condition after deletion
-        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
-            showGameOverScreen()
+            sparkleEmitterNode.addChild(sparkle)
+
+            // Animate sparkles
+            let fadeIn = SKAction.fadeAlpha(to: 0.8, duration: 0.1)
+            let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+            let sequence = SKAction.sequence([fadeIn, fadeOut])
+            sparkle.run(sequence)
         }
+
+        // Step 3: Vanish block
+        let scaleDown = SKAction.scale(to: 0.0, duration: 0.3)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        let vanishGroup = SKAction.group([scaleDown, fadeOut])
+        blockNode.run(vanishGroup)
+
+        // Step 4: Remove sparkles after vanish
+        sparkleEmitterNode.run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.5),
+            SKAction.removeFromParent()
+        ]))
     }
+
+
+
+    func deleteBlock(_ blockNode: BBoxNode) {
+        // Run the enhanced delete (swap) animation
+        addSwapDeletionEffect(to: blockNode)
+        
+        // After the vanish duration completes, remove the block and spawn the new one
+        let waitAction = SKAction.wait(forDuration: 1.0) // Enough time for the full animation
+        let removeAndReplace = SKAction.run {
+            // Remove the old block from the scene and array
+            blockNode.removeFromParent()
+            if let index = self.boxNodes.firstIndex(of: blockNode) {
+                self.boxNodes.remove(at: index)
+            }
+            
+            // Spawn a new, different block
+            var newBlock: BBoxNode
+            repeat {
+                let blockType = self.availableBlockTypes.randomElement()!
+                newBlock = blockType.init(
+                    layoutInfo: BLayoutInfo(screenSize: self.size, boxSize: CGSize(width: self.tileSize, height: self.tileSize)),
+                    tileSize: self.tileSize
+                )
+            } while type(of: newBlock) == type(of: blockNode)
+            
+            newBlock.gameScene = self
+            newBlock.setScale(self.initialScale)
+            newBlock.position = blockNode.position
+            self.boxNodes.append(newBlock)
+            self.safeAddBlock(newBlock)
+            
+            // Re-layout spawned blocks
+            self.layoutSpawnedBlocks(isThreeNewBlocks: false)
+            
+            // Check for game-over condition
+            if self.boxNodes.isEmpty || (!self.checkForPossibleMoves(for: self.boxNodes) && !self.isDeletePowerupAvailable()) {
+                self.showGameOverScreen()
+            }
+        }
+
+        run(SKAction.sequence([waitAction, removeAndReplace]))
+    }
+
 
 
     
