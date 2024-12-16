@@ -400,21 +400,21 @@ class BGameScene: SKScene {
     }
     
     private var availableBlockTypes: [BBoxNode.Type] = [
-        BSingleBlock.self,
-        BSquareBlock2x2.self,
-        BSquareBlock3x3.self,
-        BVerticalBlockNode1x2.self,
-        BHorizontalBlockNode1x2.self,
-        BLShapeNode2x2.self, // Added the L-shaped block
-        BVerticalBlockNode1x3.self,
-        BHorizontalBlockNode1x3.self,
-        BVerticalBlockNode1x4.self,
+//        BSingleBlock.self,
+//        BSquareBlock2x2.self,
+//        BSquareBlock3x3.self,
+//        BVerticalBlockNode1x2.self,
+//        BHorizontalBlockNode1x2.self,
+//        BLShapeNode2x2.self, // Added the L-shaped block
+//        BVerticalBlockNode1x3.self,
+//        BHorizontalBlockNode1x3.self,
+//        BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
-        BRotatedLShapeNode2x2.self,
-        BLShapeNode5Block.self,
-        BRotatedLShapeNode5Block.self,
-        BTShapedBlock.self,
-        BZShapedBlock.self
+//        BRotatedLShapeNode2x2.self,
+//        BLShapeNode5Block.self,
+//        BRotatedLShapeNode5Block.self,
+//        BTShapedBlock.self,
+//        BZShapedBlock.self
     ]
     
 
@@ -829,6 +829,7 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     }
 
 
+var placedBlocksCount = 0
 
 func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
     let row = gridPosition.row
@@ -887,6 +888,7 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
 
         // Original code to add sparkle effect
         addSparkleEffect(around: cellNodes)
+        placedBlocksCount += 1
 
         // Remove the block from the spawn area
         if let index = boxNodes.firstIndex(of: block) {
@@ -1192,6 +1194,9 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         
         // Sync placed blocks
         syncPlacedBlocks()
+        if placedBlocksCount >= 3 && isBoardCleared() {
+               awardBonusPoints()
+           }
         
         return lineClears
     }
@@ -2277,6 +2282,57 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
                 }
             }
         }
+    func isBoardCleared() -> Bool {
+        for row in grid {
+            for cell in row {
+                if cell != nil {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    func awardBonusPoints() {
+        let bonusPoints = 250 // Random bonus between 250-300
+        score += bonusPoints
+        updateScoreLabel()
+
+        // Celebration Animation
+        let bonusLabel = SKLabelNode(text: "+\(bonusPoints)")
+        bonusLabel.fontName = "Helvetica-Bold"
+        bonusLabel.fontSize = 40
+        bonusLabel.fontColor = .yellow
+        bonusLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        bonusLabel.zPosition = 200
+        addChild(bonusLabel)
+
+        // Animate bonus label (fade in, scale, bounce, fade out)
+        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+        let scaleUp = SKAction.scale(to: 1.5, duration: 0.5)
+        let bounce = SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 50, duration: 0.3),
+            SKAction.moveBy(x: 0, y: -20, duration: 0.3),
+            SKAction.moveBy(x: 0, y: 20, duration: 0.3)
+        ])
+        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
+        let remove = SKAction.removeFromParent()
+        bonusLabel.run(SKAction.sequence([fadeIn, scaleUp, bounce, fadeOut, remove]))
+
+        // Particle Effect
+        if let particleEffect = SKEmitterNode(fileNamed: "CelebrationEffect.sks") {
+            particleEffect.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            particleEffect.zPosition = 200
+            addChild(particleEffect)
+            particleEffect.run(SKAction.sequence([
+                SKAction.wait(forDuration: 2.0),
+                SKAction.removeFromParent()
+            ]))
+        }
+
+        // Play Celebration Sound
+        run(SKAction.playSoundFileNamed("celebration.mp3", waitForCompletion: false))
+    }
+
     func addSwapDeletionEffect(to blockNode: BBoxNode) {
         // Use the center of the block’s frame as the position
         let blockCenter = CGPoint(
