@@ -2404,7 +2404,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         addSwapDeletionEffect(to: blockNode)
         
         // After the vanish duration completes, remove the block and spawn the new one
-        let waitAction = SKAction.wait(forDuration: 1.0) // Enough time for the full animation
+        let waitAction = SKAction.wait(forDuration: 0.3) // Enough time for the full animation
         let removeAndReplace = SKAction.run {
             // Remove the old block from the scene and array
             blockNode.removeFromParent()
