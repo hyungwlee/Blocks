@@ -145,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5// Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -158,8 +158,10 @@ class BGameScene: SKScene {
             print("Progress bar node is missing!")
             return
         }
-        progressBar.fillColor = color
+        // Always set the color to orange
+        progressBar.fillColor = .orange
     }
+
 
     func createProgressBar() {
         // Define progress bar dimensions
@@ -187,7 +189,7 @@ class BGameScene: SKScene {
 
         // Create the progress bar as a shape node
         progressBar = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
-        progressBar?.fillColor = .green
+        progressBar?.fillColor = .orange // Set the color to orange
         progressBar?.strokeColor = .clear
         progressBar?.position = CGPoint(x: -barWidth / 2, y: 0) // Start from the left edge
         progressBar?.xScale = 0.0 // Initially empty
@@ -196,6 +198,7 @@ class BGameScene: SKScene {
         clippingNode.addChild(progressBar!)
         addChild(clippingNode)
     }
+
 
 
 
@@ -218,13 +221,13 @@ class BGameScene: SKScene {
         progressBar.position = CGPoint(x: -barWidth / 2 + filledWidth / 2, y: 0)
 
         // Change color based on progress (example logic)
-        if newScale < 0.5 {
-            changeProgressBarColor(to: .red) // Red for less progress
-        } else if newScale < 0.75 {
-            changeProgressBarColor(to: .yellow) // Yellow for moderate progress
-        } else {
-            changeProgressBarColor(to: .green) // Green for high progress
-        }
+//        if newScale < 0.5 {
+//            changeProgressBarColor(to: .red) // Red for less progress
+//        } else if newScale < 0.75 {
+//            changeProgressBarColor(to: .yellow) // Yellow for moderate progress
+//        } else {
+//            changeProgressBarColor(to: .green) // Green for high progress
+//        }
 
         // If the bar reaches max scale, trigger the power-up
         if newScale >= 1.0 {
