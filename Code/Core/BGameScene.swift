@@ -1396,17 +1396,7 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY), orientation: "horizontal")
     }
 
-    // Use AVAudioPlayer for custom volume control
-    if let clearedLinesSoundURL = Bundle.main.url(forResource: "clearedlines", withExtension: "wav") {
-        do {
-            let soundPlayer = try AVAudioPlayer(contentsOf: clearedLinesSoundURL)
-            soundPlayer.volume = 0.2  // Set volume to 20%
-            soundPlayer.prepareToPlay()
-            soundPlayer.play()
-        } catch {
-            print("Error loading sound file: \(error.localizedDescription)")
-        }
-    }
+   run(SKAction.playSoundFileNamed("clearedlines.wav", waitForCompletion: false))
 
     return clearedCells
 }
@@ -1453,16 +1443,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     }
 
     // Use AVAudioPlayer for custom volume control
-    if let clearedLinesSoundURL = Bundle.main.url(forResource: "clearedlines", withExtension: "wav") {
-        do {
-            let soundPlayer = try AVAudioPlayer(contentsOf: clearedLinesSoundURL)
-            soundPlayer.volume = 0.2  // Set volume to 20%
-            soundPlayer.prepareToPlay()
-            soundPlayer.play()
-        } catch {
-            print("Error loading sound file: \(error.localizedDescription)")
-        }
-    }
+   run(SKAction.playSoundFileNamed("clearedlines.wav", waitForCompletion: false))
 
     return clearedCells
 }
