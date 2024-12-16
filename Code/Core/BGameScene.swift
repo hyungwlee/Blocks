@@ -145,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5 // Number of lines required to fill the bar
+         let requiredLinesForPowerup = 1 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -969,7 +969,7 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
                     if let gameOverSoundURL = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
                         do {
                             self.gameOverSoundPlayer = try AVAudioPlayer(contentsOf: gameOverSoundURL)
-                            self.gameOverSoundPlayer?.volume = 0.5
+                            self.gameOverSoundPlayer?.volume = 0.2
                             self.gameOverSoundPlayer?.prepareToPlay()
                             self.gameOverSoundPlayer?.play()
                         } catch {
@@ -1396,10 +1396,21 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY), orientation: "horizontal")
     }
 
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+    // Use AVAudioPlayer for custom volume control
+    if let clearedLinesSoundURL = Bundle.main.url(forResource: "clearedlines", withExtension: "wav") {
+        do {
+            let soundPlayer = try AVAudioPlayer(contentsOf: clearedLinesSoundURL)
+            soundPlayer.volume = 0.2  // Set volume to 20%
+            soundPlayer.prepareToPlay()
+            soundPlayer.play()
+        } catch {
+            print("Error loading sound file: \(error.localizedDescription)")
+        }
+    }
 
     return clearedCells
 }
+
 
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
@@ -1441,10 +1452,21 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         showMultiplierEffect(at: CGPoint(x: colCenterX, y: colCenterY), orientation: "vertical")
     }
 
-    run(SKAction.playSoundFileNamed("Risingwav.mp3", waitForCompletion: false))
+    // Use AVAudioPlayer for custom volume control
+    if let clearedLinesSoundURL = Bundle.main.url(forResource: "clearedlines", withExtension: "wav") {
+        do {
+            let soundPlayer = try AVAudioPlayer(contentsOf: clearedLinesSoundURL)
+            soundPlayer.volume = 0.2  // Set volume to 20%
+            soundPlayer.prepareToPlay()
+            soundPlayer.play()
+        } catch {
+            print("Error loading sound file: \(error.localizedDescription)")
+        }
+    }
 
     return clearedCells
 }
+
 
 
 func showMultiplierEffect(at position: CGPoint, orientation: String) {
@@ -1822,14 +1844,31 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             highlightPowerupIcon(powerupIcon)
             updatePowerupVisuals()
 
-            if powerupType == .undo {
-                if let placeholder = powerupIcon.parent as? SKShapeNode,
-                   let index = placeholderIndex(for: placeholder) {
-                    undoLastMove()
-                    resetPlaceholder(at: index)
-                }
-                deactivateActivePowerup()
-            } else if powerupType == .multiplier {
+           if powerupType == .undo {
+    if let placeholder = powerupIcon.parent as? SKShapeNode,
+       let index = placeholderIndex(for: placeholder) {
+        
+        // Play sound effect when undo power-up is activated
+        if let url = Bundle.main.url(forResource: "reverse", withExtension: "wav") {
+            do {
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play()
+                audioPlayer?.volume = 0.2 // Adjust the volume
+                print("Undo power-up sound effect played")
+            } catch {
+                print("Error: Unable to play undo sound - \(error)")
+            }
+        } else {
+            print("Error: Undo sound audio file not found.")
+        }
+
+        undoLastMove()
+        resetPlaceholder(at: index)
+    }
+    deactivateActivePowerup()
+}
+else if powerupType == .multiplier {
                 showMultiplierLabel()
             } else if powerupType == .delete {
                 // Highlight deletable blocks when delete power-up is activated
@@ -1865,17 +1904,35 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             }
             return
 
-        case .swap:
-            if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
-               boxNodes.contains(blockNode) {
-                deleteBlock(blockNode)
-                if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
-                   let index = placeholderIndex(for: placeholder) {
-                    resetPlaceholder(at: index)
-                }
-                deactivateActivePowerup()
+       case .swap:
+    if let blockNode = nodeTapped.closestParent(ofType: BBoxNode.self),
+       boxNodes.contains(blockNode) {
+        
+        // Play sound effect when a block is selected for swapping
+        if let url = Bundle.main.url(forResource: "whoosh", withExtension: "wav") {
+            do {
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play()
+                audioPlayer?.volume = 0.2 // Adjust volume
+                print("Block selected for swapping sound effect played")
+            } catch {
+                print("Error: Unable to play sound - \(error)")
             }
-            return
+        } else {
+            print("Error: Audio file for block selected for swap not found.")
+        }
+
+        // Perform the block deletion and reset
+        deleteBlock(blockNode)
+        if let placeholder = activePowerupIcon?.parent as? SKShapeNode,
+           let index = placeholderIndex(for: placeholder) {
+            resetPlaceholder(at: index)
+        }
+        deactivateActivePowerup()
+    }
+    return
+
 
         case .undo:
             return
@@ -2069,7 +2126,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         }
         
         // Play a sound effect for the deletion
-        run(SKAction.playSoundFileNamed("deleteSound.mp3", waitForCompletion: false))
+        run(SKAction.playSoundFileNamed("empty trash.aif", waitForCompletion: false))
     }
 
     // Example integration in deletePlacedBlock
