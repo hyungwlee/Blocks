@@ -400,21 +400,21 @@ class BGameScene: SKScene {
     }
     
     private var availableBlockTypes: [BBoxNode.Type] = [
-//        BSingleBlock.self,
-//        BSquareBlock2x2.self,
-//        BSquareBlock3x3.self,
-//        BVerticalBlockNode1x2.self,
-//        BHorizontalBlockNode1x2.self,
-//        BLShapeNode2x2.self, // Added the L-shaped block
-//        BVerticalBlockNode1x3.self,
-//        BHorizontalBlockNode1x3.self,
-//        BVerticalBlockNode1x4.self,
+        BSingleBlock.self,
+        BSquareBlock2x2.self,
+        BSquareBlock3x3.self,
+        BVerticalBlockNode1x2.self,
+        BHorizontalBlockNode1x2.self,
+        BLShapeNode2x2.self, // Added the L-shaped block
+        BVerticalBlockNode1x3.self,
+        BHorizontalBlockNode1x3.self,
+        BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
-//        BRotatedLShapeNode2x2.self,
-//        BLShapeNode5Block.self,
-//        BRotatedLShapeNode5Block.self,
-//        BTShapedBlock.self,
-//        BZShapedBlock.self
+        BRotatedLShapeNode2x2.self,
+        BLShapeNode5Block.self,
+        BRotatedLShapeNode5Block.self,
+        BTShapedBlock.self,
+        BZShapedBlock.self
     ]
     
 
