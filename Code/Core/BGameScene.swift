@@ -619,8 +619,8 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     let gridHeight = CGFloat(gridSize) * tileSize
 
     // Set the X node size to a smaller value, e.g., 60% of the grid's size
-    let xNodeWidth = gridWidth * 0.6
-    let xNodeHeight = gridHeight * 0.6
+    let xNodeWidth = gridWidth * 0.4
+    let xNodeHeight = gridHeight * 0.4
     xNode.size = CGSize(width: xNodeWidth, height: xNodeHeight)
 
     // Get the origin of the grid
@@ -672,7 +672,6 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
         SKAction.run {
             fadeToBlack.run(fadeScreenAction)
         },
-        SKAction.wait(forDuration: 0.1), // Small wait for immediate fade effect
         SKAction.run(completion)
     ])
 
@@ -681,11 +680,19 @@ func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) 
     }
     
     // Fade-in the X node in the center of the grid with ease-in effect
-    let fadeInAction = SKAction.fadeAlpha(to: 1.0, duration: 0.5)  // Fade-in duration for "X"
-    
+  let fadeInAction = SKAction.fadeAlpha(to: 1.0, duration: 0.015) // Fade-in duration for "X"
+
     // Apply ease-in timing mode to the fade-in action
     fadeInAction.timingMode = .easeIn
-    xNode.run(fadeInAction)
+
+let waitAction = SKAction.wait(forDuration: 1.0) // Wait for 1 second after the fade-in
+
+// Sequence: Perform fade-in with ease-in effect, then wait for 1 second
+let fadeInSequence = SKAction.sequence([fadeInAction, waitAction])
+
+// Run the sequence on the X node
+xNode.run(fadeInSequence)
+
 }
 
 
@@ -945,7 +952,7 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
             let gameOverCheckAction = SKAction.run {
                 if !self.checkForPossibleMoves(for: self.boxNodes) {
                     let gridNodes = self.placedBlocks.flatMap { $0.cellNodes }
-                    let fadeDuration: TimeInterval = 0.3
+                    let fadeDuration: TimeInterval = 0.015
 
                     // Create a non-blocking vibration sequence
                    let vibrationActions = (0..<10).map { index in
@@ -979,9 +986,10 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
                     self.run(SKAction.group([
                         vibrationSequence,
                         SKAction.run {
-                            self.fadeBlocksToGrey(gridNodes) {
+                        self.fadeBlocksToGrey(gridNodes) {
                                 self.showGameOverScreen()
                             }
+
                         }
                     ]))
 
