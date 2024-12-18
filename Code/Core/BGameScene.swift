@@ -76,7 +76,7 @@ class BGameScene: SKScene {
         Powerup(type: .delete, imageName: "delete.png"),
         Powerup(type: .swap, imageName: "swap.png"),
         Powerup(type: .undo, imageName: "undo.png"),
-        Powerup(type: .multiplier, imageName: "multiplier.png")
+//        Powerup(type: .multiplier, imageName: "multiplier.png")
     ]
     
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
@@ -145,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5// Number of lines required to fill the bar
+         let requiredLinesForPowerup = 1// Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -2061,53 +2061,7 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
     
-//    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
-//        // Ensure all original grid positions are intact and match the block's cells
-//        for gridPosition in placedBlock.gridPositions {
-//            if let cellNode = grid[gridPosition.row][gridPosition.col],
-//               let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
-//                if blockInCell !== placedBlock {
-//                    print("Block cannot be deleted because its cells do not all belong to the same block.")
-//                    return false
-//                }
-//            } else {
-//                print("Block cannot be deleted because a cell is missing at row \(gridPosition.row), col \(gridPosition.col).")
-//                return false
-//            }
-//        }
-//
-//        print("Block is intact and will be deleted.")
-//        
-//        // Proceed with the deletion
-//        for cellNode in placedBlock.cellNodes {
-//            cellNode.removeFromParent()
-//            cellNode.userData = nil
-//        }
-//
-//        for gridPosition in placedBlock.gridPositions {
-//            grid[gridPosition.row][gridPosition.col] = nil
-//        }
-//
-//        if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
-//            placedBlocks.remove(at: index)
-//        }
-//
-//        if updateScore {
-//            score += placedBlock.cellNodes.count
-//            updateScoreLabel()
-//        }
-//
-//        _ = checkForCompletedLines()
-//        syncPlacedBlocks()
-//
-//        // Check for game-over condition
-//        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
-//            showGameOverScreen()
-//        }
-//
-//        return true
-//    }
-// 
+
     
     func addDeletionEffect(to block: PlacedBlock) {
         // Iterate over each cell node in the block
@@ -2141,7 +2095,6 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         run(SKAction.playSoundFileNamed("empty trash.aif", waitForCompletion: false))
     }
 
-    // Example integration in deletePlacedBlock
     func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
         // Ensure all cells of the block are intact and match the grid state
         for gridPosition in placedBlock.gridPositions {
@@ -2158,6 +2111,8 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         }
 
         print("Block is intact and will be deleted.")
+        
+        let previousScore = score
         
         // Add the deletion effect
         addDeletionEffect(to: placedBlock)
@@ -2179,6 +2134,10 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         _ = checkForCompletedLines()
         syncPlacedBlocks()
 
+        // Record a move for this deletion so we can undo it
+        let deletionMove = Move(deletedBlock: placedBlock, previousScore: previousScore)
+        undoStack.append(deletionMove)
+
         // Handle game-over conditions
         if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
             showGameOverScreen()
@@ -2187,51 +2146,8 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         return true
     }
 
-//    func deletePlacedBlock(_ placedBlock: PlacedBlock, updateScore: Bool = true) -> Bool {
-//        // Check if all cells of the block are intact and match the grid state
-//        for gridPosition in placedBlock.gridPositions {
-//            if let cellNode = grid[gridPosition.row][gridPosition.col],
-//               let blockInCell = cellNode.userData?["placedBlock"] as? PlacedBlock {
-//                if blockInCell !== placedBlock {
-//                    print("Block cannot be deleted: Some cells belong to another block.")
-//                    return false
-//                }
-//            } else {
-//                print("Block cannot be deleted: Missing cells.")
-//                return false
-//            }
-//        }
-//
-//        print("Block is intact and will be deleted.")
-//
-//        // Delete all cells of the block
-//        for gridPosition in placedBlock.gridPositions {
-//            if let cellNode = grid[gridPosition.row][gridPosition.col] {
-//                cellNode.removeFromParent()
-//                grid[gridPosition.row][gridPosition.col] = nil
-//            }
-//        }
-//
-//        if let index = placedBlocks.firstIndex(where: { $0 === placedBlock }) {
-//            placedBlocks.remove(at: index)
-//        }
-//
-//        if updateScore {
-//            score += placedBlock.gridPositions.count
-//            updateScoreLabel()
-//        }
-//
-//        _ = checkForCompletedLines()
-//        syncPlacedBlocks()
-//
-//        // Handle game-over conditions
-//        if boxNodes.isEmpty || (!checkForPossibleMoves(for: boxNodes) && !isDeletePowerupAvailable()) {
-//            showGameOverScreen()
-//        }
-//
-//        return true
-//    }
-//
+
+
 
 
 
@@ -2408,9 +2324,14 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
     func deleteBlock(_ blockNode: BBoxNode) {
+        let previousScore = score
+
         // Run the enhanced delete (swap) animation
         addSwapDeletionEffect(to: blockNode)
         
+        // Remember which block is being removed
+        let originalBlock = blockNode
+
         // After the vanish duration completes, remove the block and spawn the new one
         let waitAction = SKAction.wait(forDuration: 0.3) // Enough time for the full animation
         let removeAndReplace = SKAction.run {
@@ -2436,6 +2357,10 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
             self.boxNodes.append(newBlock)
             self.safeAddBlock(newBlock)
             
+            // Record a swap move so we can undo it (this will restore the original block and remove the new one)
+            let swapMove = Move(originalBlock: originalBlock, newBlock: newBlock, previousScore: previousScore)
+            self.undoStack.append(swapMove)
+
             // Re-layout spawned blocks
             self.layoutSpawnedBlocks(isThreeNewBlocks: false)
             
@@ -2570,83 +2495,130 @@ override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
     return CGPoint(x: x, y: y)
 }
 
-func undoLastMove() {
-    // Check if there is a move to undo
-    guard let move = undoStack.popLast() else { return }
-    
-    // Step 1: Remove the placed block from the grid and scene
-    for gridPos in move.placedBlock.gridPositions {
-        if let cellNode = grid[gridPos.row][gridPos.col] {
-            cellNode.removeFromParent()
-            grid[gridPos.row][gridPos.col] = nil
-        }
-    }
-    
-    // Remove the placed block from the placedBlocks array
-    if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock }) {
-        placedBlocks.remove(at: index)
-    }
-    
-    // Step 2: Restore the cleared lines
-    for lineClear in move.clearedLines {
-        for (row, col, cellNode) in lineClear.clearedCells {
-            grid[row][col] = cellNode
-            if cellNode.parent == nil {
-                addChild(cellNode)
-            }
-            cellNode.alpha = 1.0
-            cellNode.setScale(1.0)
-            
-            // Restore the original position
-            if let originalPosition = cellNode.userData?["originalPosition"] as? CGPoint {
-                cellNode.position = originalPosition
-            } else {
-                cellNode.position = positionForGridCoordinate(GridCoordinate(row: row, col: col))
-            }
-        }
-    }
-    
-    // Step 3: Remove any remnants of the placed block from the grid
-    for (row, col, cellNode) in move.addedCells {
-        grid[row][col] = nil
-        cellNode.removeFromParent()
-    }
-    
-    // Step 4: Restore the block node to a temporary "undo" position
-    move.blockNode.position = getUndoBlockCenterPosition()
-    move.blockNode.setScale(initialScale)
-    
-    // Add the undo block directly to the scene but not to `boxNodes`
-    safeAddBlock(move.blockNode)
-    
-    // Step 5: Restore the score
-    score = move.previousScore
-    updateScoreLabel()
-    
-    // Step 6: Reset the current combo multiplier to its base value
-    currentCombo = 1 // Reset combo multiplier
-    // Optionally, update any UI elements tracking the combo multiplier here (if needed)
-    
-    // Step 7: Clear any visual highlights
-    clearHighlights()
-    
-    // Step 8: Hide current spawned blocks and store them
-    tempSpawnedBlocks = boxNodes
-    for block in boxNodes {
-        block.removeFromParent()
-    }
-    boxNodes.removeAll()
-    
-    // Step 9: Add the undo block to boxNodes and the scene
-    boxNodes.append(move.blockNode)
-    safeAddBlock(move.blockNode)
-    move.blockNode.position = getUndoBlockCenterPosition()
-    move.blockNode.setScale(initialScale)
-    move.blockNode.gameScene = self
+    func undoLastMove() {
+        guard let move = undoStack.popLast() else { return }
 
-    // Set the undo in progress flag
-    isUndoInProgress = true
-}
+        switch move.moveType {
+        case .placement:
+            // Undo a placement move (existing logic)
+            // Remove the placed block
+            for gridPos in move.placedBlock!.gridPositions {
+                if let cellNode = grid[gridPos.row][gridPos.col] {
+                    cellNode.removeFromParent()
+                    grid[gridPos.row][gridPos.col] = nil
+                }
+            }
+
+            // Remove from placedBlocks
+            if let index = placedBlocks.firstIndex(where: { $0 === move.placedBlock! }) {
+                placedBlocks.remove(at: index)
+            }
+
+            // Restore cleared lines
+            for lineClear in move.clearedLines {
+                for (row, col, cellNode) in lineClear.clearedCells {
+                    grid[row][col] = cellNode
+                    if cellNode.parent == nil {
+                        addChild(cellNode)
+                    }
+                    cellNode.alpha = 1.0
+                    cellNode.setScale(1.0)
+
+                    if let originalPosition = cellNode.userData?["originalPosition"] as? CGPoint {
+                        cellNode.position = originalPosition
+                    } else {
+                        cellNode.position = positionForGridCoordinate(GridCoordinate(row: row, col: col))
+                    }
+                }
+            }
+
+            // Remove addedCells from the grid
+            for (row, col, cellNode) in move.addedCells {
+                grid[row][col] = nil
+                cellNode.removeFromParent()
+            }
+
+            // Restore the block node to the undo center position
+            move.blockNode!.position = getUndoBlockCenterPosition()
+            move.blockNode!.setScale(initialScale)
+            safeAddBlock(move.blockNode!)
+            
+            // Restore score
+            score = move.previousScore
+            updateScoreLabel()
+
+            currentCombo = 1
+            clearHighlights()
+
+            // Hide current spawned blocks
+            tempSpawnedBlocks = boxNodes
+            for block in boxNodes {
+                block.removeFromParent()
+            }
+            boxNodes.removeAll()
+
+            // Add the undo block to boxNodes
+            boxNodes.append(move.blockNode!)
+            safeAddBlock(move.blockNode!)
+            move.blockNode!.position = getUndoBlockCenterPosition()
+            move.blockNode!.setScale(initialScale)
+            move.blockNode!.gameScene = self
+            isUndoInProgress = true
+
+        case .deletion:
+               // Undo a deletion move:
+               guard let deletedBlock = move.deletedBlock else { return }
+
+               // Restore the deleted block visually
+               for (row, col, cellNode) in move.addedCells {
+                   grid[row][col] = cellNode
+                   if cellNode.parent == nil {
+                       addChild(cellNode)
+                   }
+
+                   // Reset the cell's visual state
+                   cellNode.alpha = 1.0
+                   cellNode.setScale(1.0)
+                   cellNode.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2))
+
+                   // Remove any ongoing actions
+                   cellNode.removeAllActions()
+               }
+
+               // Re-add the block to placedBlocks
+               placedBlocks.append(deletedBlock)
+
+               // Restore score
+               score = move.previousScore
+               updateScoreLabel()
+
+               currentCombo = 1
+               clearHighlights()
+
+        case .swap:
+            // Undo a swap move:
+            // Remove the newly created block and restore the original block
+            guard let originalBlock = move.originalBlockNode, let newBlock = move.newBlockNode else { return }
+
+            // Remove the new block from the scene and from boxNodes
+            if let index = boxNodes.firstIndex(of: newBlock) {
+                boxNodes.remove(at: index)
+            }
+            newBlock.removeFromParent()
+
+            // Re-add the original block to the scene
+            originalBlock.setScale(initialScale)
+            safeAddBlock(originalBlock)
+            boxNodes.append(originalBlock)
+
+            // Restore score
+            score = move.previousScore
+            updateScoreLabel()
+
+            currentCombo = 1
+            clearHighlights()
+        }
+    }
 
 
 // Helper function to calculate the center position for the undo block
@@ -2722,22 +2694,82 @@ class PlacedBlock {
     }
 }
 
-// Define the Move class for undo functionality
+// Define a MoveType enum to distinguish move types
+enum MoveType {
+    case placement
+    case deletion
+    case swap
+}
+
 class Move {
-    let placedBlock: PlacedBlock
-    let blockNode: BBoxNode
+    let placedBlock: PlacedBlock?
+    let blockNode: BBoxNode?
     let previousScore: Int
     let addedCells: [(row: Int, col: Int, cellNode: SKShapeNode)]
     let clearedLines: [LineClear]
+    let moveType: MoveType
     
-    init(placedBlock: PlacedBlock, blockNode: BBoxNode, previousScore: Int, addedCells: [(Int, Int, SKShapeNode)], clearedLines: [LineClear]) {
+    // For deletion moves:
+    // The deletedBlock stores the block that was deleted.
+    // We can restore it by placing its cells back.
+    var deletedBlock: PlacedBlock?
+    
+    // For swap moves:
+    // We store the original block that was removed and the new block that replaced it.
+    var originalBlockNode: BBoxNode?
+    var newBlockNode: BBoxNode?
+    
+    // Placement move initializer
+    init(placedBlock: PlacedBlock,
+         blockNode: BBoxNode,
+         previousScore: Int,
+         addedCells: [(Int, Int, SKShapeNode)],
+         clearedLines: [LineClear]) {
+        
         self.placedBlock = placedBlock
         self.blockNode = blockNode
         self.previousScore = previousScore
         self.addedCells = addedCells
         self.clearedLines = clearedLines
+        self.moveType = .placement
+        self.deletedBlock = nil
+        self.originalBlockNode = nil
+        self.newBlockNode = nil
+    }
+    
+    // Deletion move initializer
+    init(deletedBlock: PlacedBlock, previousScore: Int) {
+        self.placedBlock = nil
+        self.blockNode = nil
+        self.previousScore = previousScore
+        // For a deletion move, addedCells represent the cells that were part of the deleted block
+        self.addedCells = deletedBlock.gridPositions.enumerated().compactMap { (index, pos) in
+            if let cellNode = deletedBlock.cellNodes[index] as? SKShapeNode {
+                return (pos.row, pos.col, cellNode)
+            }
+            return nil
+        }
+        self.clearedLines = []
+        self.moveType = .deletion
+        self.deletedBlock = deletedBlock
+        self.originalBlockNode = nil
+        self.newBlockNode = nil
+    }
+    
+    // Swap move initializer
+    init(originalBlock: BBoxNode, newBlock: BBoxNode, previousScore: Int) {
+        self.placedBlock = nil
+        self.blockNode = nil
+        self.previousScore = previousScore
+        self.addedCells = []
+        self.clearedLines = []
+        self.moveType = .swap
+        self.deletedBlock = nil
+        self.originalBlockNode = originalBlock
+        self.newBlockNode = newBlock
     }
 }
+
 
 // Define the LineClear class to store cleared lines
 class LineClear {
