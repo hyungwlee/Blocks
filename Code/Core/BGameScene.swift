@@ -76,7 +76,7 @@ class BGameScene: SKScene {
         Powerup(type: .delete, imageName: "delete.png"),
         Powerup(type: .swap, imageName: "swap.png"),
         Powerup(type: .undo, imageName: "undo.png"),
-//        Powerup(type: .multiplier, imageName: "multiplier.png")
+        Powerup(type: .multiplier, imageName: "multiplier.png")
     ]
     
     init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
@@ -145,7 +145,7 @@ class BGameScene: SKScene {
         }
     }
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1// Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5// Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
