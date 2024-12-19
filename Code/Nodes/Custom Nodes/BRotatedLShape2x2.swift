@@ -12,26 +12,11 @@ class BRotatedLShapeNode2x2: BBoxNode {
     
     private let availableAssets = [
         "Laughing-1", "Laughing-2", "Laughing", // Example assets
-        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16315","Straight Face"
+        "Group 16309-1", "Group 16309", "Group 16310", "Group 16312-1", "Group 16313", "Group 16314-1", "Group 16316" ,"Group 16363-1","Group 16315","Straight"
     ]
     
-    private let assetColors: [String: UIColor] = [
-        "Laughing-1": .red,   // Example color for Laughing-1
-        "Laughing-2": .green, // Example color for Laughing-2
-        "Laughing": .blue,    // Example color for Laughing
-        "Group 16309-1": .yellow,
-        "Group 16309": .orange,
-        "Group 16310": .purple,
-        "Group 16312-1": .cyan,
-        "Group 16313": .magenta,
-        "Group 16314-1": .brown,
-        "Group 16316": .blue,
-        "Group 16363-1": .yellow,
-        "Group 16315": .green,
-        "Straight Face": .systemBlue
-    ]
     
-    private let selectedAsset = "Straight Face"  // Choose the asset you want
+    private let selectedAsset = "Straight"  // Choose the asset you want
     
     required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .orange) {
         super.init(layoutInfo: layoutInfo, tileSize: tileSize, color: color)
@@ -43,10 +28,6 @@ class BRotatedLShapeNode2x2: BBoxNode {
             (row: 1, col: 0)
         ]
         
-        // Use the selected asset directly
-        let blockColor = assetColors[selectedAsset] ?? .orange
-        
-        self.color = blockColor
         
         // Define assets at specific positions for the rotated shape
         let assets = [

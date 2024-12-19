@@ -22,13 +22,16 @@ class BBoxNode: SKNode {
     // Property to define the shape of the block
     var shape: [(row: Int, col: Int)] = []
     var assets: [(name: String, position: (row: Int, col: Int))] = [] // Assets associated with the block
+    private var outlineNode: SKShapeNode?
     
-    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .red) {
+    required init(layoutInfo: BLayoutInfo, tileSize: CGFloat, color: UIColor = .clear) {
         self.layoutInfo = layoutInfo
         self.tileSize = tileSize
         self.color = color
+        
         super.init()
         isUserInteractionEnabled = false // Disable touch handling in BBoxNode
+        self.zPosition = 1  // Set zPosition for block nodes
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -42,34 +45,153 @@ class BBoxNode: SKNode {
         self.assets = assets
         createVisualRepresentation()
     }
+
     
     func createVisualRepresentation() {
-        // Remove any existing child nodes
         removeAllChildren()
-        
-        // For each cell in 'shape', add the asset at the correct position
+
+        // First, add all sprite nodes
         for (index, cell) in shape.enumerated() {
-            // Get the asset name and position
             let assetInfo = assets[index]
             let assetName = assetInfo.name
             
-            // Create the asset sprite node
-            let assetNode = SKSpriteNode(imageNamed: assetName)
-            assetNode.size = CGSize(width: tileSize, height: tileSize) // Adjust as necessary
-            assetNode.name = assetName  // Assign a unique name to the asset
-            
-            // Calculate the position based on the cell's coordinates
             let xPos = CGFloat(cell.col) * tileSize + tileSize / 2
             let yPos = CGFloat(cell.row) * tileSize + tileSize / 2
-            assetNode.position = CGPoint(x: xPos, y: yPos)
             
-            // Set zPosition to ensure the asset is visible
-            assetNode.zPosition = 1
+            let spriteNode = SKSpriteNode(imageNamed: assetName)
+            spriteNode.size = CGSize(width: tileSize, height: tileSize)
+            spriteNode.zPosition = 1
+            spriteNode.alpha = 1.0
+            spriteNode.position = CGPoint(x: xPos, y: yPos)
             
-            // Add the asset node as a child to this BBoxNode
-            addChild(assetNode)
+            addChild(spriteNode)
+        }
+
+        // Now create the outline
+        let cellSet = Set(shape.map { GridCoordinate(row: $0.row, col: $0.col) })
+        let path = CGMutablePath()
+
+        for cell in shape {
+            let (cellX, cellY) = (CGFloat(cell.col)*tileSize, CGFloat(cell.row)*tileSize)
+            
+            // Each cell is a square: (cellX, cellY) is bottom-left corner
+            // Top edge: from (cellX, cellY+tileSize) to (cellX+tileSize, cellY+tileSize)
+            // Bottom edge: from (cellX, cellY) to (cellX+tileSize, cellY)
+            // Left edge: from (cellX, cellY) to (cellX, cellY+tileSize)
+            // Right edge: from (cellX+tileSize, cellY) to (cellX+tileSize, cellY+tileSize)
+
+            let upNeighbor = GridCoordinate(row: cell.row+1, col: cell.col)
+            if !cellSet.contains(upNeighbor) {
+                // Add top edge
+                path.move(to: CGPoint(x: cellX, y: cellY+tileSize))
+                path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY+tileSize))
+            }
+
+            let downNeighbor = GridCoordinate(row: cell.row-1, col: cell.col)
+            if !cellSet.contains(downNeighbor) {
+                // Add bottom edge
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY))
+            }
+
+            let leftNeighbor = GridCoordinate(row: cell.row, col: cell.col-1)
+            if !cellSet.contains(leftNeighbor) {
+                // Add left edge
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX, y: cellY+tileSize))
+            }
+
+            let rightNeighbor = GridCoordinate(row: cell.row, col: cell.col+1)
+            if !cellSet.contains(rightNeighbor) {
+                // Add right edge
+                path.move(to: CGPoint(x: cellX+tileSize, y: cellY))
+                path.addLine(to: CGPoint(x: cellX+tileSize, y: cellY+tileSize))
+            }
+        }
+
+        outlineNode = SKShapeNode(path: path)
+        outlineNode?.strokeColor = .white
+        outlineNode?.lineWidth = 2.0
+        outlineNode?.lineJoin = .round
+        outlineNode?.lineCap = .round
+        outlineNode?.fillColor = .clear
+        outlineNode?.zPosition = 2
+        outlineNode?.lineJoin = .round
+        outlineNode?.lineCap = .round
+
+        if let outline = outlineNode {
+            addChild(outline)
         }
     }
+
+
+
+    func removeOutline() {
+        outlineNode?.removeFromParent()
+        outlineNode = nil
+    }
+
+    /// Adds the outline back to the block
+    func addOutline() {
+        // Ensure that the outline is only added if it doesn't already exist
+        guard outlineNode == nil else { return }
+
+        // Recreate the outline path
+        let cellSet = Set(shape.map { GridCoordinate(row: $0.row, col: $0.col) })
+        let path = CGMutablePath()
+
+        for cell in shape {
+            let gridCoord = GridCoordinate(row: cell.row, col: cell.col)
+            let (cellX, cellY) = (CGFloat(cell.col) * tileSize, CGFloat(cell.row) * tileSize)
+
+            // Each cell is a square: (cellX, cellY) is bottom-left corner
+            // Top edge
+            let upNeighbor = GridCoordinate(row: cell.row + 1, col: cell.col)
+            if !cellSet.contains(upNeighbor) {
+                path.move(to: CGPoint(x: cellX, y: cellY + tileSize))
+                path.addLine(to: CGPoint(x: cellX + tileSize, y: cellY + tileSize))
+            }
+
+            // Bottom edge
+            let downNeighbor = GridCoordinate(row: cell.row - 1, col: cell.col)
+            if !cellSet.contains(downNeighbor) {
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX + tileSize, y: cellY))
+            }
+
+            // Left edge
+            let leftNeighbor = GridCoordinate(row: cell.row, col: cell.col - 1)
+            if !cellSet.contains(leftNeighbor) {
+                path.move(to: CGPoint(x: cellX, y: cellY))
+                path.addLine(to: CGPoint(x: cellX, y: cellY + tileSize))
+            }
+
+            // Right edge
+            let rightNeighbor = GridCoordinate(row: cell.row, col: cell.col + 1)
+            if !cellSet.contains(rightNeighbor) {
+                path.move(to: CGPoint(x: cellX + tileSize, y: cellY))
+                path.addLine(to: CGPoint(x: cellX + tileSize, y: cellY + tileSize))
+            }
+        }
+
+        // Recreate the outline node
+        let newOutline = SKShapeNode(path: path)
+        newOutline.strokeColor = .white
+//        newOutline.alpha = 0.6
+        newOutline.lineWidth = 2.0
+        newOutline.lineJoin = .round
+        newOutline.lineCap = .round
+        newOutline.fillColor = .clear
+        newOutline.zPosition = 2
+        newOutline.lineJoin = .round
+        newOutline.lineCap = .round
+
+        // Assign to the outlineNode property
+        outlineNode = newOutline
+        addChild(newOutline)
+    }
+
+
     
     var gridHeight: Int {
         let rows = shape.map { $0.row }
@@ -89,14 +211,14 @@ class BBoxNode: SKNode {
     func gridPosition() -> (row: Int, col: Int) {
         guard let gameScene = gameScene else { return (0, 0) }
         let tileSize = gameScene.tileSize
-        let gridOrigin = CGPoint(x: (gameScene.size.width - CGFloat(gameScene.gridSize) * tileSize) / 2,
-                                 y: (gameScene.size.height - CGFloat(gameScene.gridSize) * tileSize) / 2)
+        let gridOrigin = gameScene.getGridOrigin()
         let adjustedPosition = CGPoint(x: self.position.x - gridOrigin.x,
                                        y: self.position.y - gridOrigin.y)
         let col = Int((adjustedPosition.x + tileSize / 2) / tileSize)
         let row = Int((adjustedPosition.y + tileSize / 2) / tileSize)
         return (row, col)
     }
+
     
     func rotateBlock() {
         // Rotate the block's shape 90 degrees clockwise
@@ -105,6 +227,23 @@ class BBoxNode: SKNode {
         assets = assets.map { (name: $0.name, position: (row: $0.position.col, col: -$0.position.row)) }
         createVisualRepresentation()
     }
+    func occupiedCellsWithAssets() -> [(gridCoordinate: GridCoordinate, assetName: String)] {
+        var occupied: [(gridCoordinate: GridCoordinate, assetName: String)] = []
+        let gridPosition = self.gridPosition()
+        let baseRow = gridPosition.row
+        let baseCol = gridPosition.col
+
+        for (index, cell) in shape.enumerated() {
+            let gridRow = baseRow + cell.row
+            let gridCol = baseCol + cell.col
+            let gridCoordinate = GridCoordinate(row: gridRow, col: gridCol)
+            let assetName = assets[index].name
+            occupied.append((gridCoordinate: gridCoordinate, assetName: assetName))
+        }
+        return occupied
+    }
+
+
     
     func occupiedCells() -> [GridCoordinate] {
         var occupied: [GridCoordinate] = []
@@ -120,3 +259,4 @@ class BBoxNode: SKNode {
         return occupied
     }
 }
+
