@@ -3,98 +3,124 @@
 //  Blocks
 //
 //  Created by Jevon Williams on 10/24/24.
-//
+
 
 import SpriteKit
 import AVFoundation
 
 
 class BGameScene: SKScene {
-    let gridSize = 8
-     var gameOverSoundPlayer: AVAudioPlayer? // Variable to store the sound action
-    var hasShownMultiplierEffect = false  // Flag to track multiplier animation
-    var tileSize: CGFloat {
-        return (size.width - 40) / CGFloat(gridSize)
-    }
-    // Power-up state variables
-    var activePowerup: PowerupType? = nil
-    var activePowerupIcon: SKSpriteNode? = nil // New variable to track the active power-up icon
+   let gridSize = 8
 
-    var score = 0
-    var multiplierLabel: SKLabelNode!
-    var grid: [[SKShapeNode?]] = []
-    var boxNodes: [BBoxNode] = []
-    var currentlyDraggedNode: BBoxNode?
-    var gameContext: BGameContext
-    var isGameOver: Bool = false
-    var placedBlocks: [PlacedBlock] = []
-    var gameOverAudioPlayer: AVAudioPlayer?
-    var lastClearTime: TimeInterval = 0 // Tracks the time of the last line cleared
-    var currentCombo: Int = 1 // Multiplier for consecutive clears within the time window
-    let comboResetTime: TimeInterval = 5 // Time window in seconds for combo multiplier
-    var gridOrigin: CGPoint = CGPoint(x: 50, y: 50) // Adjust this to match your grid's starting point
-    var cellSize: CGFloat = 40.0
-    var currentVolume: Float = 0.5 // Default volume
+// Declare layoutInfo as a non-lazy property
+var layoutInfo: BLayoutInfo
 
-    
-    var multiplier: Int = 1  // Default multiplier is 1 (no multiplier)
-    
-    // Power-up state variables
-//    var activePowerup: PowerupType? = nil
-    var tempSpawnedBlocks: [BBoxNode] = []
-    var isUndoInProgress: Bool = false
+var gameOverSoundPlayer: AVAudioPlayer? // Variable to store the sound action
+var hasShownMultiplierEffect = false  // Flag to track multiplier animation
 
-    var undoStack: [Move] = []  // Updated to store Move objects
-    
-    var highlightGrid: [[SKNode?]] = []
-    
-    var dropSound: SKAudioNode?
-    var backgroundMusic: SKAudioNode?
-    var gameOverSound: SKAudioNode?
-    var blockSelectionSound: SKAudioNode?
-    var audioPlayer: AVAudioPlayer?
-    
-    var dependencies: Dependencies
-    var gameMode: GameModeType
-    
-    let initialScale: CGFloat = 0.6  // Set the initial scale to 0.6
-    
-    // Power-up related variables
-    enum PowerupType {
-        case delete
-        case swap
-        case undo
-        case multiplier
-    }
-    
-    struct Powerup {
-        let type: PowerupType
-        let imageName: String
-    }
-    
-    let availablePowerups: [Powerup] = [
-        Powerup(type: .delete, imageName: "delete.png"),
-        Powerup(type: .swap, imageName: "swap.png"),
-        Powerup(type: .undo, imageName: "undo.png"),
-        Powerup(type: .multiplier, imageName: "multiplier.png")
-    ]
-    
-    init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
-        self.gameContext = context
-        self.dependencies = dependencies
-        self.gameMode = gameMode
-        self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        super.init(size: size)
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        let defaultDependencies = Dependencies()
-        self.dependencies = defaultDependencies
-        self.gameMode = .single
-        self.gameContext = BGameContext(dependencies: dependencies, gameMode: gameMode)
-        self.grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
-        super.init(coder: aDecoder)
-    }
+var tileSize: CGFloat {
+    return (size.width - 40) / CGFloat(gridSize)
+}
+
+// Power-up state variables
+var activePowerup: PowerupType? = nil
+var activePowerupIcon: SKSpriteNode? = nil // New variable to track the active power-up icon
+
+var score = 0
+var multiplierLabel: SKLabelNode!
+var grid: [[SKShapeNode?]] = []
+var boxNodes: [BBoxNode] = []
+var currentlyDraggedNode: BBoxNode?
+var gameContext: BGameContext?
+var isGameOver: Bool = false
+var placedBlocks: [PlacedBlock] = []
+var gameOverAudioPlayer: AVAudioPlayer?
+var lastClearTime: TimeInterval = 0 // Tracks the time of the last line cleared
+var currentCombo: Int = 1 // Multiplier for consecutive clears within the time window
+let comboResetTime: TimeInterval = 5 // Time window in seconds for combo multiplier
+
+// Use computed properties for gridOrigin and cellSize
+var gridOrigin: CGPoint {
+    return layoutInfo.gridOrigin
+}
+
+var cellSize: CGFloat {
+    return layoutInfo.cellSize
+}
+
+var currentVolume: Float = 0.5 // Default volume
+var multiplier: Int = 1  // Default multiplier is 1 (no multiplier)
+var tempSpawnedBlocks: [BBoxNode] = []
+var isUndoInProgress: Bool = false
+var undoStack: [Move] = []  // Updated to store Move objects
+var highlightGrid: [[SKNode?]] = []
+
+var dropSound: SKAudioNode?
+var backgroundMusic: SKAudioNode?
+var gameOverSound: SKAudioNode?
+var blockSelectionSound: SKAudioNode?
+var audioPlayer: AVAudioPlayer?
+
+var dependencies: Dependencies
+var gameMode: GameModeType
+
+let initialScale: CGFloat  // Set the initial scale to 0.6
+
+// Power-up related variables
+enum PowerupType {
+    case delete
+    case swap
+    case undo
+    case multiplier
+}
+
+struct Powerup {
+    let type: PowerupType
+    let imageName: String
+}
+
+let availablePowerups: [Powerup] = [
+    Powerup(type: .delete, imageName: "delete.png"),
+    Powerup(type: .swap, imageName: "swap.png"),
+    Powerup(type: .undo, imageName: "undo.png"),
+    Powerup(type: .multiplier, imageName: "multiplier.png")
+]
+
+// Initializer
+init(context: BGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
+    self.gameContext = context
+    self.dependencies = dependencies
+    self.gameMode = gameMode
+
+    // Initialize layoutInfo with the current screen size
+    let screenSize = UIScreen.main.bounds.size
+    self.layoutInfo = BLayoutInfo(screenSize: screenSize)
+    self.initialScale = layoutInfo.initialScale // Assign the dynamic initialScale
+
+    self.grid = Array(repeating: Array(repeating: nil, count: layoutInfo.gridSize), count: layoutInfo.gridSize)
+
+    super.init(size: size)
+}
+
+
+required init?(coder aDecoder: NSCoder) {
+    let defaultDependencies = Dependencies()
+    self.dependencies = defaultDependencies
+    self.gameMode = .single
+    self.gameContext = BGameContext(dependencies: dependencies, gameMode: gameMode)
+
+    // Initialize layoutInfo with the current screen size
+    let screenSize = UIScreen.main.bounds.size
+    self.layoutInfo = BLayoutInfo(screenSize: screenSize)
+    self.initialScale = layoutInfo.initialScale // Assign the dynamic initialScale
+
+    self.grid = Array(repeating: Array(repeating: nil, count: layoutInfo.gridSize), count: layoutInfo.gridSize)
+
+    super.init(coder: aDecoder)
+}
+
+
+
     
     // MARK: - Node Management
     func addBlockNode(_ blockNode: SKShapeNode, to parentNode: SKNode) {
@@ -422,11 +448,6 @@ class BGameScene: SKScene {
     
 
 
-
-
-
-
-
     func setupGridHighlights() {
         highlightGrid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         
@@ -498,10 +519,20 @@ class BGameScene: SKScene {
         }
     }
     
-   override func didMove(to view: SKView) {
+override func didMove(to view: SKView) {
     super.didMove(to: view)
 
-    // Existing setup
+    // Update layoutInfo with the actual view size first
+    self.layoutInfo = BLayoutInfo(screenSize: view.bounds.size)
+
+    // Debug prints to verify the correct values
+    print("View Size: \(view.bounds.size)")
+    print("Screen Size: \(layoutInfo.screenSize)")
+    print("Grid Size: \(layoutInfo.gridSize)")
+    print("Initial Scale: \(layoutInfo.initialScale)")
+    print("Grid Origin: \(layoutInfo.gridOrigin)")
+
+    // Create grid and other UI elements
     createGrid()
     addScoreLabel()
     createPowerupPlaceholders()
@@ -516,7 +547,7 @@ class BGameScene: SKScene {
             backgroundMusic.autoplayLooped = true
             addChild(backgroundMusic)
 
-            // Lower the volume to 50% (0.5 out of 1.0)
+            // Lower the volume to 20% (0.2 out of 1.0)
             backgroundMusic.run(SKAction.changeVolume(to: 0.2, duration: 0))
         }
     } else {
@@ -524,23 +555,44 @@ class BGameScene: SKScene {
     }
 }
 
+
     
-    func getGridOrigin() -> CGPoint {
-        let totalGridWidth = CGFloat(gridSize) * tileSize
-        let totalGridHeight = CGFloat(gridSize) * tileSize
+func getGridOrigin() -> CGPoint {
+    // Use layoutInfo to get grid size and tile size
+    let totalGridWidth = CGFloat(layoutInfo.gridSize) * layoutInfo.tileSize
+    let totalGridHeight = CGFloat(layoutInfo.gridSize) * layoutInfo.tileSize
 
-        // Center horizontally
-        let gridOriginX = (size.width - totalGridWidth) / 2
+    // Center horizontally
+    let gridOriginX = (size.width - totalGridWidth) / 2
 
-        // Adjust the vertical positioning
-        let topMargin: CGFloat = size.height * 0.10 // Space for score and icons
-        let bottomMargin: CGFloat = size.height * 0.20 // Reduced space for placeholders
-        let additionalOffset: CGFloat = 70 // Shift grid upwards by 30 points
-
-        let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + bottomMargin + additionalOffset
-
-        return CGPoint(x: gridOriginX, y: gridOriginY)
+    // Adjust the vertical positioning based on layoutInfo percentages
+    var topMargin: CGFloat
+    var bottomMargin: CGFloat
+    var additionalOffset: CGFloat
+    
+    // Adjust for different screen sizes
+    if layoutInfo.screenSize.height <= 667 {  // SE (smaller screen)
+        topMargin = layoutInfo.screenSize.height * 0.30 // 10% for SE
+        bottomMargin = layoutInfo.screenSize.height * 0.20 // 20% for SE
+        additionalOffset = 70 // Shift grid down on SE
+    } else if layoutInfo.screenSize.height <= 844 {  // Pro (6.1-inch)
+        topMargin = layoutInfo.screenSize.height * 0.10 // 10% for Pro
+        bottomMargin = layoutInfo.screenSize.height * 0.15 // 15% for Pro
+        additionalOffset = 10 // Smaller offset for Pro
+    } else {  // Pro Max (6.7-inch)
+        topMargin = layoutInfo.screenSize.height * 0.35 // 8% for Pro Max
+        bottomMargin = layoutInfo.screenSize.height * 0.12 // 12% for Pro Max
+        additionalOffset = 10 // Smaller offset for Pro Max
     }
+
+    // Calculate the vertical grid origin
+    let gridOriginY = (size.height - totalGridHeight - topMargin - bottomMargin) / 2 + topMargin + additionalOffset
+
+    // Return the grid origin point, ensuring it's not too high
+    return CGPoint(x: gridOriginX, y: max(gridOriginY, topMargin)) // Ensure grid doesn't go too high
+}
+
+
 
     
     func createGrid() {
@@ -572,7 +624,25 @@ func addScoreLabel() {
     let scoreContainer = SKShapeNode(rectOf: CGSize(width: 100, height: 50), cornerRadius: 25)
     scoreContainer.fillColor = .lightGray
     scoreContainer.strokeColor = .clear
-    scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - 100)
+    
+    // Position the score container based on device screen size
+    var topMargin: CGFloat
+    var verticalPosition: CGFloat
+
+    // Adjust for different screen sizes
+    if layoutInfo.screenSize.height <= 667 {  // SE (smaller screen)
+        topMargin = layoutInfo.screenSize.height * 0.08 // 10% for SE
+        verticalPosition = topMargin + 10 // Adjust position for SE, slightly lower
+    } else if layoutInfo.screenSize.height <= 844 {  // Pro (6.1-inch)
+        topMargin = layoutInfo.screenSize.height * 0.10 // 10% for Pro
+        verticalPosition = topMargin + 40 // Adjust position for Pro
+    } else {  // Pro Max (6.7-inch)
+        topMargin = layoutInfo.screenSize.height * 0.08 // 8% for Pro Max
+        verticalPosition = topMargin + 40 // Slightly higher for Pro Max
+    }
+
+    // Set the position of the score container
+    scoreContainer.position = CGPoint(x: size.width / 2, y: size.height - verticalPosition)
     scoreContainer.name = "scoreContainer"
 
     // Add the score label inside the container
@@ -590,6 +660,7 @@ func addScoreLabel() {
     // Add the container to the scene
     addChild(scoreContainer)
 }
+
     
     func checkForPossibleMoves(for blocks: [BBoxNode]) -> Bool {
         for block in blocks {

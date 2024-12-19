@@ -7,16 +7,19 @@
 
 import Combine
 import GameplayKit
+import UIKit
 
 class BGameContext: GameContext {
     var nextState: GameState?
+    
     var gameScene: BGameScene? {
         scene as? BGameScene
     }
+    
     let gameMode: GameModeType
     let gameInfo: BGameInfo
-    var layoutInfo: BLayoutInfo = .init(screenSize: .zero)
-    var placingState: Bool = false 
+    var layoutInfo: BLayoutInfo
+    var placingState: Bool = false
 
     private(set) var stateMachine: GKStateMachine?
     var currentState: GKState? {
@@ -27,68 +30,54 @@ class BGameContext: GameContext {
     init(dependencies: Dependencies, gameMode: GameModeType) {
         self.gameInfo = BGameInfo()
         self.gameMode = gameMode
+        let screenSize = UIScreen.main.bounds.size
+        self.layoutInfo = BLayoutInfo(screenSize: screenSize)
         super.init(dependencies: dependencies)
         configureStates()
     }
 
     // MARK: - Configure State Machine
     private func configureStates() {
-        guard let gameScene else { return }
+        guard let gameScene = gameScene else { return }
         print("Configuring states for game context")
 
-        // Define the states available in this game context
         let states: [GKState] = [
             BGameIdleState(scene: gameScene, context: self),
             BGamePlayingState(scene: gameScene, context: self),
-            BGamePlacingState(scene: gameScene, context: self) // Ensure placing state is included
+            BGamePlacingState(scene: gameScene, context: self)
         ]
-        
-        // Initialize the state machine with the array of states
-        stateMachine = GKStateMachine(states: states)
 
-        // Enter the initial state
+        stateMachine = GKStateMachine(states: states)
         stateMachine?.enter(BGameIdleState.self)
     }
 
-    // MARK: - State Management Methods
-    func enterState(_ stateClass: AnyClass) {
-        // Validates the transition before attempting it
-        guard stateMachine?.canEnterState(stateClass) == true else {
-            print("Cannot enter state: \(stateClass)")
-            return
-        }
-        stateMachine?.enter(stateClass)
-        // Update placing state based on the state
-        placingState = (stateClass == BGamePlacingState.self)
-    }
-    
-    func configureLayoutInfo() {
-    let screenSize = UIScreen.main.bounds.size
-
-    layoutInfo.initialScale = calculateInitialScale(for: screenSize)
-}
-    
-    private func calculateInitialScale(for screenSize: CGSize) -> CGFloat {
-    if UIDevice.current.userInterfaceIdiom == .phone {
-        if screenSize.width <= 375 { // Adjust for iPhone SE (3rd generation)
-            return 0.5
-        } else {
-            return 0.6 // Default initialScale for other iPhones
-        }
-    }
-    return 0.6 // Default initialScale if device type is unknown
-}
-    
+    // MARK: - Layout Configuration
  
-    // Example method to transition to the placing state
+
+
+
+    // MARK: - State Management Methods
     func startPlacing() {
         enterState(BGamePlacingState.self)
     }
 
-    // Example method to transition to the playing state
     func startGame() {
         enterState(BGamePlayingState.self)
     }
+
+    func enterState(_ stateClass: AnyClass) {
+        guard let stateMachine = stateMachine else {
+            print("State machine is not initialized")
+            return
+        }
+
+        guard stateMachine.canEnterState(stateClass) else {
+            print("Cannot enter state: \(stateClass)")
+            return
+        }
+
+        stateMachine.enter(stateClass)
+        placingState = (stateClass == BGamePlacingState.self)
+        print("Entered state: \(stateClass)")
+    }
 }
-
-
