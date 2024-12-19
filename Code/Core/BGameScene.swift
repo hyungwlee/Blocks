@@ -196,10 +196,19 @@ required init?(coder aDecoder: NSCoder) {
 
 
   func createProgressBar() {
-    // Define progress bar dimensions
-    let barWidth: CGFloat = size.width * 0.80
+    // Define default progress bar length and height
+    let defaultBarWidth: CGFloat = size.width * 0.80
+    let seBarWidth: CGFloat = size.width * 0.90  // Shorter length for SE
     let barHeight: CGFloat = 10
     let cornerRadius = barHeight / 2
+
+    // Conditional width adjustment based on screen height
+    let barWidth: CGFloat
+    if size.height <= 667 { // iPhone SE screen height (667 points)
+        barWidth = seBarWidth
+    } else {
+        barWidth = defaultBarWidth
+    }
 
     // Conditional Y position adjustment based on screen height
     let barY: CGFloat
@@ -237,6 +246,7 @@ required init?(coder aDecoder: NSCoder) {
     clippingNode.addChild(progressBar!)
     addChild(clippingNode)
 }
+
 
 
 
@@ -1361,9 +1371,6 @@ func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPositi
 
 
 
-
-
-
   func gridToScreenPosition(row: Int, col: Int) -> CGPoint {
     // Get the grid origin (assuming it's calculated somewhere else, like in createGrid())
     let gridOrigin = getGridOrigin() // You can use your existing grid origin calculation
@@ -1395,41 +1402,44 @@ func displayComboAnimation(for multiplier: Int) {
     // Define maximum position for the combo label based on screen size
     let maxComboYPosition = frame.midY + 150
     
-    // Position combo label within screen bounds
-    let comboLabelYPosition = frame.midY + 300  // Position below screen
+    // Conditional Y position for different devices
+    let comboLabelYPosition: CGFloat
+    if frame.height <= 667 { // iPhone SE screen height (667 points)
+        comboLabelYPosition = frame.midY + 265  // Lower position for SE
+    } else {
+        comboLabelYPosition = frame.midY + 300  // Default position for Pro and Pro Max
+    }
     
     let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
-    //comboLabel.fontSize = min(70, frame.width * 0.1)  // Adjust font size based on screen width
     comboLabel.fontSize = min(40, frame.width * 0.08) // Reduced font size (adjust further as needed)
     comboLabel.fontColor = .white
     comboLabel.fontName = "Arial-BoldMT"
     comboLabel.position = CGPoint(x: frame.midX, y: comboLabelYPosition)
     
-        // Create shadow by adding another label
+    // Create shadow by adding another label
     let shadowComboLabel = createShadowedLabel(text: "COMBO x\(multiplier)", position: comboLabel.position, fontSize: comboLabel.fontSize)
     addChild(shadowComboLabel)
     
     addChild(comboLabel)  // Add combo label to the scene
-        
     
-    
-        // Animation sequence (scale up, bounce, fade out)
+    // Animation sequence (scale up, bounce, fade out)
     let scaleUp = SKAction.scale(to: 1.5, duration: 0.5)  // Increased to 0.5 seconds
     
-let bounce = SKAction.sequence([
-    SKAction.moveBy(x: 0, y: 80, duration: 0.2),  // Move up 80 pixels
-SKAction.moveBy(x: 0, y: -10, duration: 0.2),  // Minor downward movement
-SKAction.moveBy(x: 0, y: 10, duration: 0.2)   // Minor upward movement
-])
+    let bounce = SKAction.sequence([
+        SKAction.moveBy(x: 0, y: 80, duration: 0.2),  // Move up 80 pixels
+        SKAction.moveBy(x: 0, y: -10, duration: 0.2),  // Minor downward movement
+        SKAction.moveBy(x: 0, y: 10, duration: 0.2)    // Minor upward movement
+    ])
+    
     let fadeOut = SKAction.fadeOut(withDuration: 0.5)   // Increased to 0.5 seconds
-        let remove = SKAction.removeFromParent()
+    let remove = SKAction.removeFromParent()
     let delay = SKAction.wait(forDuration: 0.2)
     let comboAnimation = SKAction.sequence([delay, scaleUp, bounce, fadeOut, remove])
-    
     
     comboLabel.run(comboAnimation)
     shadowComboLabel.run(comboAnimation)  // Make shadow move as well
 }
+
     
     func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
     let pointsLabel = SKLabelNode(text: "+\(points)")
