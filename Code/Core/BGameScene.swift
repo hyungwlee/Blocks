@@ -1063,7 +1063,7 @@ func placeBlock(_ block: BBoxNode, at gridPosition: (row: Int, col: Int)) {
                     if let gameOverSoundURL = Bundle.main.url(forResource: "Muted", withExtension: "mp3") {
                         do {
                             self.gameOverSoundPlayer = try AVAudioPlayer(contentsOf: gameOverSoundURL)
-                            self.gameOverSoundPlayer?.volume = 0.2
+                            self.gameOverSoundPlayer?.volume = 0.8
                             self.gameOverSoundPlayer?.prepareToPlay()
                             self.gameOverSoundPlayer?.play()
                         } catch {
@@ -1490,7 +1490,7 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     // Show multiplier effect if the power-up is active
     if activePowerup == .multiplier {
         let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
-        showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY), orientation: "horizontal")
+        /*showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY), orientation: "horizontal")*/
     }
 
    run(SKAction.playSoundFileNamed("clearedlines.wav", waitForCompletion: false))
@@ -1536,7 +1536,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         let colCenterX = gridToScreenPosition(row: midRow, col: col).x
         let colCenterY = gridToScreenPosition(row: midRow, col: col).y
 
-        showMultiplierEffect(at: CGPoint(x: colCenterX, y: colCenterY), orientation: "vertical")
+        /*showMultiplierEffect(at: CGPoint(x: colCenterX, y: colCenterY), orientation: "vertical")*/
     }
 
     // Use AVAudioPlayer for custom volume control
@@ -1546,60 +1546,7 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 }
 
 
-func showMultiplierEffect(at position: CGPoint, orientation: String) {
-    let numberOfStars = 5
-    let starSpacing: CGFloat = 20
 
-    // Load the star image
-    let starImage = SKTexture(imageNamed: "multiplier3") // Replace with your actual image name
-
-    // Calculate the total length of the row/column based on grid size and tile size
-    let totalLength = CGFloat(gridSize) * tileSize
-
-    for i in 0..<numberOfStars {
-        // Create a sprite node with the star image
-        let starNode = SKSpriteNode(texture: starImage)
-        starNode.size = CGSize(width: 60, height: 60)
-        starNode.zPosition = 100
-        starNode.alpha = 0.0
-
-        // Set the initial position based on orientation
-        if orientation == "vertical" {
-            // Position at the bottom end of the column, outside the grid
-            starNode.position = CGPoint(
-                x: position.x,
-                y: position.y - totalLength / 2 - CGFloat(numberOfStars) * starSpacing
-            )
-        } else {
-            // Position at the left end of the row, outside the grid
-            starNode.position = CGPoint(
-                x: position.x - totalLength / 2 - CGFloat(numberOfStars) * starSpacing,
-                y: position.y
-            )
-        }
-
-        addChild(starNode)
-
-        // Create fade-in and fade-out actions
-        let fadeIn = SKAction.fadeIn(withDuration: 0.2)
-        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
-
-        // Create movement action based on orientation
-        let moveAction: SKAction
-        if orientation == "vertical" {
-            moveAction = SKAction.moveBy(x: 0, y: totalLength + CGFloat(numberOfStars) * starSpacing, duration: 0.5)
-        } else {
-            moveAction = SKAction.moveBy(x: totalLength + CGFloat(numberOfStars) * starSpacing, y: 0, duration: 0.5)
-        }
-
-        // Sequence: fade in, move, fade out, then remove from parent
-        let sequence = SKAction.sequence([fadeIn, moveAction, fadeOut, SKAction.removeFromParent()])
-
-        // Add a slight delay for each star to create a staggered effect
-        let delay = SKAction.wait(forDuration: Double(i) * 0.1)
-        starNode.run(SKAction.sequence([delay, sequence]))
-    }
-}
 
 
 
