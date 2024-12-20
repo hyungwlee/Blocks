@@ -452,21 +452,21 @@ required init?(coder aDecoder: NSCoder) {
     }
     
     private var availableBlockTypes: [BBoxNode.Type] = [
-       // BSingleBlock.self,
-       // BSquareBlock2x2.self,
-        //BSquareBlock3x3.self,
-       // BVerticalBlockNode1x2.self,
-       // BHorizontalBlockNode1x2.self,
-        //BLShapeNode2x2.self, // Added the L-shaped block
-        //BVerticalBlockNode1x3.self,
-        //BHorizontalBlockNode1x3.self,
-        //BVerticalBlockNode1x4.self,
+//        BSingleBlock.self,
+//        BSquareBlock2x2.self,
+//        BSquareBlock3x3.self,
+//        BVerticalBlockNode1x2.self,
+//        BHorizontalBlockNode1x2.self,
+//        BLShapeNode2x2.self, // Added the L-shaped block
+//        BVerticalBlockNode1x3.self,
+//        BHorizontalBlockNode1x3.self,
+//        BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
-        /*BRotatedLShapeNode2x2.self,
-        BLShapeNode5Block.self,
-        BRotatedLShapeNode5Block.self,
-        BTShapedBlock.self,
-        BZShapedBlock.self*/
+//        BRotatedLShapeNode2x2.self,
+//        BLShapeNode5Block.self,
+//        BRotatedLShapeNode5Block.self,
+//        BTShapedBlock.self,
+//        BZShapedBlock.self
     ]
     
 
@@ -498,10 +498,10 @@ required init?(coder aDecoder: NSCoder) {
     
     func highlightValidCells(for block: BBoxNode) {
         clearHighlights() // Clear previous highlights
-        
+
         let occupiedCellsWithAssets = block.occupiedCellsWithAssets()
         var isValidPlacement = true
-        
+
         // Check if all cells are valid
         for occupiedCell in occupiedCellsWithAssets {
             let cell = occupiedCell.gridCoordinate
@@ -510,37 +510,114 @@ required init?(coder aDecoder: NSCoder) {
                 break
             }
         }
-        
+
         if !isValidPlacement {
             return // If any cell is invalid, don't show any highlights
         }
-        
-        // Highlight cells only if placement is valid
+
+        // Highlight cells for valid placement
         for occupiedCell in occupiedCellsWithAssets {
             let cell = occupiedCell.gridCoordinate
             let assetName = occupiedCell.assetName
-            
+
             if cell.row >= 0, cell.row < gridSize, cell.col >= 0, cell.col < gridSize, grid[cell.row][cell.col] == nil {
                 if let highlightNode = highlightGrid[cell.row][cell.col] {
-                    // Create the shadow node (ensure it sticks below the block)
+                    // Create the shadow node
                     let shadowNode = SKSpriteNode(imageNamed: assetName)
                     shadowNode.size = CGSize(width: tileSize, height: tileSize)
-                    shadowNode.alpha = 0.3  // Subtle shadow transparency
-                    shadowNode.zPosition = -1  // Always beneath the block
-                    
-                    // Create the block sprite node
+                    shadowNode.alpha = 0.3
+                    shadowNode.zPosition = -1
+
                     let spriteNode = SKSpriteNode(imageNamed: assetName)
                     spriteNode.size = CGSize(width: tileSize, height: tileSize)
-                    spriteNode.alpha = 0.8  // Adjust alpha if needed
-                    spriteNode.zPosition = 1  // Above the shadow
-                    
-                    // Add shadow and block to the highlight node
+                    spriteNode.alpha = 0.8
+                    spriteNode.zPosition = 1
+
                     highlightNode.addChild(shadowNode)
                     highlightNode.addChild(spriteNode)
                 }
             }
         }
+
+        // After highlighting the potential placement cells, highlight potential lines
+        highlightPotentialClears(for: block)
     }
+
+    func highlightPotentialClears(for block: BBoxNode) {
+        // Create a temporary copy of the grid state
+        var tempGrid = grid
+
+        // Simulate placing the block
+        let occupiedCells = block.occupiedCells()
+        for cell in occupiedCells {
+            // Add a dummy node to represent filled cells in the tempGrid
+            // We don't need actual SKNodes here, just a placeholder to indicate occupancy
+            tempGrid[cell.row][cell.col] = SKShapeNode(rectOf: CGSize(width: tileSize, height: tileSize))
+        }
+
+        // Check for completed lines in tempGrid
+        let completedRows = findCompletedRows(in: tempGrid)
+        let completedColumns = findCompletedColumns(in: tempGrid)
+
+        // Highlight them visually
+        highlightCompletedRows(completedRows)
+        highlightCompletedColumns(completedColumns)
+    }
+
+    func findCompletedRows(in grid: [[SKShapeNode?]]) -> [Int] {
+        var completedRows: [Int] = []
+        for row in 0..<gridSize {
+            if grid[row].allSatisfy({ $0 != nil }) {
+                completedRows.append(row)
+            }
+        }
+        return completedRows
+    }
+
+    func findCompletedColumns(in grid: [[SKShapeNode?]]) -> [Int] {
+        var completedColumns: [Int] = []
+        for col in 0..<gridSize {
+            var isCompleted = true
+            for row in 0..<gridSize {
+                if grid[row][col] == nil {
+                    isCompleted = false
+                    break
+                }
+            }
+            if isCompleted {
+                completedColumns.append(col)
+            }
+        }
+        return completedColumns
+    }
+
+    func highlightCompletedRows(_ rows: [Int]) {
+        for row in rows {
+            for col in 0..<gridSize {
+                if let highlightNode = highlightGrid[row][col] {
+                    // Add a subtle overlay or colorize the highlight
+                    let overlay = SKSpriteNode(color: UIColor.yellow.withAlphaComponent(0.25),
+                                               size: CGSize(width: tileSize, height: tileSize))
+                    overlay.zPosition = 10
+                    highlightNode.addChild(overlay)
+                }
+            }
+        }
+    }
+
+    func highlightCompletedColumns(_ columns: [Int]) {
+        for col in columns {
+            for row in 0..<gridSize {
+                if let highlightNode = highlightGrid[row][col] {
+                    let overlay = SKSpriteNode(color: UIColor.yellow.withAlphaComponent(0.25),
+                                               size: CGSize(width: tileSize, height: tileSize))
+                    overlay.zPosition = 10
+                    highlightNode.addChild(overlay)
+                }
+            }
+        }
+    }
+
     
 override func didMove(to view: SKView) {
     super.didMove(to: view)
@@ -1272,6 +1349,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         // Sync placed blocks
         syncPlacedBlocks()
         if placedBlocksCount >= 3 && isBoardCleared() {
+            awardBonusPoints()
             showPopUpAnimation(imageName: "Clear 250+.png")
            }
         
@@ -1340,7 +1418,14 @@ func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPositi
     }
 }
 
-
+    func awardBonusPoints() {
+            let bonusPoints = 250 // Random bonus between 250-300
+            score += bonusPoints
+            updateScoreLabel()
+           
+            // Play Celebration Sound
+//            run(SKAction.playSoundFileNamed("celebration.mp3", waitForCompletion: false))
+        }
 
   func gridToScreenPosition(row: Int, col: Int) -> CGPoint {
     // Get the grid origin (assuming it's calculated somewhere else, like in createGrid())
