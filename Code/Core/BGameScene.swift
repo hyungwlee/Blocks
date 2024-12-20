@@ -139,37 +139,43 @@ required init?(coder aDecoder: NSCoder) {
     }
     
     func createPowerupPlaceholders() {
-        let placeholderSize = CGSize(width: 60, height: 60)
-        let spacing: CGFloat = 30
-        let totalWidth = placeholderSize.width * 4 + spacing * 3
-        let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
+    let placeholderSize = CGSize(width: 60, height: 60)
+    let spacing: CGFloat = 30
+    let totalWidth = placeholderSize.width * 4 + spacing * 3
+    let startX = (size.width - totalWidth) / 2 + placeholderSize.width / 2
 
-        // Position the placeholders below the spawned blocks
-        let yPosition = size.height * 0.16  // Adjusted to place beneath the blocks
-
-        for i in 0..<4 {
-            let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
-            
-            // Subtle outline effect
-            placeholder.strokeColor = UIColor.white.withAlphaComponent(0.3) // Light, semi-transparent white
-            placeholder.lineWidth = 1.0 // Thinner line for subtlety
-            
-            placeholder.fillColor = .clear
-            placeholder.name = "powerupPlaceholder\(i)"
-            placeholder.userData = ["powerup": NSNull()]
-            
-            let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
-            placeholder.position = CGPoint(x: xPosition, y: yPosition)
-            addChild(placeholder)
-            
-            // Add the question icon initially
-            let questionIcon = SKSpriteNode(imageNamed: "questioni.png")
-            questionIcon.size = CGSize(width: 40, height: 40)
-            questionIcon.position = CGPoint.zero // Center within the placeholder
-            questionIcon.name = "questionIcon\(i)"
-            placeholder.addChild(questionIcon)
-        }
+    // Conditional Y position adjustment based on screen height
+    let yPosition: CGFloat
+    if size.height <= 667 { // iPhone SE screen height (667 points)
+        yPosition = size.height * 0.12  // Lower position for SE
+    } else {
+        yPosition = size.height * 0.16  // Default position for Pro and Pro Max
     }
+
+    for i in 0..<4 {
+        let placeholder = SKShapeNode(rectOf: placeholderSize, cornerRadius: 8)
+        
+        // Subtle outline effect
+        placeholder.strokeColor = UIColor.white.withAlphaComponent(0.3) // Light, semi-transparent white
+        placeholder.lineWidth = 1.0 // Thinner line for subtlety
+        
+        placeholder.fillColor = .clear
+        placeholder.name = "powerupPlaceholder\(i)"
+        placeholder.userData = ["powerup": NSNull()]
+        
+        let xPosition = startX + CGFloat(i) * (placeholderSize.width + spacing)
+        placeholder.position = CGPoint(x: xPosition, y: yPosition)
+        addChild(placeholder)
+        
+        // Add the question icon initially
+        let questionIcon = SKSpriteNode(imageNamed: "questioni.png")
+        questionIcon.size = CGSize(width: 40, height: 40)
+        questionIcon.position = CGPoint.zero // Center within the placeholder
+        questionIcon.name = "questionIcon\(i)"
+        placeholder.addChild(questionIcon)
+    }
+}
+
     // MARK: - Variables for Progress Bar
          let requiredLinesForPowerup = 5// Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
@@ -189,41 +195,58 @@ required init?(coder aDecoder: NSCoder) {
     }
 
 
-    func createProgressBar() {
-        // Define progress bar dimensions
-        let barWidth: CGFloat = size.width * 0.80
-        let barHeight: CGFloat = 10
-        let barY = size.height * 0.1
-        let cornerRadius = barHeight / 2
+  func createProgressBar() {
+    // Define default progress bar length and height
+    let defaultBarWidth: CGFloat = size.width * 0.80
+    let seBarWidth: CGFloat = size.width * 0.90  // Shorter length for SE
+    let barHeight: CGFloat = 10
+    let cornerRadius = barHeight / 2
 
-        // Create the background for the progress bar
-        progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
-        progressBarBackground?.fillColor = .darkGray
-        progressBarBackground?.strokeColor = .clear
-        progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
-        addChild(progressBarBackground!)
-
-        // Create a clipping node for the progress bar
-        let clippingNode = SKCropNode()
-        clippingNode.position = progressBarBackground!.position
-        clippingNode.zPosition = progressBarBackground!.zPosition + 1
-
-        // Create a mask for the clipping node
-        let maskNode = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
-        maskNode.fillColor = .white
-        clippingNode.maskNode = maskNode
-
-        // Create the progress bar as a shape node
-        progressBar = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
-        progressBar?.fillColor = .orange // Set the color to orange
-        progressBar?.strokeColor = .clear
-        progressBar?.position = CGPoint(x: -barWidth / 2, y: 0) // Start from the left edge
-        progressBar?.xScale = 0.0 // Initially empty
-
-        // Add the progress bar to the clipping node
-        clippingNode.addChild(progressBar!)
-        addChild(clippingNode)
+    // Conditional width adjustment based on screen height
+    let barWidth: CGFloat
+    if size.height <= 667 { // iPhone SE screen height (667 points)
+        barWidth = seBarWidth
+    } else {
+        barWidth = defaultBarWidth
     }
+
+    // Conditional Y position adjustment based on screen height
+    let barY: CGFloat
+    if size.height <= 667 { // iPhone SE screen height (667 points)
+        barY = size.height * 0.05  // Lower position for SE
+    } else {
+        barY = size.height * 0.1   // Default position for Pro and Pro Max
+    }
+
+    // Create the background for the progress bar
+    progressBarBackground = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
+    progressBarBackground?.fillColor = .darkGray
+    progressBarBackground?.strokeColor = .clear
+    progressBarBackground?.position = CGPoint(x: size.width / 2, y: barY)
+    addChild(progressBarBackground!)
+
+    // Create a clipping node for the progress bar
+    let clippingNode = SKCropNode()
+    clippingNode.position = progressBarBackground!.position
+    clippingNode.zPosition = progressBarBackground!.zPosition + 1
+
+    // Create a mask for the clipping node
+    let maskNode = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
+    maskNode.fillColor = .white
+    clippingNode.maskNode = maskNode
+
+    // Create the progress bar as a shape node
+    progressBar = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: cornerRadius)
+    progressBar?.fillColor = .orange // Set the color to orange
+    progressBar?.strokeColor = .clear
+    progressBar?.position = CGPoint(x: -barWidth / 2, y: 0) // Start from the left edge
+    progressBar?.xScale = 0.0 // Initially empty
+
+    // Add the progress bar to the clipping node
+    clippingNode.addChild(progressBar!)
+    addChild(clippingNode)
+}
+
 
 
 
@@ -572,7 +595,7 @@ func getGridOrigin() -> CGPoint {
     
     // Adjust for different screen sizes
     if layoutInfo.screenSize.height <= 667 {  // SE (smaller screen)
-        topMargin = layoutInfo.screenSize.height * 0.30 // 10% for SE
+        topMargin = layoutInfo.screenSize.height * 0.15 // 10% for SE
         bottomMargin = layoutInfo.screenSize.height * 0.20 // 20% for SE
         additionalOffset = 70 // Shift grid down on SE
     } else if layoutInfo.screenSize.height <= 844 {  // Pro (6.1-inch)
@@ -593,8 +616,6 @@ func getGridOrigin() -> CGPoint {
 }
 
 
-
-    
     func createGrid() {
         grid = Array(repeating: Array(repeating: nil, count: gridSize), count: gridSize)
         let gridOrigin = getGridOrigin()
@@ -799,66 +820,69 @@ xNode.run(fadeInSequence)
         return shapes
     }
 
-    func layoutSpawnedBlocks(isThreeNewBlocks: Bool) {
-        guard boxNodes.count > 0 else { return }
-        
-        let scaledTileSize = tileSize * 0.6  // Adjust scale to make blocks visually smaller
+func layoutSpawnedBlocks(isThreeNewBlocks: Bool) {
+    guard boxNodes.count > 0 else { return }
 
-        // Define X positions for the three blocks: 1/4, 1/2, 3/4 of screen width
-        let xPositions: [CGFloat] = [
-            size.width * 0.2,
-            size.width * 0.5,
-            size.width * 0.8
-        ]
+    let scaledTileSize = tileSize * 0.6  // Adjust scale to make blocks visually smaller
 
-        // Y position remains unchanged, but ensure blocks are vertically centered on this position
-        let blockYPosition = size.height * 0.3
+    // Define X positions for the three blocks: 1/4, 1/2, 3/4 of screen width
+    let xPositions: [CGFloat] = [
+        size.width * 0.2,
+        size.width * 0.5,
+        size.width * 0.8
+    ]
 
-        if isThreeNewBlocks {
-            for (index, block) in boxNodes.enumerated() {
-                block.position.x = xPositions[index]
-            }
-        }
-        
-        var positionInfo = [-1, -1, -1]
+    // Conditional Y position adjustment based on screen height
+    let blockYPosition: CGFloat
+    if size.height <= 667 { // iPhone SE screen height (667 points)
+        blockYPosition = size.height * 0.25 // Lower Y position for smaller devices like SE
+    } else {
+        blockYPosition = size.height * 0.3 // Default Y position for Pro and Pro Max
+    }
+
+    if isThreeNewBlocks {
         for (index, block) in boxNodes.enumerated() {
-            if block.position.x < size.width * 0.35 {
-                positionInfo[0] = index
-            } else if block.position.x < size.width * 0.65 {
-                positionInfo[1] = index
-            } else {
-                positionInfo[2] = index
-            }
-        }
-
-        
-        for (index, blockIndex) in positionInfo.enumerated() {
-            if blockIndex == -1 { continue }
-            
-            let block = boxNodes[blockIndex]
-            
-            // Calculate block's height based on its grid height and scaled tile size
-            let blockHeight = CGFloat(block.gridHeight) * scaledTileSize
-            let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
-
-            
-            let xPosition = xPositions[index] - (blockWidth / 2)
-
-            // To center the block vertically on blockYPosition, set y to blockYPosition
-            // Assuming block's position is at its center
-            let yPosition = blockYPosition - (blockHeight / 2)
-
-            // Update block's position
-            block.position = CGPoint(x: xPosition, y: yPosition)
-            block.initialPosition = block.position
-            block.gameScene = self
-
-            // Set scale and add block to the scene
-            block.setScale(0.6)  // Adjust as needed
-
-            safeAddBlock(block)
+            block.position.x = xPositions[index]
         }
     }
+
+    var positionInfo = [-1, -1, -1]
+    for (index, block) in boxNodes.enumerated() {
+        if block.position.x < size.width * 0.35 {
+            positionInfo[0] = index
+        } else if block.position.x < size.width * 0.65 {
+            positionInfo[1] = index
+        } else {
+            positionInfo[2] = index
+        }
+    }
+
+    for (index, blockIndex) in positionInfo.enumerated() {
+        if blockIndex == -1 { continue }
+
+        let block = boxNodes[blockIndex]
+
+        // Calculate block's height based on its grid height and scaled tile size
+        let blockHeight = CGFloat(block.gridHeight) * scaledTileSize
+        let blockWidth = CGFloat(block.gridWidth) * scaledTileSize
+
+        let xPosition = xPositions[index] - (blockWidth / 2)
+
+        // Center the block vertically on blockYPosition
+        let yPosition = blockYPosition - (blockHeight / 2)
+
+        // Update block's position
+        block.position = CGPoint(x: xPosition, y: yPosition)
+        block.initialPosition = block.position
+        block.gameScene = self
+
+        // Set scale and add block to the scene
+        block.setScale(0.6)  // Adjust as needed
+
+        safeAddBlock(block)
+    }
+}
+
     
     func isPlacementValid(for block: BBoxNode, at row: Int, col: Int) -> Bool {
         for cell in block.shape {
@@ -1347,9 +1371,6 @@ func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPositi
 
 
 
-
-
-
   func gridToScreenPosition(row: Int, col: Int) -> CGPoint {
     // Get the grid origin (assuming it's calculated somewhere else, like in createGrid())
     let gridOrigin = getGridOrigin() // You can use your existing grid origin calculation
@@ -1381,41 +1402,44 @@ func displayComboAnimation(for multiplier: Int) {
     // Define maximum position for the combo label based on screen size
     let maxComboYPosition = frame.midY + 150
     
-    // Position combo label within screen bounds
-    let comboLabelYPosition = frame.midY + 300  // Position below screen
+    // Conditional Y position for different devices
+    let comboLabelYPosition: CGFloat
+    if frame.height <= 667 { // iPhone SE screen height (667 points)
+        comboLabelYPosition = frame.midY + 265  // Lower position for SE
+    } else {
+        comboLabelYPosition = frame.midY + 300  // Default position for Pro and Pro Max
+    }
     
     let comboLabel = SKLabelNode(text: "COMBO x\(multiplier)")
-    //comboLabel.fontSize = min(70, frame.width * 0.1)  // Adjust font size based on screen width
     comboLabel.fontSize = min(40, frame.width * 0.08) // Reduced font size (adjust further as needed)
     comboLabel.fontColor = .white
     comboLabel.fontName = "Arial-BoldMT"
     comboLabel.position = CGPoint(x: frame.midX, y: comboLabelYPosition)
     
-        // Create shadow by adding another label
+    // Create shadow by adding another label
     let shadowComboLabel = createShadowedLabel(text: "COMBO x\(multiplier)", position: comboLabel.position, fontSize: comboLabel.fontSize)
     addChild(shadowComboLabel)
     
     addChild(comboLabel)  // Add combo label to the scene
-        
     
-    
-        // Animation sequence (scale up, bounce, fade out)
+    // Animation sequence (scale up, bounce, fade out)
     let scaleUp = SKAction.scale(to: 1.5, duration: 0.5)  // Increased to 0.5 seconds
     
-let bounce = SKAction.sequence([
-    SKAction.moveBy(x: 0, y: 80, duration: 0.2),  // Move up 80 pixels
-SKAction.moveBy(x: 0, y: -10, duration: 0.2),  // Minor downward movement
-SKAction.moveBy(x: 0, y: 10, duration: 0.2)   // Minor upward movement
-])
+    let bounce = SKAction.sequence([
+        SKAction.moveBy(x: 0, y: 80, duration: 0.2),  // Move up 80 pixels
+        SKAction.moveBy(x: 0, y: -10, duration: 0.2),  // Minor downward movement
+        SKAction.moveBy(x: 0, y: 10, duration: 0.2)    // Minor upward movement
+    ])
+    
     let fadeOut = SKAction.fadeOut(withDuration: 0.5)   // Increased to 0.5 seconds
-        let remove = SKAction.removeFromParent()
+    let remove = SKAction.removeFromParent()
     let delay = SKAction.wait(forDuration: 0.2)
     let comboAnimation = SKAction.sequence([delay, scaleUp, bounce, fadeOut, remove])
-    
     
     comboLabel.run(comboAnimation)
     shadowComboLabel.run(comboAnimation)  // Make shadow move as well
 }
+
     
     func displayAnimatedPoints(_ points: Int, at position: CGPoint) {
     let pointsLabel = SKLabelNode(text: "+\(points)")
