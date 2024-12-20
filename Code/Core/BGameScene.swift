@@ -452,21 +452,21 @@ required init?(coder aDecoder: NSCoder) {
     }
     
     private var availableBlockTypes: [BBoxNode.Type] = [
-        BSingleBlock.self,
-        BSquareBlock2x2.self,
-        BSquareBlock3x3.self,
-        BVerticalBlockNode1x2.self,
-        BHorizontalBlockNode1x2.self,
-        BLShapeNode2x2.self, // Added the L-shaped block
-        BVerticalBlockNode1x3.self,
-        BHorizontalBlockNode1x3.self,
-        BVerticalBlockNode1x4.self,
+       // BSingleBlock.self,
+       // BSquareBlock2x2.self,
+        //BSquareBlock3x3.self,
+       // BVerticalBlockNode1x2.self,
+       // BHorizontalBlockNode1x2.self,
+        //BLShapeNode2x2.self, // Added the L-shaped block
+        //BVerticalBlockNode1x3.self,
+        //BHorizontalBlockNode1x3.self,
+        //BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
-        BRotatedLShapeNode2x2.self,
+        /*BRotatedLShapeNode2x2.self,
         BLShapeNode5Block.self,
         BRotatedLShapeNode5Block.self,
         BTShapedBlock.self,
-        BZShapedBlock.self
+        BZShapedBlock.self*/
     ]
     
 
@@ -1273,6 +1273,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         syncPlacedBlocks()
         if placedBlocksCount >= 3 && isBoardCleared() {
                awardBonusPoints()
+            showPopUpAnimation(imageName: "Clear 250+.png")
            }
         
         return lineClears
@@ -2176,11 +2177,6 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
 
 
 
-
-
-
-
-
     
     func isDeletePowerupAvailable() -> Bool {
         // Check if any delete power-up is still available in the placeholders
@@ -2287,6 +2283,41 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         // Play Celebration Sound
         run(SKAction.playSoundFileNamed("celebration.mp3", waitForCompletion: false))
     }
+    
+   func showPopUpAnimation(imageName: String) {
+    // Get the grid origin (center of the grid)
+    let gridOrigin = getGridOrigin()
+    
+    // Calculate the center of the grid (taking tile size into account)
+    let centerOfGrid = CGPoint(x: gridOrigin.x + (CGFloat(layoutInfo.gridSize) * layoutInfo.tileSize) / 2,
+                               y: gridOrigin.y + (CGFloat(layoutInfo.gridSize) * layoutInfo.tileSize) / 2)
+    
+    // Create a sprite node with the provided image name
+    let popUpNode = SKSpriteNode(imageNamed: imageName)
+    
+    // Set the initial position to the center of the grid
+    popUpNode.position = centerOfGrid
+    
+    // Set the initial scale to be small
+    popUpNode.setScale(0.0)
+    
+    // Add the node to the scene
+    addChild(popUpNode)
+    
+    // Define the scaling and fading animation
+    let scaleUp = SKAction.scale(to: 1.2, duration: 0.2)
+    let scaleDown = SKAction.scale(to: 1.0, duration: 0.1)
+    let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+    let remove = SKAction.removeFromParent()
+    
+    // Create a sequence of actions
+    let animationSequence = SKAction.sequence([scaleUp, scaleDown, fadeOut, remove])
+    
+    // Run the animation on the pop-up node
+    popUpNode.run(animationSequence)
+}
+
+
 
     func addSwapDeletionEffect(to blockNode: BBoxNode) {
         // Use the center of the block’s frame as the position
