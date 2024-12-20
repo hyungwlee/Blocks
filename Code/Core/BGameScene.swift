@@ -1272,7 +1272,6 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         // Sync placed blocks
         syncPlacedBlocks()
         if placedBlocksCount >= 3 && isBoardCleared() {
-               awardBonusPoints()
             showPopUpAnimation(imageName: "Clear 250+.png")
            }
         
@@ -2243,48 +2242,8 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
         }
         return true
     }
-    func awardBonusPoints() {
-        let bonusPoints = 250 // Random bonus between 250-300
-        score += bonusPoints
-        updateScoreLabel()
-
-        // Celebration Animation
-        let bonusLabel = SKLabelNode(text: "+\(bonusPoints)")
-        bonusLabel.fontName = "Helvetica-Bold"
-        bonusLabel.fontSize = 40
-        bonusLabel.fontColor = .yellow
-        bonusLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        bonusLabel.zPosition = 200
-        addChild(bonusLabel)
-
-        // Animate bonus label (fade in, scale, bounce, fade out)
-        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
-        let scaleUp = SKAction.scale(to: 1.5, duration: 0.5)
-        let bounce = SKAction.sequence([
-            SKAction.moveBy(x: 0, y: 50, duration: 0.3),
-            SKAction.moveBy(x: 0, y: -20, duration: 0.3),
-            SKAction.moveBy(x: 0, y: 20, duration: 0.3)
-        ])
-        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
-        let remove = SKAction.removeFromParent()
-        bonusLabel.run(SKAction.sequence([fadeIn, scaleUp, bounce, fadeOut, remove]))
-
-        // Particle Effect
-        if let particleEffect = SKEmitterNode(fileNamed: "CelebrationEffect.sks") {
-            particleEffect.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            particleEffect.zPosition = 200
-            addChild(particleEffect)
-            particleEffect.run(SKAction.sequence([
-                SKAction.wait(forDuration: 2.0),
-                SKAction.removeFromParent()
-            ]))
-        }
-
-        // Play Celebration Sound
-        run(SKAction.playSoundFileNamed("celebration.mp3", waitForCompletion: false))
-    }
     
-   func showPopUpAnimation(imageName: String) {
+func showPopUpAnimation(imageName: String) {
     // Get the grid origin (center of the grid)
     let gridOrigin = getGridOrigin()
     
@@ -2304,18 +2263,23 @@ func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
     // Add the node to the scene
     addChild(popUpNode)
     
-    // Define the scaling and fading animation
+    // Define the scaling, movement, and fading animation
     let scaleUp = SKAction.scale(to: 1.2, duration: 0.2)
     let scaleDown = SKAction.scale(to: 1.0, duration: 0.1)
+    
+    // Add upward movement by adjusting the y-position
+    let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 0.3)  // Moves 50 points upward
+    
     let fadeOut = SKAction.fadeOut(withDuration: 0.5)
     let remove = SKAction.removeFromParent()
     
     // Create a sequence of actions
-    let animationSequence = SKAction.sequence([scaleUp, scaleDown, fadeOut, remove])
+    let animationSequence = SKAction.sequence([scaleUp, scaleDown, moveUp, fadeOut, remove])
     
     // Run the animation on the pop-up node
     popUpNode.run(animationSequence)
 }
+
 
 
 
