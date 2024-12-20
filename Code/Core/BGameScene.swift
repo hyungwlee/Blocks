@@ -177,7 +177,7 @@ required init?(coder aDecoder: NSCoder) {
 }
 
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5// Number of lines required to fill the bar
+         let requiredLinesForPowerup = 1// Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -703,90 +703,61 @@ func addScoreLabel() {
 func fadeBlocksToGrey(_ nodes: [SKShapeNode], completion: @escaping () -> Void) {
     // Create the X image sprite using SKSpriteNode
     let xNode = SKSpriteNode(imageNamed: "X") // Replace "X" with the name of your image asset
-    xNode.zPosition = 10 // Ensure it's on top of the grid
-    xNode.alpha = 0.0    // Start fully transparent
+    xNode.zPosition = 10
+    xNode.alpha = 0.0 // Start fully transparent
 
     // Get the grid dimensions
     let gridWidth = CGFloat(gridSize) * tileSize
     let gridHeight = CGFloat(gridSize) * tileSize
 
-    // Set the X node size to a smaller value, e.g., 60% of the grid's size
-    let xNodeWidth = gridWidth * 0.4
-    let xNodeHeight = gridHeight * 0.4
+    // Set the X node size to 20% of the grid's size
+    let xNodeWidth = gridWidth * 0.2
+    let xNodeHeight = gridHeight * 0.2
     xNode.size = CGSize(width: xNodeWidth, height: xNodeHeight)
 
-    // Get the origin of the grid
+    // Get the origin of the grid and position the X node at the center
     let gridOrigin = getGridOrigin()
-
-    // Calculate the final position at the center of the grid
     let finalPosition = CGPoint(
-        x: gridOrigin.x + gridWidth / 2, 
-        y: gridOrigin.y + gridHeight / 2 
+        x: gridOrigin.x + gridWidth / 2,
+        y: gridOrigin.y + gridHeight / 2
     )
-
-    // Position the X node directly in the center of the grid
     xNode.position = finalPosition
     addChild(xNode)
 
-    // Fade actions for the blocks
-    let fadeActions = nodes.map { node -> SKAction in
-        if let spriteNode = node.children.first as? SKSpriteNode {
-            return SKAction.sequence([
-                SKAction.group([
-                    SKAction.fadeAlpha(to: 0.8, duration: 0.1),  // Fade the alpha to 0.8 to reduce opacity, not fully transparent
-                    SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 0.1) // Grey out completely
-                ]),
-                SKAction.run {
-                    spriteNode.color = UIColor(white: 0.5, alpha: 1.0)  // Set to full grey (no original color showing)
-                    spriteNode.colorBlendFactor = 1.0  // Ensure full grey color
-                }
-            ])
-        }
-        return SKAction()
-    }
+    // Play the game-over sound
+    run(SKAction.playSoundFileNamed("gameOverSound", waitForCompletion: false))
 
-    // Create a fade-to-black effect using SKSpriteNode
-    let fadeToBlack = SKSpriteNode(color: .black, size: CGSize(width: self.size.width, height: self.size.height))
-    fadeToBlack.zPosition = 20
-    fadeToBlack.alpha = 0.0
-    fadeToBlack.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
-    addChild(fadeToBlack)
-
-    // Instant fade-to-black effect (no duration)
-    let fadeScreenAction = SKAction.fadeAlpha(to: 1.0, duration: 0.0)
-
-    // Run the actions
-    let animationGroup = SKAction.group(fadeActions)
-    let sequence = SKAction.sequence([
-        animationGroup,
-        SKAction.wait(forDuration: 0.5), // Wait for the block fade out to complete
-        SKAction.wait(forDuration: 0.5), // Add a delay before fade to black (adjust as needed)
-        SKAction.run {
-            fadeToBlack.run(fadeScreenAction)
-        },
-        SKAction.run(completion)
-    ])
-
+    // Fade the blocks to grey over 1 second (half the original duration)
+    let fadeDuration = 1.0
     for node in nodes {
-        node.run(sequence)
+        if let spriteNode = node.children.first as? SKSpriteNode {
+            let fadeAction = SKAction.group([
+                SKAction.fadeAlpha(to: 0.5, duration: fadeDuration),
+                SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: fadeDuration)
+            ])
+            node.run(fadeAction)
+        }
     }
-    
-    // Fade-in the X node in the center of the grid with ease-in effect
-  let fadeInAction = SKAction.fadeAlpha(to: 1.0, duration: 0.015) // Fade-in duration for "X"
 
-    // Apply ease-in timing mode to the fade-in action
-    fadeInAction.timingMode = .easeIn
+    // After blocks have faded, wait 0.5 seconds and then fade in the "X" over 0.5 seconds
+    let waitAfterFade = SKAction.wait(forDuration: fadeDuration + 0.5)
+    let fadeInX = SKAction.fadeAlpha(to: 1.0, duration: 0.5) // Half the original duration
+    fadeInX.timingMode = .easeIn
 
-let waitAction = SKAction.wait(forDuration: 1.0) // Wait for 1 second after the fade-in
+    let waitAfterX = SKAction.wait(forDuration: 0.5)
+    let transitionToGameOver = SKAction.run {
+        completion()
+    }
 
-// Sequence: Perform fade-in with ease-in effect, then wait for 1 second
-let fadeInSequence = SKAction.sequence([fadeInAction, waitAction])
-
-// Run the sequence on the X node
-xNode.run(fadeInSequence)
-
+    // Sequence for the "X" node and game-over transition
+    let xSequence = SKAction.sequence([
+        waitAfterFade,
+        fadeInX,
+        waitAfterX,
+        transitionToGameOver
+    ])
+    xNode.run(xSequence)
 }
-
 
 
     func spawnNewBlocks() {
@@ -1575,46 +1546,61 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 }
 
 
-
 func showMultiplierEffect(at position: CGPoint, orientation: String) {
     let numberOfStars = 5
     let starSpacing: CGFloat = 20
 
     // Load the star image
-    let starImage = SKTexture(imageNamed: "multiplier3") // Replace with your image name
+    let starImage = SKTexture(imageNamed: "multiplier3") // Replace with your actual image name
+
+    // Calculate the total length of the row/column based on grid size and tile size
+    let totalLength = CGFloat(gridSize) * tileSize
 
     for i in 0..<numberOfStars {
         // Create a sprite node with the star image
         let starNode = SKSpriteNode(texture: starImage)
-        starNode.size = CGSize(width: 60, height: 60) // Adjust the size of the star
+        starNode.size = CGSize(width: 60, height: 60)
+        starNode.zPosition = 100
+        starNode.alpha = 0.0
 
-        // Set the position based on the orientation
+        // Set the initial position based on orientation
         if orientation == "vertical" {
+            // Position at the bottom end of the column, outside the grid
             starNode.position = CGPoint(
                 x: position.x,
-                y: position.y + CGFloat(i) * starSpacing - CGFloat(numberOfStars - 1) * starSpacing / 2
+                y: position.y - totalLength / 2 - CGFloat(numberOfStars) * starSpacing
             )
         } else {
+            // Position at the left end of the row, outside the grid
             starNode.position = CGPoint(
-                x: position.x + CGFloat(i) * starSpacing - CGFloat(numberOfStars - 1) * starSpacing / 2,
+                x: position.x - totalLength / 2 - CGFloat(numberOfStars) * starSpacing,
                 y: position.y
             )
         }
 
-        starNode.zPosition = 100
-        starNode.alpha = 0.0
-
         addChild(starNode)
 
-        // Make the fade-in, fade-out, and delay faster
-        let fadeIn = SKAction.fadeIn(withDuration: 0.3)    // Reduced from 0.5 to 0.3
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)  // Reduced from 0.5 to 0.3
-        let delay = SKAction.wait(forDuration: Double(i) * 0.1) // Reduced delay between stars
+        // Create fade-in and fade-out actions
+        let fadeIn = SKAction.fadeIn(withDuration: 0.2)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
 
-        let sequence = SKAction.sequence([delay, fadeIn, fadeOut, SKAction.removeFromParent()])
-        starNode.run(sequence)
+        // Create movement action based on orientation
+        let moveAction: SKAction
+        if orientation == "vertical" {
+            moveAction = SKAction.moveBy(x: 0, y: totalLength + CGFloat(numberOfStars) * starSpacing, duration: 0.5)
+        } else {
+            moveAction = SKAction.moveBy(x: totalLength + CGFloat(numberOfStars) * starSpacing, y: 0, duration: 0.5)
+        }
+
+        // Sequence: fade in, move, fade out, then remove from parent
+        let sequence = SKAction.sequence([fadeIn, moveAction, fadeOut, SKAction.removeFromParent()])
+
+        // Add a slight delay for each star to create a staggered effect
+        let delay = SKAction.wait(forDuration: Double(i) * 0.1)
+        starNode.run(SKAction.sequence([delay, sequence]))
     }
 }
+
 
 
 
