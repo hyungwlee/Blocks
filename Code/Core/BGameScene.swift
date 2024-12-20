@@ -452,21 +452,21 @@ required init?(coder aDecoder: NSCoder) {
     }
     
     private var availableBlockTypes: [BBoxNode.Type] = [
-//        BSingleBlock.self,
-//        BSquareBlock2x2.self,
-//        BSquareBlock3x3.self,
-//        BVerticalBlockNode1x2.self,
-//        BHorizontalBlockNode1x2.self,
-//        BLShapeNode2x2.self, // Added the L-shaped block
-//        BVerticalBlockNode1x3.self,
-//        BHorizontalBlockNode1x3.self,
-//        BVerticalBlockNode1x4.self,
+        BSingleBlock.self,
+        BSquareBlock2x2.self,
+        BSquareBlock3x3.self,
+        BVerticalBlockNode1x2.self,
+        BHorizontalBlockNode1x2.self,
+        BLShapeNode2x2.self, // Added the L-shaped block
+        BVerticalBlockNode1x3.self,
+        BHorizontalBlockNode1x3.self,
+        BVerticalBlockNode1x4.self,
         BHorizontalBlockNode1x4.self,
-//        BRotatedLShapeNode2x2.self,
-//        BLShapeNode5Block.self,
-//        BRotatedLShapeNode5Block.self,
-//        BTShapedBlock.self,
-//        BZShapedBlock.self
+        BRotatedLShapeNode2x2.self,
+        BLShapeNode5Block.self,
+        BRotatedLShapeNode5Block.self,
+        BTShapedBlock.self,
+        BZShapedBlock.self
     ]
     
 
@@ -595,11 +595,17 @@ required init?(coder aDecoder: NSCoder) {
         for row in rows {
             for col in 0..<gridSize {
                 if let highlightNode = highlightGrid[row][col] {
-                    // Add a subtle overlay or colorize the highlight
-                    let overlay = SKSpriteNode(color: UIColor.yellow.withAlphaComponent(0.25),
-                                               size: CGSize(width: tileSize, height: tileSize))
-                    overlay.zPosition = 10
-                    highlightNode.addChild(overlay)
+                    // Instead of a yellow overlay, use a subtle block-like highlight
+                    let highlightSprite = SKSpriteNode(color: UIColor.white.withAlphaComponent(0.3),
+                                                       size: CGSize(width: tileSize, height: tileSize))
+                    highlightSprite.zPosition = 10
+                    
+                    // Optionally add a subtle glow or outline for more polish
+                    // highlightSprite.run(SKAction.sequence([
+                    //    SKAction.colorize(with: .white, colorBlendFactor: 0.3, duration: 0.1)
+                    // ]))
+                    
+                    highlightNode.addChild(highlightSprite)
                 }
             }
         }
@@ -609,10 +615,10 @@ required init?(coder aDecoder: NSCoder) {
         for col in columns {
             for row in 0..<gridSize {
                 if let highlightNode = highlightGrid[row][col] {
-                    let overlay = SKSpriteNode(color: UIColor.yellow.withAlphaComponent(0.25),
-                                               size: CGSize(width: tileSize, height: tileSize))
-                    overlay.zPosition = 10
-                    highlightNode.addChild(overlay)
+                    let highlightSprite = SKSpriteNode(color: UIColor.white.withAlphaComponent(0.3),
+                                                       size: CGSize(width: tileSize, height: tileSize))
+                    highlightSprite.zPosition = 10
+                    highlightNode.addChild(highlightSprite)
                 }
             }
         }
