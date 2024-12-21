@@ -82,7 +82,7 @@ struct BLPowerup {
 let availablePowerups: [BLPowerup] = [
     BLPowerup(type: .delete, imageName: "bl_delete.png"),
     BLPowerup(type: .swap, imageName: "bl_swap.png"),
-    BLPowerup(type: .undo, imageName: "bl_undo.png"),
+//    BLPowerup(type: .undo, imageName: "bl_undo.png"),
     BLPowerup(type: .multiplier, imageName: "bl_multiplier.png")
 ]
 
@@ -177,7 +177,7 @@ required init?(coder aDecoder: NSCoder) {
 }
 
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 1// Number of lines required to fill the bar
+         let requiredLinesForPowerup = 5// Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -1297,7 +1297,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
 //        }
         
         var twinkleNodes: [SKSpriteNode] = []
-        let twinkleTexture = SKTexture(imageNamed: "bl_twinkle")
+        let twinkleTexture = SKTexture(imageNamed: "BL_twinkle")
 
         for index in 0..<3 {
             let twinkleNode = SKSpriteNode(texture: twinkleTexture)
@@ -2463,7 +2463,7 @@ func showPopUpAnimation(imageName: String, soundFileName: String) {
         }
 
         // Step 2: Sparkle effects
-        let sparkleTexture = SKTexture(imageNamed: "bl_twinkle")
+        let sparkleTexture = SKTexture(imageNamed: "BL_twinkle")
         let sparkleEmitterNode = SKNode()
         sparkleEmitterNode.position = blockCenter
         sparkleEmitterNode.zPosition = 150
