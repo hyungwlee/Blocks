@@ -9,14 +9,14 @@ import Combine
 import GameplayKit
 import UIKit
 
-class BLSGameContext: BLGameContext {
+class BLGameContext: GameContext {
     var nextState: BLGameState?
     
     var gameScene: BLGameScene? {
         scene as? BLGameScene
     }
     
-    let gameMode: BLGameModeType
+    let gameMode: GameModeType
     let gameInfo: BLGameInfo
     var layoutInfo: BLLayoutInfo
     var placingState: Bool = false
@@ -27,7 +27,7 @@ class BLSGameContext: BLGameContext {
     }
 
     // MARK: - Initialization
-    init(dependencies: BLDependencies, gameMode: BLGameModeType) {
+    init(dependencies: Dependencies, gameMode: GameModeType) {
         self.gameInfo = BLGameInfo()
         self.gameMode = gameMode
         let screenSize = UIScreen.main.bounds.size

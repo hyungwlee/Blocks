@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum BLGameType: String, Codable {
+enum GameType: String, Codable {
     case none
     case test
     
@@ -19,7 +19,7 @@ enum BLGameType: String, Codable {
             return ""
         }
     }
-    static func type(withGameId id: String) -> BLGameType? {
+    static func type(withGameId id: String) -> GameType? {
         switch id {
         case "none":
             return nil

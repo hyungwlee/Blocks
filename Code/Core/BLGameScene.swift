@@ -31,7 +31,7 @@ var multiplierLabel: SKLabelNode!
 var grid: [[SKShapeNode?]] = []
 var boxNodes: [BLBoxNode] = []
 var currentlyDraggedNode: BLBoxNode?
-var gameContext: BLSGameContext?
+var gameContext: BLGameContext?
 var isGameOver: Bool = false
 var placedBlocks: [BLPlacedBlock] = []
 var gameOverAudioPlayer: AVAudioPlayer?
@@ -61,8 +61,8 @@ var gameOverSound: SKAudioNode?
 var blockSelectionSound: SKAudioNode?
 var audioPlayer: AVAudioPlayer?
 
-var dependencies: BLDependencies
-var gameMode: BLGameModeType
+var dependencies: Dependencies
+var gameMode: GameModeType
 
 let initialScale: CGFloat  // Set the initial scale to 0.6
 
@@ -87,7 +87,7 @@ let availablePowerups: [BLPowerup] = [
 ]
 
 // Initializer
-init(context: BLSGameContext, dependencies: BLDependencies, gameMode: BLGameModeType, size: CGSize) {
+init(context: BLGameContext, dependencies: Dependencies, gameMode: GameModeType, size: CGSize) {
     self.gameContext = context
     self.dependencies = dependencies
     self.gameMode = gameMode
@@ -104,10 +104,10 @@ init(context: BLSGameContext, dependencies: BLDependencies, gameMode: BLGameMode
 
 
 required init?(coder aDecoder: NSCoder) {
-    let defaultDependencies = BLDependencies()
+    let defaultDependencies = Dependencies()
     self.dependencies = defaultDependencies
     self.gameMode = .single
-    self.gameContext = BLSGameContext(dependencies: dependencies, gameMode: gameMode)
+    self.gameContext = BLGameContext(dependencies: dependencies, gameMode: gameMode)
 
     // Initialize layoutInfo with the current screen size
     let screenSize = UIScreen.main.bounds.size

@@ -9,15 +9,15 @@ import Combine
 import GameplayKit
 import SwiftUI
 
-protocol BLGameContextDelegate: AnyObject {
-    var gameMode: BLGameModeType { get }
-    var gameType: BLGameType { get }
+protocol GameContextDelegate: AnyObject {
+    var gameMode: GameModeType { get }
+    var gameType: GameType { get }
 
     func exitGame()
     func transitionToScore(_ score: Int)
 }
 
-class BLGameContext {
+class GameContext {
     var shouldResetPlayback: Bool = false
 
     @Published var opacity: Double = 0.0
@@ -27,15 +27,15 @@ class BLGameContext {
     
     var scene: SKScene?
 
-    private(set) var dependencies: BLDependencies
+    private(set) var dependencies: Dependencies
     
-    var gameType: BLGameType? {
+    var gameType: GameType? {
         delegate?.gameType
     }
 
-    weak var delegate: BLGameContextDelegate?
+    weak var delegate: GameContextDelegate?
 
-    init(dependencies deps: BLDependencies) {
+    init(dependencies deps: Dependencies) {
         dependencies = deps
     }
     
@@ -43,4 +43,4 @@ class BLGameContext {
     }
 }
 
-extension BLGameContext: ObservableObject {}
+extension GameContext: ObservableObject {}

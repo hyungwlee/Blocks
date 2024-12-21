@@ -10,9 +10,9 @@ import GameplayKit
 
 class BLGameIdleState: GKState {
     weak var scene: BLGameScene?
-    weak var context: BLGameContext?
+    weak var context: GameContext?
 
-    init(scene: BLGameScene, context: BLGameContext) {
+    init(scene: BLGameScene, context: GameContext) {
         self.scene = scene
         self.context = context
         super.init()

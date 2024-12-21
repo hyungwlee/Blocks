@@ -7,6 +7,6 @@
 
 import UIKit
 
-internal class BLDependencies: NSObject, ObservableObject {
+internal class Dependencies: NSObject, ObservableObject {
 }
 

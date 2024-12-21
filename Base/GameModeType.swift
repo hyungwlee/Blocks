@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum BLGameModeType: Equatable {
+enum GameModeType: Equatable {
     case multi
     case random
     case single

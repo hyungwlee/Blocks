@@ -14,7 +14,7 @@ struct BlocksApp: App {
     var body: some Scene {
         WindowGroup {
             // Provide actual dependencies and game mode
-            BLContentView(dependencies: BLDependencies(), gameMode: .single) // Use the desired game mode
+            BLContentView(dependencies: Dependencies(), gameMode: .single) // Use the desired game mode
         }
     }
 }

@@ -14,10 +14,10 @@ struct BLContentView: View {
         BLLayoutInfo(screenSize: screenSize)
     }
     
-    let gameContext: BLSGameContext
+    let gameContext: BLGameContext
 
-    init(dependencies: BLDependencies, gameMode: BLGameModeType) {
-        self.gameContext = BLSGameContext(dependencies: dependencies, gameMode: gameMode)
+    init(dependencies: Dependencies, gameMode: GameModeType) {
+        self.gameContext = BLGameContext(dependencies: dependencies, gameMode: gameMode)
     }
 
     var body: some View {
@@ -27,7 +27,7 @@ struct BLContentView: View {
 }
 
 #Preview {
-    BLContentView(dependencies: BLDependencies(), gameMode: .single)
+    BLContentView(dependencies: Dependencies(), gameMode: .single)
         .ignoresSafeArea()
 }
 
