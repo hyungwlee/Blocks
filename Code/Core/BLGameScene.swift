@@ -1193,7 +1193,12 @@ func placeBlock(_ block: BLBoxNode, at gridPosition: (row: Int, col: Int)) {
 }
 
                     let vibrationSequence = SKAction.sequence(vibrationActions)
-
+                    for spawnedBlock in self.boxNodes {
+                           spawnedBlock.run(SKAction.group([
+                               SKAction.fadeAlpha(to: 0.5, duration: 1.0),
+                               SKAction.colorize(with: UIColor(white: 0.5, alpha: 1.0), colorBlendFactor: 1.0, duration: 1.0)
+                           ]))
+                       }
                     // Run vibration and fade in parallel
                     self.run(SKAction.group([
                         vibrationSequence,
@@ -1706,8 +1711,10 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
 
 
 func showGameOverScreen() {
-    isGameOver = true
     
+    isGameOver = true
+    currentlyDraggedNode = nil
+    stopDeletePowerupVibrations()
     // Stop any ongoing animations and actions
     self.enumerateChildNodes(withName: "*") { node, _ in
         node.removeAllActions() // Stop any ongoing actions
@@ -1831,7 +1838,8 @@ func showGameOverScreen() {
     restartButton.addChild(restartLabel)
     
     // Disable all further animations in the scene (ensure nothing happens)
-    self.isPaused = true
+//    self.isPaused = true
+   
 }
 
 
@@ -1969,13 +1977,17 @@ override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     guard let touch = touches.first else { return }
     let location = touch.location(in: self)
     let nodeTapped = atPoint(location)
-
-    if isGameOver {
-        if nodeTapped.name == "restartButton" {
+    if nodeTapped.name == "restartButton" {
             restartGame()
+            return
         }
-        return
-    }
+    if !checkForPossibleMoves(for: boxNodes) {
+           print("No moves available. Touch interactions are disabled.")
+           return
+       }
+
+
+
 
   // Check if a power-up icon is tapped
     if let powerupIcon = nodeTapped as? SKSpriteNode, powerupIcon.name == "powerupIcon",
@@ -2633,6 +2645,9 @@ func showPopUpAnimation(imageName: String, soundFileName: String) {
 
     
 override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    if isGameOver {
+           return // Do not allow dragging of blocks if the game is over
+       }
     guard let touch = touches.first, let node = currentlyDraggedNode else { return }
     
     let touchLocation = touch.location(in: self)
@@ -2827,6 +2842,9 @@ func getUndoBlockCenterPosition() -> CGPoint {
 
     // Handle the block placement and reset its size when placed on the grid
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if isGameOver {
+               return // Do not allow dragging of blocks if the game is over
+           }
         guard let node = currentlyDraggedNode else { return }
 
         // Determine the grid position for placement
