@@ -11,6 +11,8 @@ import AVFoundation
 
 class BLGameScene: SKScene {
    let gridSize = 8
+   var isMultiplierAnimationActive = false
+
 
 // Declare layoutInfo as a non-lazy property
 var layoutInfo: BLLayoutInfo
@@ -177,7 +179,7 @@ required init?(coder aDecoder: NSCoder) {
 }
 
     // MARK: - Variables for Progress Bar
-         let requiredLinesForPowerup = 5// Number of lines required to fill the bar
+         let requiredLinesForPowerup = 10 // Number of lines required to fill the bar
          var linesCleared = 0 // Tracks the total lines cleared for the progress bar
     var progressBar: SKShapeNode? // Change from SKSpriteNode
     var progressBarBackground: SKShapeNode? // Keep as SKShapeNode
@@ -1214,7 +1216,7 @@ func placeBlock(_ block: BLBoxNode, at gridPosition: (row: Int, col: Int)) {
                     if let gameOverSoundURL = Bundle.main.url(forResource: "bl_Muted", withExtension: "mp3") {
                         do {
                             self.gameOverSoundPlayer = try AVAudioPlayer(contentsOf: gameOverSoundURL)
-                            self.gameOverSoundPlayer?.volume = 0.8
+                            self.gameOverSoundPlayer?.volume = 1.0
                             self.gameOverSoundPlayer?.prepareToPlay()
                             self.gameOverSoundPlayer?.play()
                         } catch {
@@ -1358,77 +1360,106 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
         let row: Int
         let col: Int
     }
+    
+    
+func checkForCompletedLines() -> [LineClear] {
+    var lineClears: [LineClear] = []
+    var completedRows: [Int] = []
+    var completedColumns: [Int] = []
 
-    func checkForCompletedLines() -> [LineClear] {
-        var lineClears: [LineClear] = []
-        var completedRows: [Int] = []
-        var completedColumns: [Int] = []
-        
-        // Identify completed rows
-        for row in 0..<gridSize {
-            if grid[row].allSatisfy({ $0 != nil }) {
-                completedRows.append(row)
-            }
+    // Identify completed rows
+    for row in 0..<gridSize {
+        if grid[row].allSatisfy({ $0 != nil }) {
+            completedRows.append(row)
         }
-        
-        // Identify completed columns
-        for col in 0..<gridSize {
-            var isCompleted = true
-            for row in 0..<gridSize {
-                if grid[row][col] == nil {
-                    isCompleted = false
-                    break
-                }
-            }
-            if isCompleted {
-                completedColumns.append(col)
-            }
-        }
-        
-        // Now clear all identified rows and columns
-        var totalLinesCleared = 0
-        var totalPoints = 0
-        
-        for row in completedRows {
-            let clearedCells = clearRow(row)
-            let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
-            lineClears.append(lineClear)
-            totalLinesCleared += 1
-            totalPoints += 10
-        }
-        
-        for col in completedColumns {
-            let clearedCells = clearColumn(col)
-            let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
-            lineClears.append(lineClear)
-            totalLinesCleared += 1
-            totalPoints += 10
-        }
-        
-        // Handle progress, combo, etc.
-        if totalLinesCleared > 0 {
-            self.linesCleared += totalLinesCleared
-            updateProgressBar()
-        } else {
-            let currentTime = Date().timeIntervalSinceReferenceDate
-            if currentTime - lastClearTime > comboResetTime {
-                currentCombo = 1
-            }
-        }
-        
-        if totalLinesCleared > 0 {
-            lastClearTime = Date().timeIntervalSinceReferenceDate
-        }
-        
-        // Sync placed blocks
-        syncPlacedBlocks()
-        if placedBlocksCount >= 3 && isBoardCleared() {
-            awardBonusPoints()
-            showPopUpAnimation(imageName: "bl_Clear 250+.png", soundFileName: "bl_250+.wav")
-           }
-        
-        return lineClears
     }
+
+    // Identify completed columns
+    for col in 0..<gridSize {
+        var isCompleted = true
+        for row in 0..<gridSize {
+            if grid[row][col] == nil {
+                isCompleted = false
+                break
+            }
+        }
+        if isCompleted {
+            completedColumns.append(col)
+        }
+    }
+
+    // Clear all identified rows and columns
+    var totalLinesCleared = 0
+    var totalPoints = 0
+
+    for row in completedRows {
+        let clearedCells = clearRow(row)
+        let lineClear = LineClear(isRow: true, index: row, clearedCells: clearedCells)
+        lineClears.append(lineClear)
+        totalLinesCleared += 1
+        totalPoints += 10
+    }
+
+    for col in completedColumns {
+        let clearedCells = clearColumn(col)
+        let lineClear = LineClear(isRow: false, index: col, clearedCells: clearedCells)
+        lineClears.append(lineClear)
+        totalLinesCleared += 1
+        totalPoints += 10
+    }
+
+    // Calculate combo points (Combo multiplier is based on the currentCombo count)
+    let comboPoints = (currentCombo - 1) * 10 // Adjust this as per your game logic
+    totalPoints += comboPoints
+
+    // Apply multiplier if active
+    if activePowerup == .multiplier {
+        totalPoints = Int(Double(totalPoints) * 1.5) // Apply multiplier effect
+    }
+
+    // Show the multiplier animation with the updated total points
+    if activePowerup == .multiplier, totalPoints > 0 {
+        let position: CGPoint
+        if !completedRows.isEmpty {
+            let row = completedRows.min()! // Use the first completed row
+            let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
+            position = CGPoint(x: size.width / 2, y: rowCenterY)
+            showMultiplierAnimation(at: position, orientation: "horizontal", points: totalPoints)
+        } else if !completedColumns.isEmpty {
+            let col = completedColumns.min()! // Use the first completed column
+            let colCenterX = gridToScreenPosition(row: gridSize / 2, col: col).x
+            position = CGPoint(x: colCenterX, y: size.height / 2)
+            showMultiplierAnimation(at: position, orientation: "vertical", points: totalPoints)
+        }
+    }
+
+    // Handle progress, combo, etc.
+    if totalLinesCleared > 0 {
+        self.linesCleared += totalLinesCleared
+        updateProgressBar()
+    } else {
+        let currentTime = Date().timeIntervalSinceReferenceDate
+        if currentTime - lastClearTime > comboResetTime {
+            currentCombo = 1
+        }
+    }
+
+    if totalLinesCleared > 0 {
+        lastClearTime = Date().timeIntervalSinceReferenceDate
+    }
+
+    // Sync placed blocks
+    syncPlacedBlocks()
+    if placedBlocksCount >= 3 && isBoardCleared() {
+        awardBonusPoints()
+        showPopUpAnimation(imageName: "bl_Clear 250+.png", soundFileName: "bl_250+.wav")
+    }
+
+    return lineClears
+}
+
+
+
 
 
     func syncPlacedBlocks() {
@@ -1466,6 +1497,9 @@ func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPositi
             resetPlaceholder(at: index)
         }
         deactivateActivePowerup()
+        
+        // Prevent displaying points animation during multiplier effect
+        return // Skip the rest of the function if multiplier is active
     }
     
     // Update score by casting points to Int
@@ -1477,8 +1511,10 @@ func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPositi
         displayComboAnimation(for: currentCombo)
     }
     
-    // Display animated points at the block placement position
-    displayAnimatedPoints(Int(points), at: displayPosition)
+    // Display animated points at the block placement position (skip when multiplier is active)
+    if !isMultiplierAnimationActive {
+        displayAnimatedPoints(Int(points), at: displayPosition)
+    }
     
     // Increment combo multiplier for consecutive clears
     currentCombo += 1
@@ -1491,6 +1527,8 @@ func applyComboMultiplier(for linesCleared: Int, totalPoints: Int, displayPositi
        /* run(SKAction.playSoundFileNamed("ComboSound.mp3", waitForCompletion: false))*/
     }
 }
+
+
 
     func awardBonusPoints() {
             let bonusPoints = 250 // Random bonus between 250-300
@@ -1619,6 +1657,57 @@ func displayComboAnimation(for multiplier: Int) {
     }
     
 
+func showMultiplierAnimation(at position: CGPoint, orientation: String, points: Int) {
+    // Set flag to indicate the multiplier animation is active
+    isMultiplierAnimationActive = true
+
+    // Create the star image
+    let multiplierImage = SKSpriteNode(imageNamed: "bl_Star.png")
+    multiplierImage.setScale(0.5) // Shrink the overall size
+    multiplierImage.position = position
+    multiplierImage.zPosition = 10 // Ensure it's on top of other nodes
+    addChild(multiplierImage)
+
+    // Create the points label
+    let pointsLabel = SKLabelNode(text: "+\(points)")
+    pointsLabel.fontName = "Helvetica-Bold"
+    pointsLabel.fontSize = 10
+    pointsLabel.fontColor = .black // Black text color
+     pointsLabel.position = CGPoint(x: position.x, y: position.y - pointsLabel.fontSize / 2)
+    pointsLabel.zPosition = 11 // Ensure it's above the star
+    addChild(pointsLabel)
+
+    // Actions for the star animation (keep the shrink action)
+    let shrinkAction = SKAction.scale(to: 0.3, duration: 0.2) // Shrink the star
+    let fadeOutAction = SKAction.fadeOut(withDuration: 0.3) // Fade out
+    let removeStarAction = SKAction.run {
+        multiplierImage.removeFromParent() // Clean up star
+    }
+    let starSequence = SKAction.sequence([shrinkAction, fadeOutAction, removeStarAction])
+    multiplierImage.run(starSequence)
+
+    // Actions for the points label animation (scale up the label)
+    let growLabelAction = SKAction.scale(to: 1.2, duration: 0.3) // Scale the label up
+    let fadeOutLabelAction = SKAction.fadeOut(withDuration: 0.3) // Fade out
+    let removeLabelAction = SKAction.run {
+        pointsLabel.removeFromParent() // Clean up label
+    }
+    let labelSequence = SKAction.sequence([growLabelAction, fadeOutLabelAction, removeLabelAction])
+    pointsLabel.run(labelSequence)
+
+    // Set flag to false after animation completes
+    let animationDuration = shrinkAction.duration + fadeOutAction.duration
+    let resetFlagAction = SKAction.run {
+        self.isMultiplierAnimationActive = false
+    }
+    run(SKAction.sequence([SKAction.wait(forDuration: animationDuration), resetFlagAction]))
+}
+
+
+
+
+
+
 func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
 
@@ -1646,17 +1735,17 @@ func clearRow(_ row: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
 
-    // Show multiplier effect if the power-up is active
-    if activePowerup == .multiplier {
+    // Show the multiplier animation only once
+    if activePowerup == .multiplier && !clearedCells.isEmpty {
         let rowCenterY = gridToScreenPosition(row: row, col: gridSize / 2).y
-        /*showMultiplierEffect(at: CGPoint(x: size.width / 2, y: rowCenterY), orientation: "horizontal")*/
+        let position = CGPoint(x: size.width / 2, y: rowCenterY)
+       // showMultiplierAnimation(at: position, orientation: "horizontal")
     }
 
-   run(SKAction.playSoundFileNamed("bl_clearinglines.mp3", waitForCompletion: false))
+    run(SKAction.playSoundFileNamed("bl_clearinglines.mp3", waitForCompletion: false))
 
     return clearedCells
 }
-
 
 func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
     var clearedCells: [(row: Int, col: Int, cellNode: SKShapeNode)] = []
@@ -1687,24 +1776,21 @@ func clearColumn(_ col: Int) -> [(row: Int, col: Int, cellNode: SKShapeNode)] {
         }
     }
 
-    // Show multiplier effect if the power-up is active
+    // Show the multiplier animation only once
     if activePowerup == .multiplier, !clearedRows.isEmpty {
         let minRow = clearedRows.min()!
         let maxRow = clearedRows.max()!
         let midRow = (minRow + maxRow) / 2
         let colCenterX = gridToScreenPosition(row: midRow, col: col).x
         let colCenterY = gridToScreenPosition(row: midRow, col: col).y
-
-        /*showMultiplierEffect(at: CGPoint(x: colCenterX, y: colCenterY), orientation: "vertical")*/
+        let position = CGPoint(x: colCenterX, y: colCenterY)
+        //showMultiplierAnimation(at: position, orientation: "vertical")
     }
 
-    // Use AVAudioPlayer for custom volume control
-   run(SKAction.playSoundFileNamed("bl_clearinglines.mp3", waitForCompletion: false))
+    run(SKAction.playSoundFileNamed("bl_clearinglines.mp3", waitForCompletion: false))
 
     return clearedCells
 }
-
-
 
 
 
@@ -1885,7 +1971,7 @@ func restartGame() {
     setupGridHighlights()
 
     // Restart background music
-    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
+    if let url = Bundle.main.url(forResource: "bl_New", withExtension: "mp3") {
         backgroundMusic = SKAudioNode(url: url)
         if let backgroundMusic = backgroundMusic {
             backgroundMusic.autoplayLooped = true

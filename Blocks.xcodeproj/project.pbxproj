@@ -24,6 +24,7 @@
 		5190EBE52D0D255A00E1674A /* bl_X.png in Resources */ = {isa = PBXBuildFile; fileRef = 5190EBE42D0D255A00E1674A /* bl_X.png */; };
 		51A81AC52CDECC37002406E2 /* bl_Muted.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 51A81AC12CDECC37002406E2 /* bl_Muted.mp3 */; };
 		51A81AC62CDECC37002406E2 /* bl_Soft_Pop_or_Click.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 51A81AC32CDECC37002406E2 /* bl_Soft_Pop_or_Click.mp3 */; };
+		51AE018C2D167DAC00446DE9 /* bl_Star.png in Resources */ = {isa = PBXBuildFile; fileRef = 51AE018B2D167DAC00446DE9 /* bl_Star.png */; };
 		51B2BAB42CD82A4000BB4E30 /* BLVerticalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB32CD82A4000BB4E30 /* BLVerticalBlockNode.swift */; };
 		51B2BAB62CD82AE300BB4E30 /* BLHorizontalBlockNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB52CD82AE300BB4E30 /* BLHorizontalBlockNode.swift */; };
 		51B2BAB82CD82BB200BB4E30 /* BLLShapeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B2BAB72CD82BB200BB4E30 /* BLLShapeNode.swift */; };
@@ -85,6 +86,7 @@
 		5190EBE42D0D255A00E1674A /* bl_X.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bl_X.png; sourceTree = "<group>"; };
 		51A81AC12CDECC37002406E2 /* bl_Muted.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bl_Muted.mp3; sourceTree = "<group>"; };
 		51A81AC32CDECC37002406E2 /* bl_Soft_Pop_or_Click.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bl_Soft_Pop_or_Click.mp3; sourceTree = "<group>"; };
+		51AE018B2D167DAC00446DE9 /* bl_Star.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bl_Star.png; sourceTree = "<group>"; };
 		51B2BAB32CD82A4000BB4E30 /* BLVerticalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLVerticalBlockNode.swift; sourceTree = "<group>"; };
 		51B2BAB52CD82AE300BB4E30 /* BLHorizontalBlockNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLHorizontalBlockNode.swift; sourceTree = "<group>"; };
 		51B2BAB72CD82BB200BB4E30 /* BLLShapeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLLShapeNode.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				80605FCB2D0E2DFC003336FE /* bl_questionmark.png */,
 				80605FC92D0E2C9E003336FE /* bl_question.png */,
 				51BC61052D15F41400A7DD5D /* bl_Clear 250+.png */,
+				51AE018B2D167DAC00446DE9 /* bl_Star.png */,
 				51FC7F962D0B4FB700064AA2 /* bl_swap.png */,
 				51FC7F902D0B4F9800064AA2 /* bl_multiplier.png */,
 				510F3E942D0BA3C6004E3CAC /* bl_multiplier2.png */,
@@ -371,6 +374,7 @@
 				51FC7F912D0B4F9800064AA2 /* bl_multiplier.png in Resources */,
 				512D30312D0FDEBC0019485C /* bl_multiplier.wav in Resources */,
 				51FC7F972D0B4FB700064AA2 /* bl_swap.png in Resources */,
+				51AE018C2D167DAC00446DE9 /* bl_Star.png in Resources */,
 				51A81AC52CDECC37002406E2 /* bl_Muted.mp3 in Resources */,
 				51FC7F952D0B4FA800064AA2 /* bl_delete.png in Resources */,
 				51A81AC62CDECC37002406E2 /* bl_Soft_Pop_or_Click.mp3 in Resources */,
@@ -558,7 +562,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = AXV2JL5X7V;
+				DEVELOPMENT_TEAM = GY8R2NLRXH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -571,7 +575,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.your.Blocks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yr.Blocks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -587,7 +591,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Blocks/Preview Content\"";
-				DEVELOPMENT_TEAM = AXV2JL5X7V;
+				DEVELOPMENT_TEAM = GY8R2NLRXH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -600,7 +604,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.your.Blocks;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yr.Blocks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
