@@ -1302,7 +1302,7 @@ func addSparkleEffect(around cellNodes: [SKShapeNode]) {
 //        }
         
         var twinkleNodes: [SKSpriteNode] = []
-        let twinkleTexture = SKTexture(imageNamed: "bl_twinkle")
+        let twinkleTexture = SKTexture(imageNamed: "BL_twinkle")
 
         for index in 0..<3 {
             let twinkleNode = SKSpriteNode(texture: twinkleTexture)
@@ -1885,7 +1885,7 @@ func restartGame() {
     setupGridHighlights()
 
     // Restart background music
-    if let url = Bundle.main.url(forResource: "bl_New", withExtension: "mp3") {
+    if let url = Bundle.main.url(forResource: "New", withExtension: "mp3") {
         backgroundMusic = SKAudioNode(url: url)
         if let backgroundMusic = backgroundMusic {
             backgroundMusic.autoplayLooped = true
