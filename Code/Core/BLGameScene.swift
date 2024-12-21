@@ -543,7 +543,13 @@ required init?(coder aDecoder: NSCoder) {
         highlightPotentialClears(for: block)
     }
 
+    // Add a property to track which cells were highlighted
+    var previouslyHighlightedCells: [SKShapeNode] = []
+
     func highlightPotentialClears(for block: BLBoxNode) {
+        // First, revert any previously highlighted cells to their original textures
+        revertHighlightedCells()
+
         // Create a temporary copy of the grid state
         var tempGrid = grid
 
@@ -592,37 +598,95 @@ required init?(coder aDecoder: NSCoder) {
     }
 
     func highlightCompletedRows(_ rows: [Int]) {
+        guard let hoveredBlock = currentlyDraggedNode else {
+            return // If no block is being dragged, we can't match its texture
+        }
+
+        guard let firstAssetName = hoveredBlock.assets.first?.name else { return }
+        let hoveredTexture = SKTexture(imageNamed: firstAssetName)
+
         for row in rows {
             for col in 0..<gridSize {
-                if let highlightNode = highlightGrid[row][col] {
-                    // Instead of a yellow overlay, use a subtle block-like highlight
-                    let highlightSprite = SKSpriteNode(color: UIColor.white.withAlphaComponent(0.3),
-                                                       size: CGSize(width: tileSize, height: tileSize))
-                    highlightSprite.zPosition = 10
+                if let cellNode = grid[row][col],
+                   let spriteNode = cellNode.children.first as? SKSpriteNode {
+
+                    // Store original texture info before overwriting
+                    storeOriginalTexture(for: spriteNode)
                     
-                    // Optionally add a subtle glow or outline for more polish
-                    // highlightSprite.run(SKAction.sequence([
-                    //    SKAction.colorize(with: .white, colorBlendFactor: 0.3, duration: 0.1)
-                    // ]))
-                    
-                    highlightNode.addChild(highlightSprite)
+                    // Replace the cell’s texture with the hovered block’s texture
+                    spriteNode.texture = hoveredTexture
+                    spriteNode.alpha = 0.8
+
+                    // Add this cell to previouslyHighlightedCells for later restoration
+                    if !previouslyHighlightedCells.contains(cellNode) {
+                        previouslyHighlightedCells.append(cellNode)
+                    }
                 }
             }
         }
     }
 
     func highlightCompletedColumns(_ columns: [Int]) {
+        guard let hoveredBlock = currentlyDraggedNode else {
+            return // If no block is being dragged, we can't match its texture
+        }
+
+        guard let firstAssetName = hoveredBlock.assets.first?.name else { return }
+        let hoveredTexture = SKTexture(imageNamed: firstAssetName)
+
         for col in columns {
             for row in 0..<gridSize {
-                if let highlightNode = highlightGrid[row][col] {
-                    let highlightSprite = SKSpriteNode(color: UIColor.white.withAlphaComponent(0.3),
-                                                       size: CGSize(width: tileSize, height: tileSize))
-                    highlightSprite.zPosition = 10
-                    highlightNode.addChild(highlightSprite)
+                if let cellNode = grid[row][col],
+                   let spriteNode = cellNode.children.first as? SKSpriteNode {
+
+                    // Store original texture info before overwriting
+                    storeOriginalTexture(for: spriteNode)
+                    
+                    // Replace the cell’s texture with the hovered block’s texture
+                    spriteNode.texture = hoveredTexture
+                    spriteNode.alpha = 0.8
+
+                    // Add this cell to previouslyHighlightedCells for later restoration
+                    if !previouslyHighlightedCells.contains(cellNode) {
+                        previouslyHighlightedCells.append(cellNode)
+                    }
                 }
             }
         }
     }
+
+    // Store the original texture and alpha in the sprite node's userData before changing
+    func storeOriginalTexture(for spriteNode: SKSpriteNode) {
+        if spriteNode.userData == nil {
+            spriteNode.userData = [:]
+        }
+        // Only store if not already stored
+        if spriteNode.userData?["originalTexture"] == nil {
+            spriteNode.userData?["originalTexture"] = spriteNode.texture
+            spriteNode.userData?["originalAlpha"] = spriteNode.alpha
+        }
+    }
+
+    // Revert all previously highlighted cells to their original textures and alpha
+    func revertHighlightedCells() {
+        for cellNode in previouslyHighlightedCells {
+            if let spriteNode = cellNode.children.first as? SKSpriteNode,
+               let originalTexture = spriteNode.userData?["originalTexture"] as? SKTexture,
+               let originalAlpha = spriteNode.userData?["originalAlpha"] as? CGFloat {
+
+                // Restore original texture and alpha
+                spriteNode.texture = originalTexture
+                spriteNode.alpha = originalAlpha
+
+                // Clear stored originals
+                spriteNode.userData?.removeObject(forKey: "originalTexture")
+                spriteNode.userData?.removeObject(forKey: "originalAlpha")
+            }
+        }
+        previouslyHighlightedCells.removeAll()
+    }
+
+
 
     
 override func didMove(to view: SKView) {
@@ -2091,6 +2155,7 @@ else if powerupType == .multiplier {
     }
 
     if let node = currentlyDraggedNode {
+        currentlyDraggedNode?.zPosition = 1000 // A large number so it appears on top
         if let rotatePowerupIcon = childNode(withName: "//rotatePowerup") as? SKSpriteNode {
             rotatePowerupIcon.colorBlendFactor = 0.0
         }
@@ -2593,6 +2658,15 @@ override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         // Update the node’s position
         node.position = easedPosition
     }
+    // Check if the block is within the grid bounds or not
+        // If not valid, revert highlighted cells
+        let gridPos = node.gridPosition()
+        if !isPlacementValid(for: node, at: gridPos.row, col: gridPos.col) {
+            revertHighlightedCells() // No valid placement, so revert
+        } else {
+            // If valid placement, re-apply highlights
+            highlightValidCells(for: node)
+        }
     
     // Highlight valid cells based on the updated position
     highlightValidCells(for: node)
@@ -2781,7 +2855,7 @@ func getUndoBlockCenterPosition() -> CGPoint {
 
         // Remove the offset data
         node.userData = nil
-
+        node.zPosition = 0 // Reset the zPosition to its original state
         currentlyDraggedNode = nil
         clearHighlights()
     }
@@ -2935,3 +3009,4 @@ extension UIImage {
         self.init(cgImage: image.cgImage!)
     }
 }
+
